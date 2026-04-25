@@ -5,6 +5,12 @@ updated: 2026-04-24
 last_edited_by: agent_operator
 status: active
 tags: [backlog, open-questions, v1, mop]
+resolved:
+  - B1 → adr_009 (2026-04-24)
+  - B2 → adr_010 (2026-04-24)
+  - B3 → adr_011 (2026-04-24)
+  - B7 → adr_011 (2026-04-24, collateral)
+  - B4 → adr_012 (2026-04-24)
 ---
 
 # Open Questions — MOP v1 Architecture
@@ -13,33 +19,23 @@ Questions surfaced during the founding architecture session (2026-04-24) that di
 
 ## Architectural
 
-### B1: Reply receiving UX (mechanics confirmation pending)
+### B1: Reply receiving UX (mechanics confirmation pending) — RESOLVED
 
-**Last position**: Origin holds a private URL like `mop.app/origin/{K_origin_priv_encoded}` per object. Visiting it fetches reply blobs from `/m/{id}/replies` (gated by signature from K_origin_priv), decrypts each blob client-side, displays. Each authored object has its own such URL. Aggregate views (device-local list of all the user's authored objects + reply counts) are a convenience layer on the client, not part of the protocol.
+**Resolution (2026-04-24)**: Banked as **ADR-009**. Inbox aggregation is client-side via HD derivation. The author holds a device-local "master inbox URL" encoding the seed (or an HD top branch); the client uses BIP-32 derivation to regenerate every per-object `K_origin_priv` and independently fetches each per-object reply endpoint. Host stays per-object blind — no master pubkey, no `/inbox` endpoint, no authorship cluster. Recovery via BIP-39 seed + sweep across HD indices. Loss of the master URL is aligned with VISION P4 (brittleness as feature), not in tension with it.
 
-**Status**: Question was asked but not answered before session paused. Likely yes/confirm with possible refinements.
+Server-side aggregation under a master pubkey (option 3a) was rejected: even with encrypted blobs, the host would learn the authorship cluster, which is the metadata-account form ADR-003 refused.
 
-### B2: Reply notification model
+### B2: Reply notification model — RESOLVED
 
-**Three forks**:
-- **(a) Pull-only.** No notifications. User checks K_origin URL when they remember. On-philosophy (interaction-minimalism + brittleness).
-- **(b) Web push subscription per object.** Service worker registers, server pushes on new reply. Cross-platform but introduces persistent endpoint registration that may leak K_origin_pub to push relay services (Apple, Google).
-- **(c) Email notifications.** Author optionally provides email at compose time, server pings. Simplest UX; introduces an external identifier (email) which dents anonymity-by-default.
+**Resolution (2026-04-24)**: Banked as **ADR-010**. The MOP protocol exposes **no notification primitive** — no push subscription endpoint, no email field, no webhook registration. Notifications are entirely a client/app concern layered above the protocol. The reference web app is pull-only; the planned mobile app may implement OS-level push (APNs/FCM) via the app's own backend acting as a polling client of the MOP host. Host-blindness preserved by construction.
 
-**Lean**: (a) for v1, on principle. Pending user decision.
+### B3: Body format — RESOLVED
 
-### B3: Body format
+**Resolution (2026-04-24)**: Banked as **ADR-011**. Body is plain text UTF-8 + embedded URLs; no markdown grammar of any kind. Renderer aggressively auto-embeds non-MOP URLs on page open: known media extensions inline as `<img>`/`<video>`/`<audio>`; everything else fetches OG metadata client-side and renders a preview card. Recipient-side privacy is **explicitly not hardened** in v1 — tracking-pixel attacks are accepted as an in-scope-but-undefended risk. Cypherpunk on content/authorship; pragmatic on rendering. Hardening deferred to later phase.
 
-- **(a)** Pure plain text (utf-8). URLs auto-detected and rendered. No formatting.
-- **(b)** Light markdown (CommonMark or curated subset).
+### B4: Object body size cap — RESOLVED
 
-**Lean**: (a). Aligns with austerity ethos. Pending decision.
-
-### B4: Object body size cap
-
-**Open**: pick a number. "Tweet-sized" needs to mean something concrete. Candidates: 280 / 500 / 1000 / 2000 / 4000 chars.
-
-**Considerations**: Intro/ask use case wants more than 280. Whitepaper-pointer use case is short. Cross-post-as-canonical wants tweet-scale. Provisional working number: **500–1000 chars**, hard-capped.
+**Resolution (2026-04-24)**: Banked as **ADR-012**. Cap is **300 Unicode codepoints** of UTF-8 plain text. Spartan-300 cultural anchor; austerity register; deliberate distance from Twitter's 280. Server-enforced at publish, composer-enforced at compose-time, codepoint-counted (not bytes, not grapheme clusters). Non-tunable; non-per-object.
 
 ### B5: Anti-abuse / PoW / rate limits
 
@@ -51,9 +47,9 @@ Questions surfaced during the founding architecture session (2026-04-24) that di
 
 **Open**: BIP-44-style coin type (e.g., `m/44'/{coin}'/0'/0/n`) or a custom MOP-specific path? Implementation detail; should be settled before any client code is written.
 
-### B7: Image/media inclusion
+### B7: Image/media inclusion — RESOLVED (collateral with ADR-011)
 
-**Implicit assumption**: media (images, audio, video) is included via external URL only, rendered inline by the body renderer (per ADR-007). MOP itself never hosts media. Should be confirmed explicitly.
+**Resolution (2026-04-24)**: Banked as part of **ADR-011**. Media inclusion is via external URL only, auto-inlined by the renderer at page open via standard `<img>`/`<video>`/`<audio>` elements. MOP itself never hosts media. URL extension or content-type drives renderer classification.
 
 ### B8: Tombstone vs. vanish on TTL expiry
 
