@@ -1,0 +1,39 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Obsidian per-device (don't sync across clones)
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/graph.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Note: plugin binaries and themes ARE tracked so the vault works on clone.
+# Run ./setup.sh --force to update all plugins to latest versions.
+
+# Environment
+.env
+.env.local
+
+# Claude Code / MCP (local credentials — never commit)
+.mcp.json
+.claude/
