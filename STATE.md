@@ -4,7 +4,7 @@ created: 2026-04-24
 updated: 2026-04-24
 status: active
 last_edited_by: agent_operator
-last_session: session_operator_20260424_mop_founding_architecture
+last_session: session_operator_20260424_mop_open_questions_resume
 tags: [state, governance, mop]
 ---
 
@@ -12,7 +12,7 @@ tags: [state, governance, mop]
 
 ## Current Phase
 
-**Architecture resolution, mid-stream.** MOP was forked from the aDNA template on 2026-04-24. The founding session ingested the user's ChatGPT-derived architecture pack ("Hypermessage / Relay Objects — Architecture Context Pack v1") plus two adjacent inspiration docs (Weak Ties Game, TweetJoin), then ran a critical-pass rapid-fire on the architecture and banked 6 ADRs covering the protocol's core primitives. Several open questions remain pending; the next session resumes from those.
+**Architecture resolution, ~75% complete.** MOP was forked from the aDNA template on 2026-04-24. The founding session banked ADRs 003–008. The follow-on open-questions-resume session (also 2026-04-24) banked ADRs 009–013, resolving B1–B5 + B7. Six backlog items remain (B6, B8, B9, S1–S4) for the next session.
 
 ## What's Banked
 
@@ -38,6 +38,7 @@ tags: [state, governance, mop]
 | 010 | Notifications: zero protocol primitive; entirely a client/app concern |
 | 011 | Body is plain text; renderer aggressively auto-embeds non-MOP URLs (UX over recipient-side privacy) |
 | 012 | Object body size cap: 300 Unicode codepoints (Spartan reference) |
+| 013 | v1 abuse posture: edge + per-IP rate-limits + size caps; no PoW |
 
 ### Use cases identified (`who/governance/VISION.md`)
 
@@ -58,7 +59,6 @@ See `how/backlog/backlog_open_questions_v1.md` for the full list. Highest-priori
 
 | ID | Question | Why it matters |
 |----|----------|----------------|
-| B5 | Anti-abuse / PoW / rate-limits | Without accounts, abuse mitigation moves entirely to PoW + edge |
 | B6 | HD path convention (BIP-44 vs custom) | Locked-in shape needed before client code |
 | B8 | Tombstone vs. vanish on TTL expiry | Broken-link UX vs. ephemerality |
 | B9 | Public-form privacy banner on rendered page | Recipient comprehension |
@@ -67,7 +67,7 @@ See `how/backlog/backlog_open_questions_v1.md` for the full list. Highest-priori
 
 ## Active Blockers
 
-None. Session paused for context-window reset, not for any unresolved blocker.
+None. Open-questions-resume session paused for sleep, not for any unresolved blocker. Mid-question on B6 (HD path convention).
 
 ## Recent Decisions Timeline
 
@@ -78,6 +78,7 @@ None. Session paused for context-window reset, not for any unresolved blocker.
 | 2026-04-24 | ADR-010 banked: zero notification primitive at protocol layer; client/app concern (B2 resolved) | Open-questions resume session |
 | 2026-04-24 | ADR-011 banked: body is plain text; renderer aggressively auto-embeds non-MOP URLs (B3 resolved; B7 settled collateral) | Open-questions resume session |
 | 2026-04-24 | ADR-012 banked: body size cap is 300 codepoints — Spartan reference (B4 resolved) | Open-questions resume session |
+| 2026-04-24 | ADR-013 banked: v1 abuse posture is edge + rate-limits + size caps; no PoW (B5 resolved) | Open-questions resume session |
 
 ## Recent Upgrades
 
@@ -87,7 +88,7 @@ None. Session paused for context-window reset, not for any unresolved blocker.
 
 ## Partial-Resume Detection
 
-Session history at `how/sessions/history/2026-04/` is non-empty (founding session logged). MANIFEST.md no longer carries `role: template`; `last_edited_by: agent_operator` (not `agent_init`). Onboarding does **not** need to run. Next session can pick up directly from this STATE.md and the `Next Session Prompt` in the founding session log.
+Session history at `how/sessions/history/2026-04/` contains two completed sessions (founding + open-questions resume). MANIFEST.md does not carry `role: template`; `last_edited_by: agent_operator` (not `agent_init`). Onboarding does **not** need to run. Next session picks up directly from this STATE.md and the `Next Session Prompt` in the most recent session log (`session_operator_20260424_mop_open_questions_resume.md`).
 
 ## Next Session Prompt
 
@@ -95,15 +96,18 @@ A self-contained paragraph for the next agent. Read in this order:
 
 1. `CLAUDE.md` (auto-loaded — note that the **Identity & Personality** section still says "Berthier"; the user has not yet customized this and it remains the default)
 2. `MANIFEST.md` — MOP project identity and structure
-3. `who/governance/VISION.md` — five design principles + scope walls; these are immutable within v1 phase
-4. `what/decisions/adr_003*.md` through `adr_008*.md` — all banked architectural commitments, in order
+3. `who/governance/VISION.md` — five design principles + scope walls; immutable within v1 phase
+4. `what/decisions/adr_003*.md` through `adr_013*.md` — **all 11 banked architectural commitments**, in number order
 5. This STATE.md
-6. `how/backlog/backlog_open_questions_v1.md` — the open question queue
+6. `how/backlog/backlog_open_questions_v1.md` — open question queue (B6, B8, B9, S1–S4 still open)
+7. `how/sessions/history/2026-04/session_operator_20260424_mop_open_questions_resume.md` — most recent session log; its Next Session Prompt is the canonical resume instructions for the rapid-fire (more detailed than this paragraph)
 
-**Then resume rapid-fire architecture questions** with the user, one question at a time (the user explicitly preferred this over batched questions). B1 → ADR-009; B2 → ADR-010; B3 + B7 → ADR-011; B4 → ADR-012. Next on deck is **B5** (anti-abuse: PoW / rate-limits), then B6 → B8 → B9, then strategic S1 → S4.
+**Then resume rapid-fire architecture questions** with the user, one question at a time. B1 → ADR-009; B2 → ADR-010; B3 + B7 → ADR-011; B4 → ADR-012; B5 → ADR-013. Next on deck is **B6** (HD path convention — re-open with the BIP-43 / BIP-44 / custom fork; lean is BIP-43 purpose code `300'` flat). Then B8 → B9 → S1 → S2 → S3 → S4.
 
-The user is **the operator (X: @deltaclimbs)** (***), working in `~/lattice/MOP/` on a Fedora workspace. Their design temperament is cypherpunk-Nostr-adjacent, Nietzschean, anti-feed/anti-algorithm, biased toward terse declarative ADRs and rule-light protocols. Match that register; do not corporate-neutralize the voice.
+**Apply the pragmatic privacy posture heuristic** (memory: `~/.claude/projects/-home-operator-lattice-MOP/memory/feedback_pragmatic_privacy_posture.md`) when forks pit recipient-side privacy or maximalist defense against UX. The user has repeatedly chosen UX in v1.
 
-The architecture pack and inspiration docs the user shared in the founding session are NOT in the repo — they were verbatim conversation context. The pack's substance is captured in MANIFEST + VISION + ADRs; the inspiration is captured at `what/context/inspiration/`. Do not re-ingest the pack from scratch; treat the ADRs as canonical.
+The user is **the operator (X: @deltaclimbs)** (***), working in `~/lattice/MOP/` on a Fedora workspace. Cypherpunk-Nostr-adjacent, Nietzschean, anti-feed/anti-algorithm; terse declarative ADRs; rule-light protocols. Match the register; do not corporate-neutralize.
 
-**Crucially**: when starting the next session, do NOT re-debate banked decisions unless the user explicitly reopens them. Banked is banked. The point of resuming is to resolve open questions, not to revisit settled ones.
+The architecture pack and inspiration docs the user shared in the founding session are NOT in the repo — they were verbatim conversation context. The pack's substance is captured in MANIFEST + VISION + ADRs; the inspiration is at `what/context/inspiration/`. Do not re-ingest the pack from scratch; treat the ADRs as canonical.
+
+**Crucially**: do NOT re-debate banked decisions (ADRs 003–013) unless the user explicitly reopens them. Banked is banked.

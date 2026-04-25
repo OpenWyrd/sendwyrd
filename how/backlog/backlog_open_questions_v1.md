@@ -11,6 +11,7 @@ resolved:
   - B3 → adr_011 (2026-04-24)
   - B7 → adr_011 (2026-04-24, collateral)
   - B4 → adr_012 (2026-04-24)
+  - B5 → adr_013 (2026-04-24)
 ---
 
 # Open Questions — MOP v1 Architecture
@@ -37,11 +38,9 @@ Server-side aggregation under a master pubkey (option 3a) was rejected: even wit
 
 **Resolution (2026-04-24)**: Banked as **ADR-012**. Cap is **300 Unicode codepoints** of UTF-8 plain text. Spartan-300 cultural anchor; austerity register; deliberate distance from Twitter's 280. Server-enforced at publish, composer-enforced at compose-time, codepoint-counted (not bytes, not grapheme clusters). Non-tunable; non-per-object.
 
-### B5: Anti-abuse / PoW / rate limits
+### B5: Anti-abuse / PoW / rate limits — RESOLVED
 
-**Status**: Architecture pack §11 listed Cloudflare + per-IP rate-limits + optional hashcash PoW + hard size caps. Given no-accounts-by-default (ADR-003), per-IP rate-limits alone are weak (residential proxies trivially bypass).
-
-**Working principle**: PoW per object creation and per reply is likely the *primary* abuse control, not the secondary. Per-IP rate-limits secondary. Pending design.
+**Resolution (2026-04-24)**: Banked as **ADR-013**. v1 host posture is **edge-CDN (Cloudflare) + per-IP rate-limits + per-object reply rate-limits + size caps + cryptographic gates on origin operations. No PoW.** Pragmatic-v1 floor; ships fast; residential-proxy bypass is undefended and accepted as "fix on detection." PoW deferred to a later phase, not refused. Documented as v1 host-operator policy at `mop.app`, not as protocol-spec — protocol stays minimal.
 
 ### B6: HD path conventions
 
