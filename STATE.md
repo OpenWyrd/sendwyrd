@@ -34,6 +34,10 @@ tags: [state, governance, mop]
 | 006 | Object lifecycle: per-object K_origin, immutable post-publish, default 90-day burn |
 | 007 | Body schema: text-with-embedded-URLs, transitive capability references |
 | 008 | Replies: one-shot encrypted blobs, off by default, opt-in |
+| 009 | Inbox aggregation: client-side via HD derivation, host stays per-object blind |
+| 010 | Notifications: zero protocol primitive; entirely a client/app concern |
+| 011 | Body is plain text; renderer aggressively auto-embeds non-MOP URLs (UX over recipient-side privacy) |
+| 012 | Object body size cap: 300 Unicode codepoints (Spartan reference) |
 
 ### Use cases identified (`who/governance/VISION.md`)
 
@@ -54,11 +58,10 @@ See `how/backlog/backlog_open_questions_v1.md` for the full list. Highest-priori
 
 | ID | Question | Why it matters |
 |----|----------|----------------|
-| B1 | Reply receiving mechanics — confirm shape | Last question asked before pause; quick to resolve |
-| B2 | Reply notification model (pull / push / email) | UX-critical; affects whether the intro/ask use case is viable |
-| B3 | Body format (plain text vs. light markdown) | Renderer scope-defining |
-| B4 | Object body size cap (number) | Concrete ceiling needed for schema |
 | B5 | Anti-abuse / PoW / rate-limits | Without accounts, abuse mitigation moves entirely to PoW + edge |
+| B6 | HD path convention (BIP-44 vs custom) | Locked-in shape needed before client code |
+| B8 | Tombstone vs. vanish on TTL expiry | Broken-link UX vs. ephemerality |
+| B9 | Public-form privacy banner on rendered page | Recipient comprehension |
 | S1 | v1 launch scope (which use cases lead) | Marketing & demo content depend on this |
 | S2 | Domain & branding | `mop.app` is a placeholder |
 
@@ -71,6 +74,10 @@ None. Session paused for context-window reset, not for any unresolved blocker.
 | Date | Decision | Source |
 |------|----------|--------|
 | 2026-04-24 | ADR-003 to ADR-008 banked; VISION.md authored; MANIFEST.md rewritten from template | Founding session |
+| 2026-04-24 | ADR-009 banked: inbox aggregation client-side via HD derivation (B1 resolved) | Open-questions resume session |
+| 2026-04-24 | ADR-010 banked: zero notification primitive at protocol layer; client/app concern (B2 resolved) | Open-questions resume session |
+| 2026-04-24 | ADR-011 banked: body is plain text; renderer aggressively auto-embeds non-MOP URLs (B3 resolved; B7 settled collateral) | Open-questions resume session |
+| 2026-04-24 | ADR-012 banked: body size cap is 300 codepoints — Spartan reference (B4 resolved) | Open-questions resume session |
 
 ## Recent Upgrades
 
@@ -93,7 +100,7 @@ A self-contained paragraph for the next agent. Read in this order:
 5. This STATE.md
 6. `how/backlog/backlog_open_questions_v1.md` — the open question queue
 
-**Then resume rapid-fire architecture questions** with the user, one question at a time (the user explicitly preferred this over batched questions). The user paused mid-question on B1 (reply receiving mechanics confirmation) — start there, then move through B2 → B3 → B4 → B5 in roughly that order, then strategic questions S1 → S2 → S3.
+**Then resume rapid-fire architecture questions** with the user, one question at a time (the user explicitly preferred this over batched questions). B1 → ADR-009; B2 → ADR-010; B3 + B7 → ADR-011; B4 → ADR-012. Next on deck is **B5** (anti-abuse: PoW / rate-limits), then B6 → B8 → B9, then strategic S1 → S4.
 
 The user is **DeltaClimbs / Michael** (mrchapiro@gmail.com), working in `~/lattice/MOP/` on a Fedora workspace. Their design temperament is cypherpunk-Nostr-adjacent, Nietzschean, anti-feed/anti-algorithm, biased toward terse declarative ADRs and rule-light protocols. Match that register; do not corporate-neutralize the voice.
 
