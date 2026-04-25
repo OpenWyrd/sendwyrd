@@ -1,156 +1,132 @@
-# Vision: The Decentralized Frontier Lab
+---
+type: governance
+subtype: vision
+created: 2026-04-24
+updated: 2026-04-24
+last_edited_by: agent_michael
+status: active
+tags: [governance, vision, mop]
+---
 
-How a knowledge architecture becomes a living, community-driven system.
+# VISION — Hyperlinks for Conversation
+
+## North Star
+
+**MOP exists to give human conversation a hyperlink.**
+
+A Hypermessage is a tweet-sized, end-to-end-encrypted text block that becomes a shareable URL — a portable, composable, forward-worthy conversational artifact that travels through existing messaging rails (iMessage, Signal, WhatsApp, X, Slack, email) rather than through a native feed or discovery layer.
+
+Not a new social network. Not a messenger replacement. Not a decentralized messaging protocol. Hyperlinks. For conversation.
+
+This is the design filter. When in doubt, ask: *does this make MOP more like "hyperlinks for conversation," or less?*
 
 ---
 
-## The Premise
+## The Five Design Principles
 
-Every project that adopts aDNA creates a structured knowledge vault — a triad of `who/`, `what/`, `how/` with governance files that give both humans and AI agents instant orientation. Each vault is self-contained, immediately useful, and locally owned.
+These principles are immutable within the v1 phase. Every implementation decision must align to at least one. Revision requires explicit phase-gate review.
 
-But knowledge architectures don't evolve in isolation. The patterns that work in one vault — better templates, sharper context structures, cleaner naming conventions — would benefit every other vault using the same standard. The question is: how do you capture that collective learning without centralizing control?
+### 1. Hyperlinks for Conversation (North Star)
 
-aDNA's answer: make the agents themselves the sensing network.
+**Statement**: MOP is a layer for portable conversational artifacts that ride on existing rails. It is never a feed, never a discovery engine, never a social graph, never a messenger.
 
----
+**Alignment test**: Does this feature replace or compete with an existing messaging app, or does it produce *artifacts* that flow through existing apps?
 
-## What Makes This Different
+**Example**: Building a Hypermessage UI for live back-and-forth chat would *replace messaging apps* — fails the test. Producing a beautifully-rendered URL that someone can paste into iMessage *enhances messaging apps* — passes.
 
-aDNA is not a platform. There is no hosted service, no vendor lock-in, no telemetry. It's a **composable standard** — a set of conventions for organizing project knowledge that any team can adopt, extend, and own.
+### 2. Protocol Carries Text Only
 
-Three principles shape everything:
+**Statement**: The protocol carries text and a few minimal capability primitives. Identity, signing, trust, attribution, and provenance are never modeled by the protocol itself. They are either **inlined by the user into the body** (endogenous — e.g., a Nostr signature, a name in the text) or **inherited from the share channel** (exogenous — e.g., the trust signal of "Mike sent me this").
 
-1. **You own your vault.** Your data stays in your directories, synced by your git remote, browsed by your tools. aDNA adds structure; it never takes custody.
+**Alignment test**: Does this feature add a protocol-level concept of *who, when, or why* beyond the body text and capability keys?
 
-2. **The standard is open.** The [normative specification](what/docs/adna_standard.md), governance files, templates, and tools are MIT-licensed and public. Fork it, extend it, contribute back — or don't. Each level of participation is self-contained.
+**Example**: Proposing an `author` field in the schema fails the test. Proposing that the user paste their npub into the body if they want attribution passes.
 
-3. **Improvement is organic.** AI agents working in aDNA vaults encounter real friction — a missing template field, an undocumented pattern, an awkward naming convention. That friction is signal. The contribution system turns that signal into structured improvements without interrupting the work that surfaced it.
+### 3. Capability over Identity
 
----
+**Statement**: Possession of the URL implies access. There are no accounts, no usernames, no logins, no PKI hierarchy within MOP. Author-side capability is held as a private URL the user keeps locally; recipient-side capability is the share URL itself.
 
-## The Decentralized Frontier Lab
+**Alignment test**: Does this feature require the protocol to know *who* a user is across multiple objects?
 
-Imagine a research lab where every experiment happens in a different location, run by different people, on different problems — but the methodology, equipment standards, and reporting formats are shared. Each lab benefits from the collective refinement of the tools, and each lab's discoveries flow back to improve the tools for everyone else.
+**Example**: A "user dashboard showing all your authored objects" implemented server-side fails the test (requires cross-object identity). A device-local list of K_origin URLs the user has held passes.
 
-That's the model. aDNA vaults are the labs. The standard is the shared methodology. And four pieces of infrastructure make the feedback loop work:
+### 4. Brittleness as Feature
 
-### Agents Surface Improvements Organically
+**Statement**: The architecture refuses durable identity and durable archive *on purpose*. K_origin lives device-local and dies with the device unless the user deliberately backs up their seed phrase. Default object TTL is 90 days. The system architecturally penalizes its own use as a permanent archive.
 
-AI agents working in any aDNA vault are trained to notice **framework-level** improvement opportunities during normal work. When an agent encounters a gap — a template missing a useful field, a naming pattern that causes confusion, a workflow that could be smoother — it mentions the finding to the user at a natural pause point.
+**Alignment test**: Does this feature make MOP function as a personal archive, identity record, or pundit ledger?
 
-If the user approves, the agent creates a structured backlog item. If the user has the GitHub CLI configured, the agent can open an upstream issue directly. No special configuration required; this awareness is built into the agent protocol.
+**Example**: Default-on cloud backup of all authored objects fails the test. Optional BIP-39 seed export for the disciplined user passes — robustness becomes a deliberate opt-in, never an architecture-supplied default.
 
-Full protocol: [`how/skills/skill_upstream_contribution.md`](how/skills/skill_upstream_contribution.md)
+**Why**: Hot-take preaching, identity-building threads, and self-curation incentives all depend on durability. Removing durability nudges users toward action-oriented content (intros, asks, ephemeral relays, ideas worth sharing once and dissolving). The user's framing: *Nietzschean — content that fits a moment, then is gone.*
 
-### Side-Quests Generate Community Data
+### 5. Contact, Not Conversation
 
-Some improvements need data from multiple environments before the right answer becomes clear. Should frontmatter use flat or nested FAIR metadata? How many tokens does a migration prompt actually consume across different vault sizes?
+**Statement**: MOP's reply primitive exists only because the origin has no other way to reach the nth recipient through an opaque chain. It is a forensically necessary back-channel, not a feature to grow. Replies are one-shot encrypted blobs, off by default, opt-in only when the author needs the back-channel. Once contact is established, the conversation moves to existing rails.
 
-**Side-quests** are structured experiments that community members can run with spare agent tokens. Each quest specifies a procedure, expected output format, and estimated cost. Results flow back as structured data that maintainers aggregate to make evidence-based decisions.
+**Alignment test**: Does this feature turn MOP into a place where conversations *happen* rather than where they *start*?
 
-Current quests: [`how/quests/`](how/quests/)
-Participation guide: [`what/docs/side_quest_guide.md`](what/docs/side_quest_guide.md)
-Results aggregation: [`what/lattices/tools/aggregate_results.py`](what/lattices/tools/aggregate_results.py)
-
-### Migrations Keep Everyone Current
-
-As the standard evolves, vaults need to keep up. aDNA includes a **version migration system** — structured prompts that walk agents through upgrading a vault from one governance version to the next. Each migration is sequential, safe, and reversible (git-tagged snapshots enable rollback).
-
-The migration system means improvements actually propagate. A better template structure isn't just published — it's delivered to every vault that runs the migration prompt.
-
-Available migrations: [`how/migrations/`](how/migrations/)
-Migration guide: [`what/docs/version_migration_guide.md`](what/docs/version_migration_guide.md)
-
-### The Standard Evolves From the Field
-
-Traditional standards evolve through committee. aDNA evolves through usage. The cycle:
-
-1. Agents encounter friction in real vaults
-2. Users approve backlog items for promising improvements
-3. Side-quests collect data when evidence is needed
-4. Maintainers merge validated improvements
-5. Migration prompts deliver changes to every vault
-6. The next version of the standard reflects what actually worked
-
-This is deliberately bottom-up. The best improvements come from people (and agents) doing real work, not from design committees speculating about requirements.
+**Example**: Threading, reply-to-reply, notification UX optimized for engagement — all fail. A single decrypt-and-display reply page accessed via the K_origin URL passes.
 
 ---
 
-## The Participation Ladder
+## Trust Substrate
 
-Every level is self-contained. No level requires the next.
+The relational layer that makes MOP work — the percolation of objects through trust networks — lives **outside** the protocol. It lives in the existing rails (iMessage threads, Signal groups, real-world relationships) that carry the URL. The protocol stays narrow. Trust rides the rail.
 
-### Level 0: Use aDNA Standalone
-
-Clone the repo. Customize it for your project. Use the triad, templates, and tools for your own knowledge management. You never need to interact with the community, submit anything upstream, or even acknowledge that other aDNA vaults exist.
-
-**Value**: Structured knowledge architecture that both you and your AI agents can navigate. Faster agent orientation, better session continuity, organized project knowledge.
-
-> **Compute Participation**: Level 0 vaults can optionally upgrade to L1
-> compute nodes, adding JupyterHub and joining the Lattice compute network.
-> This is orthogonal to the knowledge contribution ladder. See
-> `how/skills/skill_l1_upgrade.md`.
-
-### Level 1: Submit Upstream Improvements
-
-When your agent surfaces a framework-level improvement, approve the backlog item and (optionally) open a GitHub issue upstream. Your improvement helps every aDNA user — and you benefit from everyone else's improvements when you run migrations.
-
-**Value**: Everything from Level 0, plus your vault improves as the standard improves. Your contributions make the tools better for everyone.
-
-### Level 2: Run Side-Quests
-
-Browse the quest directory. Find an experiment that interests you — or that your spare agent tokens can handle. Run it, submit the structured result. Your data point joins others to inform standard evolution decisions.
-
-**Value**: Everything from Level 1, plus you contribute to evidence-based standard development. Each quest takes 10-30 minutes and costs a few thousand tokens.
-
-### Level 3: Create Quests, Review Contributions, Evolve the Standard
-
-Design quests for questions the community needs answered. Review submitted improvements and results. Contribute to migration prompts. Help shape what aDNA becomes.
-
-**Value**: Everything from Level 2, plus you're actively steering the direction of the knowledge architecture standard.
+This is the resolution of the *object-first vs. relational-first* tension: MOP is **object-first as practical implementation, relational-first as distribution substrate.** The protocol primitive is the object; the substrate it rides on is human relationships.
 
 ---
 
-## How Everything Connects
+## What MOP Is Not (Scope Walls)
 
-The infrastructure supporting this vision was built across six missions:
+**Do not build, in v1 or v2:**
 
-| Component | What it does | Location |
-|-----------|-------------|----------|
-| **Projects folder pattern** | Multi-project workspace with agent-guided scaffolding | [`what/docs/projects_folder_pattern.md`](what/docs/projects_folder_pattern.md) |
-| **Version migration system** | Safe, sequential vault upgrades between governance versions | [`how/migrations/`](how/migrations/) |
-| **Migration safety framework** | Rollback, validation, and testing for migrations | [`what/docs/migration_safety_framework.md`](what/docs/migration_safety_framework.md) |
-| **CHANGELOG** | Two-track version history with migration cross-links | [`CHANGELOG.md`](CHANGELOG.md) |
-| **Contribution system** | CONTRIBUTING.md + Agent Contribution Mode + upstream skill | [`CONTRIBUTING.md`](CONTRIBUTING.md) |
-| **Side-quest infrastructure** | Quest specs, result templates, aggregation tooling | [`how/quests/`](how/quests/) + [`what/lattices/tools/`](what/lattices/tools/) |
+- Internal feed, timeline, or "for you" view
+- Followers, friends, mutuals, or any social-graph primitive
+- Likes, reactions, public engagement metrics
+- Discovery, recommendation, search across objects
+- Public comments
+- Full Nostr-style relay network
+- Blockchain, NFT, or token primitives
+- Identity protocol or PKI
+- Native real-time messaging
+- Group chat
+- Algorithmic distribution of any kind
+- Ad-supported monetization
 
-Each component works independently. Together, they form the feedback loop that turns individual vault usage into collective standard improvement.
-
----
-
-## What's Next
-
-The vision is aspirational but the infrastructure is real and delivered. Here's what comes next:
-
-- **Lattice Start Kit** — A 1-click onboarding experience: CLI interview → scaffolded vault with domain-specific templates. Design complete ([PRD](what/docs/start_kit_prd.md)); build pending.
-
-- **Federation** — Cross-instance lattice sharing, registry publishing, and compute orchestration. The protocol layer that connects vaults into a network.
-
-- **Code of Conduct** — Adopting [Contributor Covenant v2.1](https://www.contributor-covenant.org/version/2/1/code_of_conduct/) to formalize community standards.
-
-- **Quest CI** — GitHub Actions to validate quest result submissions on PR, ensuring data quality as community participation grows.
-
-- **Standard v3.0** — The next major version of the normative specification, incorporating learnings from the community infrastructure phase.
+If a feature requires breaking any scope wall, it does not belong in MOP. Spin it out as a separate project that *uses* MOP as a primitive.
 
 ---
 
-## Get Started
+## Use Cases (v1 Candidates)
 
-- **New to aDNA?** Start with the [README](README.md) — clone, setup, customize in minutes.
-- **Want to contribute?** Read [`CONTRIBUTING.md`](CONTRIBUTING.md) — bug reports, improvements, and Agent Contribution Mode.
-- **Want to run a quest?** Browse [`how/quests/`](how/quests/) and follow the [Side-Quest Guide](what/docs/side_quest_guide.md).
-- **Want to add aDNA to an existing project?** See the [Migration Guide](what/docs/migration_guide.md).
+MOP is deliberately unopinionated about which of these to optimize for. All are coherent with the principles above.
+
+| # | Use case | Wedge |
+|---|----------|-------|
+| 1 | **Cross-post canonical URL** | Publish once on MOP, share the URL across Twitter / iMessage / Slack as the canonical artifact for a thought. The URL is the artifact; the rails are distribution. |
+| 2 | **Intro / ask routing** | "X is looking for someone who can help with Y." Recipients forward via trust networks; terminal recipient reaches origin via the reply primitive without anyone in the chain having to coordinate. Strips real overhead from a thing humans do constantly but inefficiently. |
+| 3 | **Whisper-network dissemination** | Off-algo circulation of edgy/early ideas — often pointer-cards to externally-hosted long-form (whitepapers, GDocs, etc.). The fact of dissemination, plus who-shared-with-whom, is itself meaningful. |
+| 4 | **Tweet-replacement** | Author posts the canonical Hypermessage URL on Twitter (or wherever) instead of native posts. Recursive references enable thread-via-quoting. Self-archive incentive deliberately weakened by brittleness rule (P4). |
 
 ---
 
-*This document describes the long-term vision for aDNA as a community-driven knowledge architecture standard. The infrastructure described here is delivered and functional. The community growth it enables is aspirational — it depends on adoption, contribution, and collective iteration.*
+## Risks (Tracked, Not Resolved)
+
+From the architecture pack §23, retained for orientation:
+
+- **Product**: insufficient differentiation vs. paste-into-iMessage; too much creation friction; "weird pastebin with no wedge."
+- **Technical**: capability leakage; preview-crawler interaction (resolved by host-blind + two-form addressing — see ADR-003, ADR-004); abuse flooding (PoW/rate-limit design pending).
+- **Strategic**: drift toward feature creep; pressure to add identity, threading, or feed primitives.
+
+The principles above exist to harden against the strategic risk specifically.
+
+---
+
+## Revision Protocol
+
+- Principles 1–5 are immutable within the v1 phase.
+- Scope walls are immutable until the user explicitly elevates a phase gate.
+- Use case priority is fluid — to be settled at v1 launch-scope decision (open question, see backlog).
+- Revisions to this document require recording rationale inline.
