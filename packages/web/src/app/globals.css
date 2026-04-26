@@ -118,6 +118,36 @@ body {
   animation: wyrd-breathe 4.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
+/* Landing page — compact to a single mobile screen with no scrolling.
+   Inline styles on page.tsx win by default; !important is required. */
+@media (max-width: 640px) {
+  .landing {
+    padding: var(--spacing-6) var(--spacing-4) var(--spacing-8) !important;
+    gap: var(--spacing-5) !important;
+    justify-content: center;
+  }
+  .landing h1 {
+    font-size: 1.875rem !important;
+  }
+  .landing-sigil svg {
+    width: 56px !important;
+    height: 56px !important;
+  }
+  .landing-specimen p {
+    font-size: var(--text-caption) !important;
+    line-height: 1.5 !important;
+    padding-top: var(--spacing-3) !important;
+  }
+  .landing-prose p {
+    font-size: var(--text-caption) !important;
+    line-height: 1.5 !important;
+    margin-bottom: var(--spacing-3) !important;
+  }
+  .landing-prose p:last-child {
+    margin-bottom: 0 !important;
+  }
+}
+
 /* Reduced motion — kill all animations per visual_direction_v1.md §12. */
 @media (prefers-reduced-motion: reduce) {
   *,
