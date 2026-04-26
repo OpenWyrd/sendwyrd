@@ -104,6 +104,17 @@ body {
   box-sizing: border-box;
 }
 
+/* Wyrd sigil breathing animation (visual_direction_v1.md §7.2).
+   Single instance per page on the landing hero; static everywhere else. */
+@keyframes wyrd-breathe {
+  0%, 100% { opacity: 0.6; }
+  50%      { opacity: 1.0; }
+}
+
+.wyrd-sigil-breathing {
+  animation: wyrd-breathe 4.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
 /* Reduced motion — kill all animations per visual_direction_v1.md §12. */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -112,5 +123,9 @@ body {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+  .wyrd-sigil-breathing {
+    animation: none !important;
+    opacity: 1 !important;
   }
 }
