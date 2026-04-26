@@ -13,15 +13,22 @@ import { useParams } from "next/navigation";
 import {
   decryptFromBase64Url,
   b64uDecode,
+  deriveOriginKey,
   PERMANENT_EXPIRES_AT_MS,
   type FetchEnvelopeResponse,
 } from "@sendwyrd/core";
-import { fetchWyrd } from "@/lib/api";
+import { burnWyrd, fetchWyrd } from "@/lib/api";
 import { PrivacyIndicator } from "@/components/PrivacyIndicator";
 import { WyrdBody } from "@/components/WyrdBody";
 import { ReplyForm } from "@/components/ReplyForm";
 import { Nav } from "@/components/Nav";
 import { resolveTransitives, type ResolutionMap } from "@/lib/resolveBody";
+import { getSeed, isUnlocked, unlockSeed } from "@/lib/seedClient";
+import {
+  listHistory,
+  markHistoryEntryGone,
+  type HistoryEntry,
+} from "@/lib/wyrdHistory";
 
 type State =
   | { kind: "loading" }
@@ -35,6 +42,17 @@ type State =
 export default function FragmentView() {
   const params = useParams<{ handle: string }>();
   const [state, setState] = useState<State>({ kind: "loading" });
+  const [historyEntry, setHistoryEntry] = useState<HistoryEntry | null>(null);
+
+  // Look up the local history entry for this handle once on mount. The author
+  // is whoever holds an entry whose handle matches AND whose K_origin_pub
+  // matches what the host stores. We re-check the K_origin_pub once the live
+  // fetch returns, below.
+  useEffect(() => {
+    if (!params.handle) return;
+    const entry = listHistory().find((e) => e.handle === params.handle) ?? null;
+    setHistoryEntry(entry);
+  }, [params.handle]);
 
   useEffect(() => {
     let cancelled = false;
@@ -173,9 +191,210 @@ export default function FragmentView() {
               k_origin_pub_b64u={state.data.k_origin_pub}
             />
           )}
+          {historyEntry &&
+            !historyEntry.gone_at &&
+            historyEntry.k_origin_pub_b64u === state.data.k_origin_pub && (
+              <BurnAffordance
+                handle={state.data.handle}
+                n={historyEntry.n}
+                onBurned={(gone_at) => {
+                  markHistoryEntryGone(state.data.handle, "burned", gone_at);
+                  setState({
+                    kind: "gone",
+                    reason: "burned",
+                    gone_at: new Date(gone_at).toISOString(),
+                  });
+                }}
+                onAlreadyGone={(reason, gone_at_iso) => {
+                  const gone_at_ms = new Date(gone_at_iso).getTime();
+                  if (reason === "burned" || reason === "expired") {
+                    markHistoryEntryGone(state.data.handle, reason, gone_at_ms);
+                  }
+                  setState({
+                    kind: "gone",
+                    reason,
+                    gone_at: gone_at_iso,
+                  });
+                }}
+              />
+            )}
         </article>
       )}
     </main>
+  );
+}
+
+/**
+ * Small, restrained author-only affordance. Two-stage: a single muted "burn"
+ * link reveals a confirm row with terse final copy + the actual "burn" button.
+ * Esc cancels. Visual posture matches Settings' Danger pattern (transparent
+ * background, --color-danger border + text).
+ */
+function BurnAffordance({
+  handle,
+  n,
+  onBurned,
+  onAlreadyGone,
+}: {
+  handle: string;
+  n: number;
+  onBurned: (gone_at: number) => void;
+  onAlreadyGone: (reason: string, gone_at_iso: string) => void;
+}) {
+  const [stage, setStage] = useState<"idle" | "confirm" | "burning">("idle");
+  const [error, setError] = useState<string | null>(null);
+  const [needsPassphrase, setNeedsPassphrase] = useState(false);
+  const [passphrase, setPassphrase] = useState("");
+
+  // Esc cancels confirm / passphrase prompt.
+  useEffect(() => {
+    if (stage !== "confirm") return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setStage("idle");
+        setError(null);
+        setNeedsPassphrase(false);
+        setPassphrase("");
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [stage]);
+
+  async function unlockAndBurn() {
+    setError(null);
+    try {
+      await unlockSeed(passphrase);
+      setPassphrase("");
+      setNeedsPassphrase(false);
+      await doBurn();
+    } catch {
+      setError("Wrong passphrase.");
+    }
+  }
+
+  async function doBurn() {
+    if (!isUnlocked()) {
+      setNeedsPassphrase(true);
+      return;
+    }
+    const seedRec = getSeed();
+    if (!seedRec) {
+      setError("No seed available on this device.");
+      return;
+    }
+    setStage("burning");
+    setError(null);
+    try {
+      const k = deriveOriginKey(seedRec.seed, n);
+      const result = await burnWyrd({ handle, k_origin_priv: k.k_origin_priv });
+      if (result.kind === "burned") {
+        onBurned(result.data.gone_at);
+        return;
+      }
+      if (result.kind === "already_gone") {
+        onAlreadyGone(result.data.reason, result.data.gone_at);
+        return;
+      }
+      if (result.kind === "not_found") {
+        setStage("confirm");
+        setError("The host has no record of this wyrd.");
+        return;
+      }
+      if (result.kind === "signature_invalid") {
+        setStage("confirm");
+        setError("Signature rejected. The seed on this device may not match this wyrd.");
+        return;
+      }
+      setStage("confirm");
+      setError(`Burn failed (${result.status}).`);
+    } catch (e) {
+      setStage("confirm");
+      setError(e instanceof Error ? e.message : "Burn failed.");
+    }
+  }
+
+  if (stage === "idle") {
+    return (
+      <div style={burnRowStyle}>
+        <button
+          type="button"
+          onClick={() => {
+            setStage("confirm");
+            setError(null);
+          }}
+          style={burnTriggerStyle}
+        >
+          burn
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div style={burnPanelStyle}>
+      <p style={burnCopyStyle}>
+        Burn this wyrd? This cannot be undone. The host will return 410 Gone
+        with a tombstone for 30 days, then nothing.
+      </p>
+      {needsPassphrase ? (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void unlockAndBurn();
+          }}
+          style={{ display: "flex", gap: "var(--spacing-3)", flexWrap: "wrap" }}
+        >
+          <input
+            type="password"
+            autoComplete="current-password"
+            value={passphrase}
+            onChange={(e) => setPassphrase(e.target.value)}
+            placeholder="passphrase"
+            autoFocus
+            style={burnInputStyle}
+          />
+          <button type="submit" style={burnConfirmStyle} disabled={!passphrase}>
+            unlock and burn
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setStage("idle");
+              setNeedsPassphrase(false);
+              setPassphrase("");
+              setError(null);
+            }}
+            style={burnCancelStyle}
+          >
+            cancel
+          </button>
+        </form>
+      ) : (
+        <div style={{ display: "flex", gap: "var(--spacing-3)", flexWrap: "wrap" }}>
+          <button
+            type="button"
+            onClick={() => void doBurn()}
+            disabled={stage === "burning"}
+            style={burnConfirmStyle}
+          >
+            {stage === "burning" ? "burning…" : "burn"}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setStage("idle");
+              setError(null);
+            }}
+            disabled={stage === "burning"}
+            style={burnCancelStyle}
+          >
+            cancel
+          </button>
+        </div>
+      )}
+      {error && <p style={burnErrorStyle}>{error}</p>}
+    </div>
   );
 }
 
@@ -205,4 +424,73 @@ const goneStyle: React.CSSProperties = {
   margin: 0,
   fontFamily: "var(--font-mono)",
   color: "var(--color-ink-muted)",
+};
+const burnRowStyle: React.CSSProperties = {
+  marginTop: "var(--spacing-8)",
+  paddingTop: "var(--spacing-4)",
+  borderTop: "1px solid var(--color-hairline)",
+  display: "flex",
+  justifyContent: "flex-end",
+};
+const burnTriggerStyle: React.CSSProperties = {
+  background: "transparent",
+  border: "none",
+  padding: 0,
+  color: "var(--color-ink-subtle)",
+  fontFamily: "var(--font-mono)",
+  fontSize: "var(--text-microcaption)",
+  cursor: "pointer",
+  textDecoration: "underline",
+  textUnderlineOffset: 2,
+};
+const burnPanelStyle: React.CSSProperties = {
+  marginTop: "var(--spacing-8)",
+  paddingTop: "var(--spacing-4)",
+  borderTop: "1px solid var(--color-hairline)",
+  display: "flex",
+  flexDirection: "column",
+  gap: "var(--spacing-3)",
+};
+const burnCopyStyle: React.CSSProperties = {
+  margin: 0,
+  fontFamily: "var(--font-mono)",
+  fontSize: "var(--text-caption)",
+  color: "var(--color-ink-muted)",
+  lineHeight: 1.6,
+};
+const burnConfirmStyle: React.CSSProperties = {
+  padding: "var(--spacing-2) var(--spacing-5)",
+  border: "1px solid var(--color-danger)",
+  background: "transparent",
+  color: "var(--color-danger)",
+  fontFamily: "var(--font-mono)",
+  fontSize: "var(--text-caption)",
+  cursor: "pointer",
+};
+const burnCancelStyle: React.CSSProperties = {
+  padding: "var(--spacing-2) var(--spacing-5)",
+  border: "1px solid var(--color-hairline-strong)",
+  background: "transparent",
+  color: "var(--color-ink-muted)",
+  fontFamily: "var(--font-mono)",
+  fontSize: "var(--text-caption)",
+  cursor: "pointer",
+};
+const burnInputStyle: React.CSSProperties = {
+  flex: "1 1 200px",
+  minWidth: 0,
+  padding: "var(--spacing-2) var(--spacing-3)",
+  background: "transparent",
+  border: "none",
+  borderBottom: "1px solid var(--color-hairline-strong)",
+  color: "var(--color-ink)",
+  fontFamily: "var(--font-mono)",
+  fontSize: "var(--text-caption)",
+  outline: "none",
+};
+const burnErrorStyle: React.CSSProperties = {
+  margin: 0,
+  fontFamily: "var(--font-mono)",
+  fontSize: "var(--text-microcaption)",
+  color: "var(--color-danger)",
 };
