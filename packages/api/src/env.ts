@@ -19,4 +19,11 @@ export interface Env {
    * mode (no events sent). Set via `wrangler secret put SENTRY_DSN`.
    */
   SENTRY_DSN?: string;
+  /**
+   * Sentry release identifier — optional. Plumbed by CI as a non-secret
+   * `--var SENTRY_RELEASE:${GITHUB_SHA}` on `wrangler deploy`, so uploaded
+   * source maps and exception reports share a release tag. When unset,
+   * Sentry generates a release name automatically (fine for local dev).
+   */
+  SENTRY_RELEASE?: string;
 }
