@@ -1,6 +1,6 @@
 /**
- * Nav — minimal top navigation. Wordmark + three links (compose / inbox /
- * settings). Active route is visually marked via inline style.
+ * Nav — minimal top navigation. Wordmark + four links (compose / inbox /
+ * why / settings). Active route is visually marked via inline style.
  *
  * Mocks `next/navigation`'s usePathname so we can drive route highlighting
  * deterministically.
@@ -29,7 +29,7 @@ describe("Nav", () => {
     expect(wordmark).toHaveAttribute("href", "/compose");
   });
 
-  it("renders compose / inbox / settings links", () => {
+  it("renders compose / inbox / why / settings links", () => {
     setPathname("/compose");
     render(<Nav />);
     expect(screen.getByRole("link", { name: "compose" })).toHaveAttribute(
@@ -39,6 +39,10 @@ describe("Nav", () => {
     expect(screen.getByRole("link", { name: "inbox" })).toHaveAttribute(
       "href",
       "/inbox",
+    );
+    expect(screen.getByRole("link", { name: "why" })).toHaveAttribute(
+      "href",
+      "/about",
     );
     expect(screen.getByRole("link", { name: "settings" })).toHaveAttribute(
       "href",
