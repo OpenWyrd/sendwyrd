@@ -21,11 +21,23 @@ import {
   PERMANENT_EXPIRES_AT_MS,
 } from "@sendwyrd/core";
 import { hasSeed, isUnlocked, unlockSeed, getSeed } from "@/lib/seedClient";
-import { listHistory, renameHistoryEntry, type HistoryEntry } from "@/lib/wyrdHistory";
+import {
+  listHistory,
+  markHistoryEntryGone,
+  renameHistoryEntry,
+  type HistoryEntry,
+} from "@/lib/wyrdHistory";
+import { burnWyrd } from "@/lib/api";
 import { Segmented } from "@/components/Segmented";
 import { Nav } from "@/components/Nav";
 
 type Filter = "all" | "live" | "gone";
+
+interface BurnUiState {
+  /** confirm: row showed prompt; burning: request in flight; error: surfaced. */
+  stage: "confirm" | "burning" | "error";
+  error?: string;
+}
 
 interface Reply {
   text: string;
@@ -49,6 +61,7 @@ export default function InboxPage() {
   const [repliesByHandle, setRepliesByHandle] = useState<Record<string, RepliesView>>({});
   const [renamingHandle, setRenamingHandle] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
+  const [burnByHandle, setBurnByHandle] = useState<Record<string, BurnUiState>>({});
 
   function startRename(entry: HistoryEntry) {
     setRenamingHandle(entry.handle);
@@ -63,6 +76,85 @@ export default function InboxPage() {
   function cancelRename() {
     setRenamingHandle(null);
     setRenameDraft("");
+  }
+
+  function startBurn(entry: HistoryEntry) {
+    setBurnByHandle((m) => ({ ...m, [entry.handle]: { stage: "confirm" } }));
+  }
+  function cancelBurn(handle: string) {
+    setBurnByHandle((m) => {
+      const next = { ...m };
+      delete next[handle];
+      return next;
+    });
+  }
+
+  async function confirmBurn(entry: HistoryEntry) {
+    const seedRec = getSeed();
+    if (!seedRec) {
+      setUnlocked(false);
+      setBurnByHandle((m) => ({
+        ...m,
+        [entry.handle]: { stage: "error", error: "session_expired" },
+      }));
+      return;
+    }
+    setBurnByHandle((m) => ({ ...m, [entry.handle]: { stage: "burning" } }));
+    try {
+      const k = deriveOriginKey(seedRec.seed, entry.n);
+      const result = await burnWyrd({
+        handle: entry.handle,
+        k_origin_priv: k.k_origin_priv,
+      });
+      if (result.kind === "burned") {
+        markHistoryEntryGone(entry.handle, "burned", result.data.gone_at);
+        setHistory(listHistory());
+        cancelBurn(entry.handle);
+        return;
+      }
+      if (result.kind === "already_gone") {
+        const reason = result.data.reason;
+        const gone_at_ms = new Date(result.data.gone_at).getTime();
+        if (reason === "burned" || reason === "expired") {
+          markHistoryEntryGone(entry.handle, reason, gone_at_ms);
+        }
+        setHistory(listHistory());
+        cancelBurn(entry.handle);
+        return;
+      }
+      if (result.kind === "not_found") {
+        setBurnByHandle((m) => ({
+          ...m,
+          [entry.handle]: {
+            stage: "error",
+            error: "Host has no record of this wyrd.",
+          },
+        }));
+        return;
+      }
+      if (result.kind === "signature_invalid") {
+        setBurnByHandle((m) => ({
+          ...m,
+          [entry.handle]: {
+            stage: "error",
+            error: "Signature rejected. Seed may not match this wyrd.",
+          },
+        }));
+        return;
+      }
+      setBurnByHandle((m) => ({
+        ...m,
+        [entry.handle]: { stage: "error", error: `burn failed (${result.status})` },
+      }));
+    } catch (e: any) {
+      setBurnByHandle((m) => ({
+        ...m,
+        [entry.handle]: {
+          stage: "error",
+          error: e?.message ?? "burn failed",
+        },
+      }));
+    }
   }
 
   useEffect(() => {
@@ -80,7 +172,9 @@ export default function InboxPage() {
     if (!unlocked) return;
     const seedRec = getSeed();
     if (!seedRec) return;
-    const live = history.filter((e) => e.replies_enabled && e.expires_at > Date.now());
+    const live = history.filter(
+      (e) => e.replies_enabled && e.expires_at > Date.now() && !e.gone_at,
+    );
     for (const entry of live) {
       if (repliesByHandle[entry.handle]) continue;
       void loadReplies(entry);
@@ -190,7 +284,7 @@ export default function InboxPage() {
   }
 
   const filtered = history.filter((e) => {
-    const isGone = e.expires_at <= now;
+    const isGone = e.expires_at <= now || !!e.gone_at;
     if (filter === "live") return !isGone;
     if (filter === "gone") return isGone;
     return true;
@@ -228,9 +322,18 @@ export default function InboxPage() {
         )}
 
         {filtered.map((entry) => {
-          const isGone = entry.expires_at <= now;
+          const isExpired = entry.expires_at <= now && !entry.gone_at;
+          const isBurned = entry.gone_reason === "burned" || (!!entry.gone_at && entry.gone_reason !== "expired");
+          const isGone = isExpired || !!entry.gone_at;
           const replyState = repliesByHandle[entry.handle];
-          const url = buildFragmentUrl(window.location.origin, entry.handle, entry.k_read_b64u);
+          const burnUi = burnByHandle[entry.handle];
+          // Recovered-from-mnemonic entries lack k_read_b64u (read key isn't
+          // seed-derivable). Fall through to a non-link rendering in that case.
+          const url = entry.k_read_b64u
+            ? buildFragmentUrl(window.location.origin, entry.handle, entry.k_read_b64u)
+            : null;
+          const statusLabel = isBurned ? "burned" : isExpired ? "expired" : "live";
+          const statusColor = isGone ? "var(--color-ink-subtle)" : "var(--color-mark-sealed)";
           return (
             <article
               key={entry.handle}
@@ -238,6 +341,7 @@ export default function InboxPage() {
                 paddingTop: "var(--spacing-4)",
                 paddingBottom: "var(--spacing-4)",
                 borderTop: "1px solid var(--color-hairline)",
+                opacity: isGone ? 0.7 : 1,
               }}
             >
               <div style={{ display: "flex", justifyContent: "space-between", gap: "var(--spacing-3)", flexWrap: "wrap", alignItems: "flex-start" }}>
@@ -270,12 +374,12 @@ export default function InboxPage() {
                       <button type="submit" style={inlineBtn}>save</button>
                       <button type="button" onClick={cancelRename} style={inlineBtn}>cancel</button>
                     </form>
-                  ) : (
+                  ) : url ? (
                     <a
                       href={url}
                       style={{
                         color: "var(--color-ink)",
-                        textDecoration: "none",
+                        textDecoration: isBurned ? "line-through" : "none",
                         fontFamily: "var(--font-mono)",
                         fontSize: "var(--text-caption)",
                         overflowWrap: "anywhere",
@@ -284,6 +388,18 @@ export default function InboxPage() {
                     >
                       {entry.nickname || entry.handle}
                     </a>
+                  ) : (
+                    <span
+                      style={{
+                        color: "var(--color-ink)",
+                        fontFamily: "var(--font-mono)",
+                        fontSize: "var(--text-caption)",
+                        overflowWrap: "anywhere",
+                        display: "block",
+                      }}
+                    >
+                      {entry.nickname || entry.handle}
+                    </span>
                   )}
                   {entry.nickname && renamingHandle !== entry.handle && (
                     <span
@@ -294,6 +410,7 @@ export default function InboxPage() {
                         color: "var(--color-ink-subtle)",
                         marginTop: "var(--spacing-1)",
                         overflowWrap: "anywhere",
+                        textDecoration: isBurned ? "line-through" : "none",
                       }}
                     >
                       {entry.handle}
@@ -301,7 +418,7 @@ export default function InboxPage() {
                   )}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: "var(--spacing-3)", flexShrink: 0 }}>
-                  {entry.replies_enabled && replyState?.replies && replyState.replies.length > 0 && (
+                  {entry.replies_enabled && !isGone && replyState?.replies && replyState.replies.length > 0 && (
                     <span
                       style={{
                         fontFamily: "var(--font-mono)",
@@ -318,10 +435,10 @@ export default function InboxPage() {
                     style={{
                       fontFamily: "var(--font-mono)",
                       fontSize: "var(--text-microcaption)",
-                      color: isGone ? "var(--color-ink-subtle)" : "var(--color-mark-sealed)",
+                      color: statusColor,
                     }}
                   >
-                    {isGone ? "expired" : "live"}
+                    {statusLabel}
                   </span>
                 </div>
               </div>
@@ -332,13 +449,75 @@ export default function InboxPage() {
                     ? " · never expires"
                     : ` · expires ${formatDate(entry.expires_at)}`}
                   {entry.replies_enabled && " · replies on"}
+                  {entry.recovered && " · recovered (no read key)"}
                 </span>
                 {renamingHandle !== entry.handle && (
                   <button onClick={() => startRename(entry)} style={inlineBtn}>
                     {entry.nickname ? "rename" : "add name"}
                   </button>
                 )}
+                {!isGone && !burnUi && (
+                  <button
+                    onClick={() => startBurn(entry)}
+                    style={burnInlineBtn}
+                    aria-label={`Burn ${entry.nickname || entry.handle}`}
+                  >
+                    burn
+                  </button>
+                )}
               </p>
+              {burnUi && (
+                <div
+                  style={{
+                    marginTop: "var(--spacing-3)",
+                    padding: "var(--spacing-3)",
+                    border: "1px solid var(--color-hairline-strong)",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "var(--spacing-3)",
+                  }}
+                >
+                  <p
+                    style={{
+                      margin: 0,
+                      fontFamily: "var(--font-mono)",
+                      fontSize: "var(--text-microcaption)",
+                      color: "var(--color-ink-muted)",
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    Burn this wyrd? This cannot be undone. The host will return
+                    410 Gone with a tombstone for 30 days, then nothing.
+                  </p>
+                  <div style={{ display: "flex", gap: "var(--spacing-3)", flexWrap: "wrap" }}>
+                    <button
+                      onClick={() => void confirmBurn(entry)}
+                      disabled={burnUi.stage === "burning"}
+                      style={burnConfirmBtn}
+                    >
+                      {burnUi.stage === "burning" ? "burning…" : "burn"}
+                    </button>
+                    <button
+                      onClick={() => cancelBurn(entry.handle)}
+                      disabled={burnUi.stage === "burning"}
+                      style={burnCancelBtn}
+                    >
+                      cancel
+                    </button>
+                  </div>
+                  {burnUi.stage === "error" && burnUi.error && (
+                    <span
+                      style={{
+                        fontFamily: "var(--font-mono)",
+                        fontSize: "var(--text-microcaption)",
+                        color: "var(--color-danger)",
+                      }}
+                    >
+                      {burnUi.error}
+                    </span>
+                  )}
+                </div>
+              )}
               {entry.replies_enabled && !isGone && (
                 <div style={{ marginTop: "var(--spacing-3)" }}>
                   {replyState?.loading && (
@@ -458,4 +637,33 @@ const inlineBtn: React.CSSProperties = {
   cursor: "pointer",
   textDecoration: "underline",
   textUnderlineOffset: 2,
+};
+const burnInlineBtn: React.CSSProperties = {
+  background: "transparent",
+  border: "none",
+  padding: 0,
+  color: "var(--color-ink-subtle)",
+  fontFamily: "var(--font-mono)",
+  fontSize: "var(--text-microcaption)",
+  cursor: "pointer",
+  textDecoration: "underline",
+  textUnderlineOffset: 2,
+};
+const burnConfirmBtn: React.CSSProperties = {
+  padding: "var(--spacing-2) var(--spacing-4)",
+  border: "1px solid var(--color-danger)",
+  background: "transparent",
+  color: "var(--color-danger)",
+  fontFamily: "var(--font-mono)",
+  fontSize: "var(--text-microcaption)",
+  cursor: "pointer",
+};
+const burnCancelBtn: React.CSSProperties = {
+  padding: "var(--spacing-2) var(--spacing-4)",
+  border: "1px solid var(--color-hairline-strong)",
+  background: "transparent",
+  color: "var(--color-ink-muted)",
+  fontFamily: "var(--font-mono)",
+  fontSize: "var(--text-microcaption)",
+  cursor: "pointer",
 };
