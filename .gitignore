@@ -41,6 +41,9 @@ env/
 # Cloudflare Wrangler local cache
 .wrangler/
 
+# OpenNext Cloudflare build output
+.open-next/
+
 # Node / pnpm
 node_modules/
 .pnpm-store/

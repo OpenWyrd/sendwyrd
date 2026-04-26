@@ -7,11 +7,15 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:cloudflare": "opennextjs-cloudflare build",
+    "deploy": "opennextjs-cloudflare deploy",
+    "preview:cloudflare": "opennextjs-cloudflare preview",
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "lint": "next lint"
   },
   "dependencies": {
+    "@opennextjs/cloudflare": "^1.19.4",
     "@sendwyrd/core": "workspace:*",
     "next": "^15.1.3",
     "react": "^19.0.0",
@@ -23,6 +27,7 @@
     "@types/react-dom": "^19.0.2",
     "postcss": "^8.5.1",
     "tailwindcss": "^4.0.0",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "wrangler": "^4.85.0"
   }
 }
