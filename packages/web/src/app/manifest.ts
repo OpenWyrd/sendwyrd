@@ -21,7 +21,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "SendWyrd",
     short_name: "SendWyrd",
-    description: "Hyperlinks for conversation. Encrypted, ephemeral, no account.",
+    description: "Hyperlinks for conversational objects. Encrypted, ephemeral, no account.",
     start_url: "/",
     scope: "/",
     display: "standalone",

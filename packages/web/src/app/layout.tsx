@@ -6,7 +6,7 @@ import { MobileComposeBar } from "@/components/MobileComposeBar";
 
 export const metadata: Metadata = {
   title: "SendWyrd",
-  description: "Hyperlinks for conversation.",
+  description: "Hyperlinks for conversational objects.",
   applicationName: "SendWyrd",
   // Theme color is exposed two ways: through the manifest (single value
   // pinned to dark, used by the OS for splash/standalone chrome) and via
