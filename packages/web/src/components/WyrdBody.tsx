@@ -10,9 +10,13 @@
  * via lib/resolveBody.ts and passes the map in.
  */
 
+"use client";
+
+import { useState } from "react";
 import { isAttestationBody, parseBody, type BodySegment } from "@sendwyrd/core";
 import type { ResolutionMap } from "@/lib/resolveBody";
 import { AttestationBanner } from "@/components/AttestationBanner";
+import { LinkEmbed } from "@/components/LinkEmbed";
 
 interface Props {
   body: string;
@@ -63,22 +67,7 @@ function Segment({
   if (seg.type === "image") return <ImageEmbed url={seg.url} hostname={seg.hostname} />;
   if (seg.type === "video") return <VideoEmbed url={seg.url} hostname={seg.hostname} />;
   if (seg.type === "audio") return <AudioEmbed url={seg.url} hostname={seg.hostname} />;
-  return (
-    <a
-      href={seg.url}
-      target="_blank"
-      rel="noreferrer"
-      style={{
-        color: "var(--color-accent)",
-        textDecoration: "underline",
-        textDecorationThickness: "1px",
-        textUnderlineOffset: "2px",
-        overflowWrap: "anywhere",
-      }}
-    >
-      {seg.url}
-    </a>
-  );
+  return <LinkEmbed url={seg.url} hostname={seg.hostname} />;
 }
 
 function EmbedFrame({ children, hostname }: { children: React.ReactNode; hostname: string }) {
@@ -112,6 +101,13 @@ function EmbedFrame({ children, hostname }: { children: React.ReactNode; hostnam
 }
 
 function ImageEmbed({ url, hostname }: { url: string; hostname: string }) {
+  const [broken, setBroken] = useState(false);
+  if (broken) {
+    // The URL classified as image by extension but didn't actually serve
+    // an image (404, CORS, hotlink-block, content-type mismatch). Fall
+    // through to the OG-unfurl path so the user still gets a useful card.
+    return <LinkEmbed url={url} hostname={hostname} />;
+  }
   return (
     <EmbedFrame hostname={hostname}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -120,6 +116,7 @@ function ImageEmbed({ url, hostname }: { url: string; hostname: string }) {
         alt=""
         loading="lazy"
         referrerPolicy="no-referrer"
+        onError={() => setBroken(true)}
         style={{ display: "block", maxWidth: "100%", height: "auto" }}
       />
     </EmbedFrame>
