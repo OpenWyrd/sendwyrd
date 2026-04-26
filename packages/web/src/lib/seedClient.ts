@@ -198,6 +198,32 @@ export function getSeedBackupString(): string | null {
   return b64uEncode(seed.seed);
 }
 
+/**
+ * Replace the current seed with a recovered one (from mnemonic-import sweep).
+ * Sets counter to the recovered next-free-index. If `storagePassphrase` is
+ * provided, stores in protected mode; otherwise open mode (zero-friction default).
+ *
+ * NOTE: `storagePassphrase` is the at-rest passphrase, distinct from the
+ * BIP-39 mnemonic passphrase used during seed derivation.
+ */
+export async function installRecoveredSeed(args: {
+  seed: Uint8Array;
+  mnemonic: string;
+  counter: number;
+  storagePassphrase?: string;
+}): Promise<void> {
+  const record: SeedAndCounter = {
+    seed: args.seed,
+    counter: args.counter,
+    mnemonic: args.mnemonic,
+  };
+  if (args.storagePassphrase && args.storagePassphrase.length >= 8) {
+    await storeProtectedSeed({ ...record, passphrase: args.storagePassphrase });
+  } else {
+    storeOpenSeed(record);
+  }
+}
+
 /** Replace the current seed with a fresh one (new mnemonic). Resets counter to 0. */
 export async function regenerateSeed(args: {
   newSeed: Uint8Array;

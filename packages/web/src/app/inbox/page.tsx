@@ -230,7 +230,11 @@ export default function InboxPage() {
         {filtered.map((entry) => {
           const isGone = entry.expires_at <= now;
           const replyState = repliesByHandle[entry.handle];
-          const url = buildFragmentUrl(window.location.origin, entry.handle, entry.k_read_b64u);
+          // Recovered-from-mnemonic entries lack k_read_b64u (read key isn't
+          // seed-derivable). Fall through to a non-link rendering in that case.
+          const url = entry.k_read_b64u
+            ? buildFragmentUrl(window.location.origin, entry.handle, entry.k_read_b64u)
+            : null;
           return (
             <article
               key={entry.handle}
@@ -270,7 +274,7 @@ export default function InboxPage() {
                       <button type="submit" style={inlineBtn}>save</button>
                       <button type="button" onClick={cancelRename} style={inlineBtn}>cancel</button>
                     </form>
-                  ) : (
+                  ) : url ? (
                     <a
                       href={url}
                       style={{
@@ -284,6 +288,18 @@ export default function InboxPage() {
                     >
                       {entry.nickname || entry.handle}
                     </a>
+                  ) : (
+                    <span
+                      style={{
+                        color: "var(--color-ink)",
+                        fontFamily: "var(--font-mono)",
+                        fontSize: "var(--text-caption)",
+                        overflowWrap: "anywhere",
+                        display: "block",
+                      }}
+                    >
+                      {entry.nickname || entry.handle}
+                    </span>
                   )}
                   {entry.nickname && renamingHandle !== entry.handle && (
                     <span
@@ -332,6 +348,7 @@ export default function InboxPage() {
                     ? " · never expires"
                     : ` · expires ${formatDate(entry.expires_at)}`}
                   {entry.replies_enabled && " · replies on"}
+                  {entry.recovered && " · recovered (no read key)"}
                 </span>
                 {renamingHandle !== entry.handle && (
                   <button onClick={() => startRename(entry)} style={inlineBtn}>
