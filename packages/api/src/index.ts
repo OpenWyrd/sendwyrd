@@ -8,11 +8,13 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
+import * as Sentry from "@sentry/cloudflare";
 import { PROTOCOL_VERSION } from "@sendwyrd/core";
 import type { Env } from "./env.js";
 import { wyrdsRoutes } from "./routes/wyrds.js";
 import { repliesRoutes } from "./routes/replies.js";
 import { authorsRoutes } from "./routes/authors.js";
+import { redactBeforeSend } from "./sentryRedact.js";
 
 type App = Hono<{ Bindings: Env }>;
 
@@ -68,7 +70,44 @@ app.notFound((c) => c.json({ error: "not_found" }, 404));
 // Error handler.
 app.onError((err, c) => {
   console.error("api_error", err);
+  // Forward to Sentry if configured. Sentry.captureException is a no-op
+  // when DSN is unset.
+  try {
+    Sentry.captureException(err);
+  } catch {
+    // Never let an observability layer take down the API.
+  }
   return c.json({ error: "internal" }, 500);
 });
 
-export default app;
+/**
+ * Worker entrypoint wrapped with Sentry. When SENTRY_DSN is unset/empty,
+ * the SDK initializes in no-op mode (per renderer-contract §16: telemetry
+ * is opt-in, default-deny). When set, all events flow through
+ * redactBeforeSend before transmission.
+ *
+ * The wrapper signature (per @sentry/cloudflare docs): a (env) => options
+ * factory plus the Worker handler object.
+ */
+export default Sentry.withSentry(
+  (env: Env) => ({
+    dsn: env.SENTRY_DSN || undefined,
+    // Conservative default — no performance traces in v1; pure error
+    // reporting. A future ADR may revisit if there's a defensible
+    // privacy story for traces.
+    tracesSampleRate: 0,
+    // Strip PII at the SDK layer too (defense in depth; redactBeforeSend
+    // is the load-bearing scrub).
+    sendDefaultPii: false,
+    beforeSend: redactBeforeSend,
+    beforeBreadcrumb: (breadcrumb) => {
+      // Drop console + storage breadcrumbs at source, before they ever
+      // hit the event buffer. redactBeforeSend repeats this for events
+      // assembled from non-breadcrumb sources.
+      if (breadcrumb.category === "console") return null;
+      if (breadcrumb.category === "storage") return null;
+      return breadcrumb;
+    },
+  }),
+  app,
+);

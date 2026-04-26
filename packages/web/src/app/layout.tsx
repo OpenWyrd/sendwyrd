@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
+import { SentryInit } from "@/components/SentryInit";
 
 export const metadata: Metadata = {
   title: "SendWyrd",
@@ -67,6 +68,7 @@ export default function RootLayout({
       <body>
         {children}
         <ServiceWorkerRegister />
+        <SentryInit />
       </body>
     </html>
   );

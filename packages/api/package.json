@@ -17,6 +17,8 @@
   "dependencies": {
     "@neondatabase/serverless": "^0.10.4",
     "@sendwyrd/core": "workspace:*",
+    "@sentry/cloudflare": "^10.50.0",
+    "@sentry/core": "^10.50.0",
     "drizzle-orm": "^0.38.2",
     "hono": "^4.6.14"
   },
