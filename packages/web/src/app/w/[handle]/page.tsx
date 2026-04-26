@@ -13,10 +13,13 @@ import { useParams } from "next/navigation";
 import { decryptFromBase64Url, b64uDecode, type FetchEnvelopeResponse } from "@sendwyrd/core";
 import { fetchWyrd } from "@/lib/api";
 import { PrivacyIndicator } from "@/components/PrivacyIndicator";
+import { WyrdBody } from "@/components/WyrdBody";
+import { ReplyForm } from "@/components/ReplyForm";
+import { resolveTransitives, type ResolutionMap } from "@/lib/resolveBody";
 
 type State =
   | { kind: "loading" }
-  | { kind: "ready"; data: FetchEnvelopeResponse; body: string }
+  | { kind: "ready"; data: FetchEnvelopeResponse; body: string; transitives: ResolutionMap }
   | { kind: "gone"; reason: string; gone_at: string }
   | { kind: "missing_key" }
   | { kind: "decrypt_failed" }
@@ -68,7 +71,8 @@ export default function FragmentView() {
           expires_at_ms: result.data.expires_at,
           replies_enabled: result.data.replies_enabled,
         });
-        if (!cancelled) setState({ kind: "ready", data: result.data, body });
+        const transitives = await resolveTransitives(body);
+        if (!cancelled) setState({ kind: "ready", data: result.data, body, transitives });
       } catch {
         if (!cancelled) setState({ kind: "decrypt_failed" });
       }
@@ -134,19 +138,14 @@ export default function FragmentView() {
       {state.kind === "ready" && (
         <article style={panelStyle}>
           <PrivacyIndicator state="sealed" />
-          <p
+          <div
             style={{
-              margin: 0,
               paddingTop: "var(--spacing-6)",
               paddingBottom: "var(--spacing-3)",
-              color: "var(--color-ink)",
-              fontFamily: "var(--font-mono)",
-              whiteSpace: "pre-wrap",
-              lineHeight: 1.6,
             }}
           >
-            {state.body}
-          </p>
+            <WyrdBody body={state.body} transitives={state.transitives} />
+          </div>
           <p
             style={{
               margin: 0,
@@ -158,6 +157,12 @@ export default function FragmentView() {
             Sent {formatDate(new Date(state.data.published_at).toISOString())} ·
             expires {formatDate(new Date(state.data.expires_at).toISOString())}
           </p>
+          {state.data.replies_enabled && (
+            <ReplyForm
+              handle={state.data.handle}
+              k_origin_pub_b64u={state.data.k_origin_pub}
+            />
+          )}
         </article>
       )}
     </main>

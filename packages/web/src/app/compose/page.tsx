@@ -8,7 +8,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   composeWyrd,
-  countCodepoints,
+  countCountableCodepoints,
   buildFragmentUrl,
   buildPublicUrl,
   BODY_CODEPOINT_CAP,
@@ -22,6 +22,8 @@ import {
   consumeNextIndex,
 } from "@/lib/seedClient";
 import { publishWyrd } from "@/lib/api";
+import { addHistoryEntry } from "@/lib/wyrdHistory";
+import { b64uEncode } from "@sendwyrd/core";
 
 const TTL_PRESETS: Array<{ label: string; seconds: number }> = [
   { label: "1 day", seconds: 86_400 },
@@ -53,7 +55,8 @@ export default function ComposePage() {
     setUnlocked(isUnlocked());
   }, [router]);
 
-  const count = countCodepoints(body);
+  // URLs are excluded from the cap (spec amendment §8.2 / ADR-012).
+  const count = countCountableCodepoints(body);
   const overCap = count > BODY_CODEPOINT_CAP;
 
   async function handleUnlock(e: React.FormEvent) {
@@ -111,6 +114,17 @@ export default function ComposePage() {
         setSending(false);
         return;
       }
+
+      // Persist to local wyrd history so the inbox can find this wyrd later.
+      addHistoryEntry({
+        handle: result.handle,
+        n,
+        k_origin_pub_b64u: b64uEncode(result.k_origin.k_origin_pub),
+        k_read_b64u: result.k_read_b64u,
+        published_at: resp.published_at,
+        expires_at: resp.expires_at,
+        replies_enabled: repliesEnabled,
+      });
 
       const origin = window.location.origin;
       const url =
@@ -171,21 +185,32 @@ export default function ComposePage() {
           <div
             style={{
               display: "flex",
-              alignItems: "center",
+              alignItems: "flex-start",
               gap: "var(--spacing-3)",
               padding: "var(--spacing-3) var(--spacing-4)",
               border: "1px solid var(--color-hairline)",
               borderRadius: 4,
               fontSize: "var(--text-caption)",
               color: "var(--color-ink)",
-              wordBreak: "break-all",
+              maxWidth: "100%",
             }}
           >
-            <span style={{ flex: 1 }}>{shareUrl}</span>
+            <span
+              style={{
+                flex: "1 1 0",
+                minWidth: 0,
+                overflowWrap: "anywhere",
+                wordBreak: "break-word",
+                fontFamily: "var(--font-mono)",
+              }}
+            >
+              {shareUrl}
+            </span>
             <button
               onClick={handleCopy}
               aria-label="Copy share URL"
               style={{
+                flexShrink: 0,
                 background: "transparent",
                 border: "none",
                 color: copied ? "var(--color-mark-sealed)" : "var(--color-accent)",
@@ -248,13 +273,12 @@ export default function ComposePage() {
           value={body}
           onChange={(e) => {
             const next = e.target.value;
-            // Cap by codepoints — slice if user pastes beyond cap.
-            if (countCodepoints(next) > BODY_CODEPOINT_CAP) {
-              const arr = Array.from(next).slice(0, BODY_CODEPOINT_CAP);
-              setBody(arr.join(""));
-            } else {
-              setBody(next);
+            // Cap by *countable* codepoints (URLs excluded). Allow pastes that
+            // contain a long URL; only block when prose exceeds the cap.
+            if (countCountableCodepoints(next) > BODY_CODEPOINT_CAP) {
+              return; // refuse the keystroke / paste
             }
+            setBody(next);
           }}
           placeholder="A wyrd…"
           rows={6}
