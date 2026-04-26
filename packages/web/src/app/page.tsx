@@ -17,6 +17,7 @@ import { InstallAffordance } from "@/components/InstallAffordance";
 export default function LandingPage() {
   return (
     <main
+      className="landing"
       style={{
         minHeight: "100vh",
         display: "flex",
@@ -41,17 +42,20 @@ export default function LandingPage() {
       </h1>
 
       {/* Breathing sigil — landing only */}
-      <WyrdSigil
-        size={96}
-        breathing
-        ariaLabel="SendWyrd sigil"
-        className=""
-      />
+      <span className="landing-sigil">
+        <WyrdSigil
+          size={96}
+          breathing
+          ariaLabel="SendWyrd sigil"
+          className=""
+        />
+      </span>
 
       {/* Specimen — a real-feeling rendered wyrd, demonstrating the form.
           Per ADR-015 (use-case agnostic), the body reads naturally for any
           of the four candidate use cases. */}
       <article
+        className="landing-specimen"
         style={{
           width: "100%",
           maxWidth: "var(--max-content)",
@@ -89,6 +93,7 @@ export default function LandingPage() {
 
       {/* Prose — what is this. Per ADR-015, no use-case lead. */}
       <section
+        className="landing-prose"
         style={{
           width: "100%",
           maxWidth: "var(--max-content)",
