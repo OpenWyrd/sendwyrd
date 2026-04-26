@@ -26,8 +26,6 @@ Protocol codename: **MOP** (Message Object Protocol). Consumer brand: **SendWyrd
 
 A wyrd is a 300-codepoint, end-to-end-encrypted text block that becomes a shareable URL — a portable, composable, forward-worthy conversational artifact that travels through existing messaging rails (iMessage, Signal, WhatsApp, Slack, email) rather than through a native feed or discovery layer.
 
-The result is a mesh network layered on top of existing platforms — the same wyrd can hop from an iMessage thread to a Twitter DM to a Slack channel to an email, routed by human judgement rather than an algorithm. SendWyrd doesn't own a network; it rides whatever channels people already use, and crosses cleanly between them.
-
 ```
 https://sendwyrd.com/w/{object_handle}#{K_read}
 ```
@@ -63,6 +61,8 @@ Possession of the URL is access. Forwarding is the default and the point. There 
 - **AAD binding**: every envelope binds version, handle, expiry, and reply-mode into the AES-GCM authenticated data. Tampering any field fails decryption.
 
 ## Mosaic Quality as contract
+
+SendWyrd is a **mosaic mesh network**. Mesh: each wyrd hops across whatever platforms people already use — iMessage to Twitter DM to Slack to email — routed by human judgement, not algorithms. Mosaic: each wyrd is a tile, independently meaningful; lost tiles leave gaps but don't break the wyrds that remain. SendWyrd doesn't own a network and refuses an archive that would hold the whole picture; the assembly lives in the social graph itself.
 
 `K_read` is per-wyrd random, not derived from your seed. If you lose the URL, the body becomes unreadable — even if you still hold your mnemonic.
 
