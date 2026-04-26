@@ -1,24 +1,28 @@
 ---
 type: manifest
 created: 2026-04-24
-updated: 2026-04-24
+updated: 2026-04-25
 last_edited_by: agent_operator
-tags: [manifest, governance, mop]
+tags: [manifest, governance, mop, sendwyrd]
 ---
 
 # MOP — Project Manifest
 
 ## Project Identity
 
-**MOP — Message Object Protocol** (consumer name: **Hypermessage**).
+- **Consumer brand**: **SendWyrd** (at `sendwyrd.com`)
+- **Protocol codename**: **MOP — Message Object Protocol**
+- **Unit noun**: a **wyrd** (lowercase) — *"send a wyrd"*, *"my wyrd is at this URL"*
 
-A lightweight system for relayable conversational objects. Each object is a tweet-sized, end-to-end-encrypted text block that becomes a shareable URL. Objects can reference other objects recursively and optionally accept private replies. Sharing happens through existing messaging rails (iMessage, Signal, WhatsApp, X DMs, Slack, email) — there is no internal feed, no discovery algorithm, no public graph.
+A lightweight system for relayable conversational artifacts. Each wyrd is a 300-codepoint, end-to-end-encrypted text block that becomes a shareable URL. Wyrds can reference other wyrds recursively and optionally accept private replies. Sharing happens through existing messaging rails (iMessage, Signal, WhatsApp, X DMs, Slack, email) — there is no internal feed, no discovery algorithm, no public graph.
 
 **North star**: *Hyperlinks for conversation.* Not a social network, not a messenger replacement — a layer for portable, composable, forward-worthy conversational artifacts.
 
+The brand-vs-protocol layering follows the standard pattern (Signal app vs. Signal Protocol; Mastodon vs. ActivityPub): consumer-facing surfaces use **SendWyrd**, technical/spec-facing language uses **MOP**. See ADR-016 for the binding decision.
+
 ## Architecture
 
-This project uses the **aDNA (Agentic DNA)** knowledge architecture for its operational/governance layer. The product itself — the Hypermessage protocol — lives inside this vault as design artifacts (decisions, context, vision) until implementation begins.
+This project uses the **aDNA (Agentic DNA)** knowledge architecture for its operational/governance layer. The product itself — the SendWyrd consumer surface and MOP protocol underneath — lives inside this vault as design artifacts (decisions, context, vision) until implementation begins.
 
 ```
 MOP/
@@ -43,13 +47,13 @@ These are the immutable rules that every implementation decision must align to. 
 4. **Brittleness as feature** — the architecture refuses durable identity and durable archive on purpose; nudges toward action-oriented content over hot-take preaching.
 5. **Contact, not conversation** — MOP initiates contact across opaque chains; it never grows into a conversation host.
 
-## Use Cases (v1 candidates)
+## Use Cases (illustrative, not prioritized)
 
-The protocol is deliberately unopinionated, but four use cases are explicitly in scope:
+Per ADR-015, v1 is unopinionated about which use case leads — the product is a primitive, the four use cases below are equal and illustrative, none is the headline pitch.
 
 | Use case | Description |
 |----------|-------------|
-| **Cross-post canonical URL** | Publish once on MOP, share the URL across Twitter / iMessage / Slack as the canonical artifact |
+| **Cross-post canonical URL** | Publish once on SendWyrd, share the URL across Twitter / iMessage / Slack as the canonical artifact |
 | **Intro / ask routing** | "X looking for someone who can help with Y" — recipients forward via trust networks; terminal recipient reaches origin via the reply primitive |
 | **Whisper-network dissemination** | Off-algo distribution of edgy/early ideas (often pointer-cards to externally-hosted long-form) |
 | **Tweet-replacement / authored thoughts** | Use the canonical URL form as a personal record of one's own posts; recursive references enable thread-via-quoting |
@@ -58,23 +62,30 @@ The protocol is deliberately unopinionated, but four use cases are explicitly in
 
 See `what/decisions/` for full ADRs. Summary:
 
-- **ADR-003** Capability-based privacy posture (encryption mandatory v1, host cryptographically blind, no accounts)
-- **ADR-004** Two-key model + two-form addressing (`K_read` symmetric distributed; `K_origin` asymmetric author-held; private fragment URL vs. public path URL, user-toggled)
-- **ADR-005** Bitcoin cryptography stack (secp256k1, BIP-32 hardened HD, BIP-39 mnemonic) — composes cleanly with Nostr, optional cross-device recovery via seed
-- **ADR-006** Object lifecycle (immutable post-publish, default 90-day burn with permanent toggle, K_origin authorizes delete)
-- **ADR-007** Body-text-with-embedded-URLs schema (no separate `references` array; transitive capability grant via embedded `#K`)
-- **ADR-008** Replies are one-shot encrypted blobs, off by default, opt-in via author toggle
+| ADR | Title |
+|-----|-------|
+| 003 | Capability-based privacy posture (encryption mandatory v1, host cryptographically blind, no accounts) |
+| 004 | Two-key model + two-form addressing (`K_read` symmetric / `K_origin` asymmetric; private fragment vs. public path URL) |
+| 005 | Bitcoin cryptography stack (secp256k1 + BIP-32 hardened HD + BIP-39) |
+| 006 | Object lifecycle (immutable post-publish, default 90-day burn, K_origin-signed delete) |
+| 007 | Body-text-with-embedded-URLs schema (transitive capability grant via embedded `#K`) |
+| 008 | Replies: one-shot encrypted blobs, off by default, opt-in |
+| 009 | Inbox aggregation: client-side via HD derivation, host stays per-object blind |
+| 010 | Notifications: zero protocol primitive; entirely a client/app concern |
+| 011 | Body is plain text + aggressively auto-embedded URLs (recipient-side privacy not hardened in v1) |
+| 012 | Body size cap: 300 Unicode codepoints (Spartan reference) |
+| 013 | v1 abuse posture: edge + per-IP rate-limits + size caps; no PoW |
+| 014 | Single canonical renderer; first-party clients only across web + iOS + Android in v1 |
+| 015 | v1 is unopinionated about which use case leads (closes S1) |
+| 016 | Brand is SendWyrd; canonical domain is sendwyrd.com; protocol codename remains MOP; unit noun is wyrd (closes S2) |
+| 017 | HD path convention: BIP-43 flat purpose `300'`, hardened indices `m/300'/n'` (closes B6) |
+| 018 | TTL expiry response: 410 Gone with structured tombstone metadata, 30-day retention (closes B8) |
+| 019 | Renderer displays a symmetric privacy-posture indicator on every wyrd view (closes B9) |
+| 020 | v1 stack: Next.js + Hono on Cloudflare + Neon Postgres + R2; Web Crypto + noble + scure; AES-GCM + Schnorr (closes S3) |
 
-## Open Questions (see `how/backlog/`)
+## Open Questions
 
-- Reply receiving UX (notifications? polling? aggregate inbox?)
-- Object body format (plain text vs. light markdown)
-- Object size cap (number)
-- Anti-abuse / PoW / rate-limit design
-- v1 launch scope (which use cases ship first vs. follow-on)
-- Domain & branding decisions
-- Image/media inclusion model (URL-only assumed; needs confirmation)
-- HD path conventions (BIP-44-style coin type or custom)
+Architecture phase is closed. See `how/backlog/backlog_open_questions_v1.md` for status. Remaining work moves to spec/build phases (wire spec, renderer contract, visual direction, scaffolding, content) — tracked in the active session and the upcoming v1-build readiness mission.
 
 ## Inspiration Archive (Adjacent Context, Not Canonical)
 

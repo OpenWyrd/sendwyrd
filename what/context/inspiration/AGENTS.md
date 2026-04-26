@@ -22,6 +22,7 @@ These documents were shared by the user during the founding architecture session
 |------|------------|------------------------|
 | `inspiration_weak_ties_game.md` | Voice-relay graph traversal experiment ("Weak Ties Graph Traversal Game") | Insight into the user's network/percolation thinking; bias toward trust-mediated distribution; weak-tie theory as substrate |
 | `inspiration_tweetjoin.md` | Group-chat-mediated tweet relay protocol ("TweetJoin") | The user's explicit conjecture: *"relational-first architectures overpower object-first architectures"*; cypherpunk-Nietzschean register; design temperament for rule-light, ritual-heavy protocols |
+| `inspiration_bin_21.md` | Encrypted pastebin (`bin.t21.dev`, MIT-licensed at `t21dev/bin-21`) shipped 2025–2026 | Stack-convergence validation (Next.js + TS + Tailwind + Postgres/Drizzle + R2 = ADR-020 within Cloudflare-vs-Railway divergence); architectural mirror highlighting where SendWyrd intentionally diverges (capability-URL vs password); operational ideas (burn-after-read, bot-protection layer) |
 
 ## How to use these (and how not to)
 

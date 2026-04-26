@@ -12,6 +12,13 @@ resolved:
   - B7 → adr_011 (2026-04-24, collateral)
   - B4 → adr_012 (2026-04-24)
   - B5 → adr_013 (2026-04-24)
+  - S1 → adr_015 (2026-04-25)
+  - S4 → adr_014 (2026-04-25)
+  - S2 → adr_016 (2026-04-25)
+  - B6 → adr_017 (2026-04-25)
+  - B8 → adr_018 (2026-04-25)
+  - B9 → adr_019 (2026-04-25)
+  - S3 → adr_020 (2026-04-25)
 ---
 
 # Open Questions — MOP v1 Architecture
@@ -42,60 +49,39 @@ Server-side aggregation under a master pubkey (option 3a) was rejected: even wit
 
 **Resolution (2026-04-24)**: Banked as **ADR-013**. v1 host posture is **edge-CDN (Cloudflare) + per-IP rate-limits + per-object reply rate-limits + size caps + cryptographic gates on origin operations. No PoW.** Pragmatic-v1 floor; ships fast; residential-proxy bypass is undefended and accepted as "fix on detection." PoW deferred to a later phase, not refused. Documented as v1 host-operator policy at `mop.app`, not as protocol-spec — protocol stays minimal.
 
-### B6: HD path conventions
+### B6: HD path conventions — RESOLVED
 
-**Open**: BIP-44-style coin type (e.g., `m/44'/{coin}'/0'/0/n`) or a custom MOP-specific path? Implementation detail; should be settled before any client code is written.
+**Resolution (2026-04-25)**: Banked as **ADR-017**. Path is **`m/300'/n'`** — BIP-43 flat purpose code `300'` (Spartan-300 anchor matching ADR-012), hardened index `n'`. Two levels, both hardened. No coin/account/change layers (coin-wallet semantics don't apply). Client persists a next-free-index counter device-local; on recovery (BIP-39 import), client sweeps indices with a configurable gap limit (default 20). Forward-compatible to a future multi-account migration if needed.
 
 ### B7: Image/media inclusion — RESOLVED (collateral with ADR-011)
 
 **Resolution (2026-04-24)**: Banked as part of **ADR-011**. Media inclusion is via external URL only, auto-inlined by the renderer at page open via standard `<img>`/`<video>`/`<audio>` elements. MOP itself never hosts media. URL extension or content-type drives renderer classification.
 
-### B8: Tombstone vs. vanish on TTL expiry
+### B8: Tombstone vs. vanish on TTL expiry — RESOLVED
 
-When an object's 90-day TTL fires (or burn is requested via K_origin), does the host:
-- (a) Return `410 Gone` with metadata only (timestamp, "burned by author" or "TTL expired")?
-- (b) Return `404 Not Found` (object never existed from the host's perspective)?
+**Resolution (2026-04-25)**: Banked as **ADR-018**. Host returns **`410 Gone`** with structured tombstone metadata: `{ status: "gone", reason: "expired" | "burned", gone_at: ISO8601 }`. No body, no ciphertext, no `K_origin_pub`. Tombstone retention is bounded — host serves `410` for 30 days post gone-at, then transitions to `404`. Aligns with pragmatic privacy posture: UX wins over marginal metadata leak; bounded retention keeps the leak time-limited.
 
-(a) helps broken-link UX; (b) maximizes ephemerality. Pending decision.
+### B9: Privacy posture indicator on rendered page — RESOLVED
 
-### B9: Public-form privacy banner on rendered page
-
-When a recipient views a public-form Hypermessage (host-readable), should the rendered page include a visible "this is the public form — host can see body content" indicator? Helps recipients understand what they're holding.
+**Resolution (2026-04-25)**: Banked as **ADR-019**. Renderer displays a small, **symmetric** privacy-posture indicator on every wyrd view: *Sealed* (private fragment form) vs. *Open* (public path form). Both forms get an indicator, not just public — symmetry gives affirmative reassurance on Sealed and pedagogical contrast across forms. Position: top of rendered area, below wordmark, glanceable. Visual treatment is small, hairline, neutral palette — informational, not alarmist.
 
 ## Strategic
 
-### S1: v1 launch scope
+### S1: v1 launch scope — RESOLVED
 
-Four candidate use cases (see VISION.md):
-1. Cross-post canonical URL
-2. Intro/ask routing
-3. Whisper-network dissemination
-4. Tweet-replacement
+**Resolution (2026-04-25)**: Banked as **ADR-015**. v1 is unopinionated about which use case leads. The product is a primitive, not a vertical app. The four use cases are equal; design decisions must not be biased toward any one of them. No modes, no templates, no use-case onboarding flows. Marketing surface presents the primitive itself, not a use-case-led pitch. The question "which use case leads?" was closed by the user as malformed: *"the use case should not impact what you do; it's inherently unopinionated."*
 
-The architecture supports all four. Marketing/launch can only front one or two.
+### S2: Domain & branding — RESOLVED
 
-**Open**: Which use case(s) does v1 lead with? Affects: composer defaults (e.g., reply-enabled default for intro mode), example content, demo scenarios, growth strategy.
+**Resolution (2026-04-25)**: Banked as **ADR-016**. Consumer brand is **SendWyrd** at **sendwyrd.com**. Protocol codename **MOP** (Message Object Protocol) is retained for spec/internal use. Unit noun is a **wyrd** (lowercase) — *"send a wyrd"*. CamelCase branding (SendWyrd, never sendwyrd) is mandatory in copy. `sendwyrd.app` reserved for future PWA / mobile shell. Defensive registrations tracked as a separate operational task.
 
-### S2: Domain & branding
+### S3: Stack confirmation — RESOLVED
 
-`mop.app` is a placeholder used in ADRs. Real domain decision pending.
+**Resolution (2026-04-25)**: Banked as **ADR-020**. v1 stack: **Next.js + React + TypeScript + Tailwind + Radix UI** for the canonical web client; **Hono on Cloudflare Workers** for the API; **Neon Postgres** + **Cloudflare R2** for storage; **Cloudflare** for edge/CDN/rate-limits/bot-mgmt (consistent with ADR-013). Crypto: **Web Crypto API** for AES-256-GCM; **`@noble/secp256k1`** for ECC ops; **`@scure/bip32`** + **`@scure/bip39`** for HD and mnemonic; **secp256k1 Schnorr (BIP-340)** for signatures; ECIES variant (ephemeral secp256k1 + ECDH + HKDF-SHA256 + AES-256-GCM) for reply encryption. Monorepo via pnpm workspaces + Turborepo, with extractable `core` package for future native consumption.
 
-Naming: "MOP" is the protocol-side codename. "Hypermessage" is the consumer name. Confirm both stick or pick alternatives.
+### S4: Renderer ownership — RESOLVED
 
-### S3: Stack confirmation
-
-Architecture pack §5 proposed: Next.js + React + TypeScript + Tailwind frontend; Fastify or NestJS backend; Postgres + S3 storage; Cloudflare CDN; Web Crypto API client-side (with `noble-secp256k1` for the curve, per ADR-005).
-
-Probably fine; pending explicit user confirmation when implementation phase starts.
-
-### S4: Renderer ownership
-
-The renderer (which decrypts client-side, parses body, fetches and inlines references and OG previews, enforces recursion caps and cycle detection) is the security-critical surface (per ADR-007). Open questions:
-- Do we ship a single canonical renderer (web app at `mop.app`) and require everyone to use it?
-- Do we publish a renderer spec and let third parties build their own (Nostr-style)?
-- What about an iOS/Android share-extension renderer for native UX?
-
-**Lean**: v1 = single canonical web renderer. Mobile and third-party renderers are post-v1 questions.
+**Resolution (2026-04-25)**: Banked as **ADR-014**. v1 ships a single canonical renderer with three first-party implementations: web, iOS, Android. No third-party clients in v1. All three surfaces share a documented internal behavioral contract so rendering is identical across platforms. Native ship dates not promised by the ADR — commitment is "first-party only when shipped." Reading the protocol and building unsupported clients is permitted but unendorsed. Federation of clients deferred post-v1.
 
 ## Process
 
@@ -105,4 +91,16 @@ Default agent personality is **Berthier** (chief-of-staff archetype, inherited f
 
 ### P2: Inspiration archive maintenance
 
-Two inspiration docs filed at `what/context/inspiration/`. If the user shares more, file under same convention with `inspiration_*` prefix and update the AGENTS.md index.
+Three inspiration docs filed at `what/context/inspiration/` (Weak Ties Game, TweetJoin, bin-21). If the user shares more, file under same convention with `inspiration_*` prefix and update the AGENTS.md index.
+
+## Future Considerations (post-v1)
+
+Captured here for tracking; not in scope for v1 implementation.
+
+### F1: Burn-after-reading lifecycle option
+
+bin-21 (see `what/context/inspiration/inspiration_bin_21.md`) ships a burn-on-first-read option in addition to TTL. Real value for one-time-secret use cases (password share, MFA seed handoff). **Conflicts with v1 forward-chain use cases** — the URL must work for the nth recipient via Alice → Bob → Carol, not only the first reader. Possible v2 framing: a per-wyrd "single-recipient mode" toggle with composer copy explicitly explaining the consequence. Out of v1 scope; revisit when v2 priorities form.
+
+### F2: Operational bot-protection layer
+
+ADR-013 banked the v1 abuse posture (edge + rate-limits + size caps + crypto gates). bin-21's three-layer bot defense (honeypot fields + time-based detection + JS challenges) is a credible operational refinement at the host-policy layer (not protocol). Worth folding into the canonical SendWyrd host runbook during Phase E or operational deployment, not an ADR.
