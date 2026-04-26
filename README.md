@@ -43,6 +43,43 @@ Architectural decisions are recorded as ADRs in [`what/decisions/`](what/decisio
 
 ---
 
+## Architecture: no identity primitives
+
+The architecture refuses identity. The protocol carries text and capability keys; nothing else. No accounts, no usernames, no logins, no PKI.
+
+Each wyrd has its own random `K_origin` keypair, derived at `m/300'/n'` for an incrementing `n`. Two wyrds composed by the same person produce different `K_origin_pub` values. **The host cannot tell whether two wyrds came from the same author.** Counting distinct `K_origin_pub` values equals counting wyrds, not people.
+
+Possession of the URL is access. Forwarding is the default and the point. There is no friend graph, no follower list, no broadcast surface, no "who" primitive of any kind.
+
+## Cryptography
+
+- **Body envelope**: AES-256-GCM via the Web Crypto API. `K_read` is 32 bytes of CSPRNG, generated per-wyrd at compose time.
+- **Author keys**: secp256k1; signatures via BIP-340 Schnorr (publish, burn). One keypair per wyrd.
+- **Replies**: ECIES — anyone with the URL encrypts a reply to `K_origin_pub`; only the author can decrypt. One-shot.
+- **Seed**: BIP-39 mnemonic (12 or 24 words). HD path: `m/300'/n'` (BIP-43 flat purpose, hardened indices).
+- **Distribution**: `K_read` lives in the URL fragment. Browsers do not transmit fragments to servers (RFC 3986). The host is body-blind on every request.
+- **AAD binding**: every envelope binds version, handle, expiry, and reply-mode into the AES-GCM authenticated data. Tampering any field fails decryption.
+
+## Brittleness as contract
+
+`K_read` is per-wyrd random, not derived from your seed. If you lose the URL, the body becomes unreadable — even if you still hold your mnemonic.
+
+Mnemonic recovery rebuilds your wyrd-handle list and your author keys (you can decrypt replies, burn old wyrds, prove authorship) but cannot reconstruct `K_read` for sealed wyrds whose URLs you've lost. The protocol refuses durable archive on purpose.
+
+Default TTL is 90 days. Local storage may evict. Mnemonic backup is the only recovery path the protocol offers — and even that recovers identity, not content.
+
+## Why not Nostr
+
+Nostr is identity-first. Each user has a stable `npub`/`nsec` keypair. Events are signed by that stable key, posted to relays, aggregated by clients into feeds. Most events are public broadcasts.
+
+SendWyrd makes the opposite call. No stable per-user key — per-wyrd random `K_origin`. No public broadcast — the URL is the only path. The host stays blind. The protocol refuses durable archive.
+
+The two solve different problems. Nostr optimizes for *censorship-resistant public broadcasting* — important. SendWyrd optimizes for *host-blind ephemeral handoff through trust networks* — a different problem in the same neighborhood. They compose: a wyrd body can embed an `npub` as plain text if you want attribution. SendWyrd doesn't model identity; it inherits whatever the body declares.
+
+The deepest difference is the archive. Nostr accumulates an indelible signed event log per identity (a feature for some uses; an anti-feature for opinion-publishing-as-identity-building). SendWyrd refuses the archive on purpose.
+
+---
+
 ## Repository layout
 
 This repo carries both the project's knowledge architecture (aDNA in `what/`, `how/`, `who/`) and its v1 implementation code (`packages/`).
