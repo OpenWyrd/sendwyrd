@@ -34,6 +34,7 @@ import { mergeHistoryEntries } from "@/lib/wyrdHistory";
 import { sweepFromMnemonic, type SweepProgress } from "@/lib/recovery";
 import { Segmented } from "@/components/Segmented";
 import { Nav } from "@/components/Nav";
+import { MnemonicInput } from "@/components/MnemonicInput";
 import { useInstallState, triggerInstall } from "@/lib/installPrompt";
 import {
   getPersistenceState,
@@ -64,6 +65,7 @@ export default function SettingsPage() {
   // Recovery state
   const [recoveryOpen, setRecoveryOpen] = useState(false);
   const [recoveryMnemonic, setRecoveryMnemonic] = useState("");
+  const [recoveryWordCount, setRecoveryWordCount] = useState<12 | 24>(12);
   const [recoveryStoragePassphrase, setRecoveryStoragePassphrase] = useState("");
   const [recoveryStoragePassphraseConfirm, setRecoveryStoragePassphraseConfirm] = useState("");
   const [recoveryProgress, setRecoveryProgress] = useState<SweepProgress | null>(null);
@@ -468,22 +470,26 @@ export default function SettingsPage() {
         )}
         {recoveryOpen && (
           <form onSubmit={handleRecoverFromMnemonic}>
-            <textarea
+            <div style={{ marginBottom: "var(--spacing-4)" }}>
+              <Segmented
+                name="recovery-word-count"
+                value={String(recoveryWordCount)}
+                onChange={(v) => setRecoveryWordCount(Number(v) as 12 | 24)}
+                size="sm"
+                ariaLabel="Word count"
+                options={[
+                  { value: "12", label: "12 words" },
+                  { value: "24", label: "24 words" },
+                ]}
+              />
+            </div>
+            <MnemonicInput
               value={recoveryMnemonic}
-              onChange={(e) => setRecoveryMnemonic(e.target.value)}
-              placeholder="word1 word2 word3 …"
-              rows={3}
-              spellCheck={false}
-              autoComplete="off"
-              autoCapitalize="off"
+              onChange={setRecoveryMnemonic}
+              wordCount={recoveryWordCount}
               disabled={recoveryRunning}
-              style={{
-                ...inputStyle,
-                resize: "vertical",
-                lineHeight: 1.6,
-              }}
             />
-            <p style={{ ...metaStyle, marginTop: "var(--spacing-3)", marginBottom: "var(--spacing-3)" }}>
+            <p style={{ ...metaStyle, marginTop: "var(--spacing-4)", marginBottom: "var(--spacing-3)" }}>
               Optional — set a passphrase to encrypt the recovered seed at
               rest. Leave blank for open mode.
             </p>

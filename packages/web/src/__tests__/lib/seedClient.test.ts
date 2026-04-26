@@ -17,6 +17,7 @@ import {
   getSeedMode,
   hasSeed,
   isUnlocked,
+  lockSeed,
   protectWithPassphrase,
   storeOpenSeed,
   storeProtectedSeed,
@@ -151,21 +152,49 @@ describe("seedClient — consumeNextIndex", () => {
     expect(getSeed()?.counter).toBe(3);
   });
 
-  it("requires passphrase in protected mode", async () => {
+  it("uses cached passphrase from storeProtectedSeed (no arg needed)", async () => {
     await storeProtectedSeed({
       seed: makeSeed(),
       counter: 1,
       passphrase: "good-passphrase",
     });
-    await expect(consumeNextIndex()).rejects.toThrow(/passphrase_required/);
+    // store caches the passphrase, so consumeNextIndex without an arg succeeds.
+    const n = await consumeNextIndex();
+    expect(n).toBe(1);
+    const recovered = await unlockSeed("good-passphrase");
+    expect(recovered.counter).toBe(2);
   });
 
-  it("consumes index in protected mode with correct passphrase", async () => {
+  it("uses cached passphrase from unlockSeed (no arg needed)", async () => {
+    await storeProtectedSeed({
+      seed: makeSeed(),
+      counter: 5,
+      passphrase: "good-passphrase",
+    });
+    lockSeed(); // simulate page-cleared cache
+    await unlockSeed("good-passphrase"); // re-populate cache
+    const n = await consumeNextIndex();
+    expect(n).toBe(5);
+  });
+
+  it("requires unlock in protected mode after lockSeed", async () => {
+    await storeProtectedSeed({
+      seed: makeSeed(),
+      counter: 1,
+      passphrase: "good-passphrase",
+    });
+    lockSeed();
+    await expect(consumeNextIndex()).rejects.toThrow(/no_seed/);
+  });
+
+  it("consumes index in protected mode with explicit passphrase override", async () => {
     await storeProtectedSeed({
       seed: makeSeed(),
       counter: 9,
       passphrase: "good-passphrase",
     });
+    lockSeed();
+    await unlockSeed("good-passphrase");
     const n = await consumeNextIndex("good-passphrase");
     expect(n).toBe(9);
     const recovered = await unlockSeed("good-passphrase");

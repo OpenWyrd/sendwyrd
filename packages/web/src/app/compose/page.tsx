@@ -23,7 +23,6 @@ import {
   isUnlocked,
   unlockSeed,
   getSeed,
-  getSeedMode,
   storeOpenSeed,
   consumeNextIndex,
 } from "@/lib/seedClient";
@@ -123,21 +122,15 @@ export default function ComposePage() {
       }
 
       let n: number;
-      if (getSeedMode() === "open") {
+      try {
         n = await consumeNextIndex();
-      } else {
-        const pp = window.prompt("Confirm passphrase to consume the next index");
-        if (!pp) {
-          setSending(false);
-          return;
-        }
-        try {
-          n = await consumeNextIndex(pp);
-        } catch {
-          setError("Passphrase incorrect — index not consumed.");
-          setSending(false);
-          return;
-        }
+      } catch {
+        // Cache cleared between unlock and send (e.g. lockSeed/forgetSeed).
+        // Send the user back to unlock — they'll retry from there.
+        setUnlocked(false);
+        setError("Session expired — passphrase needed again.");
+        setSending(false);
+        return;
       }
 
       const result = await composeWyrd({

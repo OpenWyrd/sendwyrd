@@ -176,6 +176,48 @@ export default function AboutPage() {
           gap: "var(--spacing-12)",
         }}
       >
+        <Subhead>How it works</Subhead>
+
+        <Section>
+          <p style={pStyle}>
+            A wyrd is a 300-codepoint, end-to-end-encrypted text block that
+            becomes a shareable URL — a portable, composable, forward-worthy
+            conversational artifact that travels through existing messaging
+            rails (iMessage, Signal, WhatsApp, Slack, email) rather than a
+            native feed or discovery layer.
+          </p>
+          <p style={pStyle}>The URL takes one canonical form:</p>
+          <p
+            style={{
+              ...pStyle,
+              padding: "var(--spacing-3) var(--spacing-4)",
+              border: "1px solid var(--color-hairline)",
+              color: "var(--color-ink-muted)",
+              overflowWrap: "anywhere",
+            }}
+          >
+            https://sendwyrd.com/w/{"{handle}"}#{"{K_read}"}
+          </p>
+          <p style={pStyle}>
+            The handle is in the path; the read key is in the URL fragment.
+            Browsers don&apos;t transmit fragments to servers — so the host
+            stays body-blind. Anyone holding the URL can read the wyrd;
+            whoever you share it with can forward it to whoever they think
+            is relevant.
+          </p>
+          <p style={pStyle}>
+            No accounts. No feed. No archive. Default 90-day TTL — pick
+            shorter, or none. Brittleness is the architecture, not an
+            oversight.
+          </p>
+          <p style={pStyle}>
+            The protocol carries text only. Identity, signing, trust, and
+            provenance are either inlined into the body (a name, a Nostr
+            signature) or inherited from the share channel — &ldquo;Mike
+            sent me this.&rdquo; Trust rides the rail.
+          </p>
+        </Section>
+
         <Subhead>Architecture</Subhead>
 
         <Section>
@@ -278,10 +320,15 @@ export default function AboutPage() {
             <em>censorship-resistant public broadcasting</em> — important.
             SendWyrd optimizes for{" "}
             <em>host-blind ephemeral handoff through trust networks</em> — a
-            different problem in the same neighborhood. They compose: a wyrd
-            body can embed an <Code>npub</Code> as plain text if you want
-            attribution. SendWyrd doesn&apos;t model identity; it inherits
-            whatever the body declares.
+            different problem in the same neighborhood. They compose. A wyrd
+            body can carry a signed Nostr event — the recipient verifies the
+            signature against an <Code>npub</Code>, and SendWyrd is just
+            transport for an attestation that already stands on its own.
+            Alternatively, the wyrd URL is forwarded by a trusted identity
+            source — a Nostr key, a domain, a known account — that signs the
+            act of sending. Either way, the attestation lives outside the
+            protocol. SendWyrd doesn&apos;t model identity; it composes with
+            whatever attestation layer the participants choose to bring.
           </p>
           <p style={pStyle}>
             The deepest difference is the archive. Nostr accumulates an
@@ -305,18 +352,6 @@ export default function AboutPage() {
             <li>
               <strong>Database</strong>: Neon Postgres. Stores encrypted
               envelopes only; no plaintext anywhere on the host.
-            </li>
-            <li>
-              <strong>Wire spec</strong>:{" "}
-              <a
-                href="https://github.com/DeltaClimbs/sendwyrd/blob/main/what/docs/spec/spec_mop_v1.md"
-                style={linkStyle}
-                rel="noreferrer"
-              >
-                spec_mop_v1.md
-              </a>{" "}
-              — every architectural decision is recorded as an ADR in the same
-              repo.
             </li>
             <li>
               <strong>API / build on this</strong>:{" "}
