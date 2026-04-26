@@ -148,7 +148,7 @@ export default function FragmentView() {
 
       {state.kind === "gone" && (
         <article style={panelStyle}>
-          <PrivacyIndicator state="sealed" />
+          <PrivacyIndicator />
           <p style={{ ...goneStyle, marginTop: "var(--spacing-6)" }}>
             {state.reason === "burned"
               ? `This wyrd was withdrawn by its author on ${formatDate(state.gone_at)}.`
@@ -162,7 +162,7 @@ export default function FragmentView() {
       {state.kind === "ready" && (
         <article style={panelStyle}>
           <header style={{ display: "flex", justifyContent: "flex-end", marginBottom: "var(--spacing-3)" }}>
-            <PrivacyIndicator state="sealed" />
+            <PrivacyIndicator />
           </header>
           <div
             style={{

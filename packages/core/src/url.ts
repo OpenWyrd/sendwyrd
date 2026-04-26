@@ -1,9 +1,12 @@
 /**
- * URL parsing per spec_mop_v1.md §4.3.
+ * URL parsing per spec_mop_v1.md §4.
  *
- * Two canonical forms:
- *   private fragment: https://sendwyrd.com/w/{handle}#{K_read_b64u}
- *   public path:      https://sendwyrd.com/w/{handle}/k/{K_read_b64u}
+ * Single canonical form (per ADR-021):
+ *   fragment: https://sendwyrd.com/w/{handle}#{K_read_b64u}
+ *
+ * Legacy path form recognized at parse time only (composer never emits it;
+ * the route layer client-side redirects to fragment form):
+ *   /w/{handle}/k/{K_read_b64u}
  *
  * Handle: 16 chars base64url (12 bytes).
  * K_read: 43 chars base64url (32 bytes).
@@ -63,6 +66,9 @@ export function parseWyrdUrl(input: string): WyrdUrlForm {
 
 /**
  * Construct a fragment-form URL from a handle and K_read.
+ *
+ * Per ADR-021, fragment is the only form the composer emits. The path-form
+ * was removed; legacy URLs in the wild client-side redirect to fragment.
  */
 export function buildFragmentUrl(
   origin: string,
@@ -70,15 +76,4 @@ export function buildFragmentUrl(
   k_read: Base64Url,
 ): string {
   return `${origin}/w/${handle}#${k_read}`;
-}
-
-/**
- * Construct a public-path-form URL from a handle and K_read.
- */
-export function buildPublicUrl(
-  origin: string,
-  handle: Base64Url,
-  k_read: Base64Url,
-): string {
-  return `${origin}/w/${handle}/k/${k_read}`;
 }

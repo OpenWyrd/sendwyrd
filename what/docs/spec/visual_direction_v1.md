@@ -1,11 +1,11 @@
 ---
 type: spec
 created: 2026-04-25
-updated: 2026-04-25
+updated: 2026-04-26
 last_edited_by: agent_michael
 status: draft
 tags: [spec, mop, sendwyrd, visual, design, ux, v1]
-spec_version: "1.0.0-draft"
+spec_version: "1.0.1-draft"
 ---
 
 # Visual Direction — SendWyrd v1
@@ -38,14 +38,13 @@ Dark theme is canonical. Light theme is a faithful mirror for daytime / accessib
 | `--accent` | `#7A8AA8` | Single accent. Desaturated rune-blue. Used on focus, active state, the wyrd sigil, and one decorative gradient. Never on body text. |
 | `--accent-soft` | `#3D4452` | The accent at lower luminance — used in the landing-page haze gradient only. |
 | `--mark-sealed` | `#9DA0A8` | Sealed indicator glyph color. Cool graphite. |
-| `--mark-open` | `#C2BCA8` | Open indicator glyph color. Warm parchment. Within 10% luminance of `--mark-sealed`; symmetric. |
 | `--danger` | `#A87A7A` | Errors. Desaturated, body-text register, not alarm-red. |
 
 ### 2.2 Light theme (mirror)
 
 | Token | Hex | Use |
 |-------|-----|-----|
-| `--ground` | `#F8F4ED` | Bone / paper. Same warmth as `--mark-open` in dark theme; ground is its own indicator that we are in light mode. |
+| `--ground` | `#F8F4ED` | Bone / paper warmth; ground itself is the cue that we are in light mode. |
 | `--surface` | `#F0EBE0` | Subtle elevation. |
 | `--hairline` | `#D8D2C4` | 1px rules. |
 | `--hairline-strong` | `#A8A095` | Active focus rings. |
@@ -55,7 +54,6 @@ Dark theme is canonical. Light theme is a faithful mirror for daytime / accessib
 | `--accent` | `#5E6F8A` | Same rune-blue family, slightly darkened for contrast on light ground. |
 | `--accent-soft` | `#B8C0CC` | Landing haze. |
 | `--mark-sealed` | `#3A3F4A` | Cool ink. |
-| `--mark-open` | `#6F6354` | Oxidized warm ink. Within 10% luminance of `--mark-sealed`. |
 | `--danger` | `#6F4A4A` | Errors. |
 
 ### 2.3 Theme switching
@@ -148,51 +146,33 @@ SendWyrd ships a small custom glyph family for brand-load-bearing moments:
 
 These three glyphs are the entire custom inventory. New custom glyphs require a contract revision.
 
-## 6. Privacy-posture indicator (Sealed / Open)
+## 6. Privacy-posture indicator (Sealed)
 
-Per ADR-019 + renderer-contract § 10.
+Per ADR-019 (amended by ADR-021 — single-form architecture means the indicator is monomorphic).
 
-### 6.1 Glyph specifications
+### 6.1 Glyph specification
 
-Both indicators share a **viewBox of `0 0 16 16`** and use **two-stroke hairline construction at 1.25px stroke-width** with `stroke-linecap: round`.
-
-#### Sealed (knotted thread)
+The indicator uses a **viewBox of `0 0 16 16`** and a hairline closed-padlock built from two strokes at 1.25px stroke-width, `stroke-linecap: round`:
 
 ```
-Two strokes:
-  Stroke A: starts at (3, 4), curves through (8, 8), ends at (13, 12).
-  Stroke B: starts at (3, 12), curves through (8, 8), ends at (13, 4).
-The two strokes cross at the center and tie at (8, 8) via a small overhand
-loop (radius ~1.5).
+- Shackle: arc from (5, 8) up through (8, 2.5) and back down to (11, 8).
+- Body: rectangle (3.5, 8) → (12.5, 14), corner-radius 1.
 ```
 
-Visual read: two threads crossing and tying. The knot is the binding. Color: `--mark-sealed`.
+Visual read: a closed lock. Color: `--mark-sealed`.
 
-#### Open (unknotted thread)
-
-```
-Two strokes:
-  Stroke A: parallel curve from (3, 6) to (13, 6), gentle arc upward.
-  Stroke B: parallel curve from (3, 10) to (13, 10), gentle arc downward.
-The two strokes are parallel, never touch.
-```
-
-Visual read: two threads, loose, untied. Color: `--mark-open`.
+The previously-spec'd "Open" (unknotted-thread) glyph is removed. There is no public-form addressing in v1, so there is no second state to indicate.
 
 ### 6.2 Indicator placement and treatment
 
-- Position: top of rendered content area, immediately below the wordmark, above the body. Hairline rule above and below the indicator strip.
-- Layout (left to right): glyph (16px) → 8px gap → label text → (optional) interpunct → muted explanation.
-  - Sealed label: `Sealed · host cannot read this`
-  - Open label: `Open · host can read this`
-  - Label uses Caption (mono, 14px, weight 400). Color matches the glyph (`--mark-sealed` / `--mark-open`).
-- Hover/tap: the explanation expands inline (one sentence), 100ms opacity fade. No animation on mount.
-- Same x-position, same scale, same weight in both states. Symmetric. Asymmetry is glyph-topology only.
+- Position: top of rendered content area, immediately below the wordmark, above the body.
+- Treatment: glyph alone, no label text adjacent. Hover/tap reveals a one-sentence explanation: *"Sealed — decrypted on your device. The decryption key lives in the URL fragment, which browsers never send to the host."*
+- Color: `--mark-sealed`.
 - NO motion on mount. NO pulse, shimmer, or color transition.
 
 ### 6.3 Indicator on tombstones
 
-When the renderer displays a 410 Gone (per `spec_mop_v1.md` §13), the indicator is preserved (the form the user navigated to is still meaningful) but the glyph color drops to `--ink-subtle` to convey "this no longer applies in the same way." Label text is unchanged.
+When the renderer displays a 410 Gone (per `spec_mop_v1.md` §13), the glyph color drops to `--ink-subtle` to convey "this no longer applies in the same way." The indicator stays in place to keep the visual rhythm consistent with live views.
 
 ## 7. The wyrd sigil
 
@@ -220,7 +200,7 @@ ViewBox `0 0 32 32`, stroke-width 1.25px, `currentColor`. The exact stroke geome
 
 - Not a chrome decoration. Does not appear in section dividers, button icons, list bullets, or anywhere not enumerated above.
 - Not animated outside the landing breathing.
-- Not the indicator glyph (the Sealed/Open thread glyphs are separate).
+- Not the indicator glyph (the Sealed lock glyph is separate).
 
 ## 8. Motion budget (reaffirmed)
 
@@ -243,8 +223,8 @@ That is the entire motion budget. Anything else is a contract violation.
 |-------|---------|------------------|
 | `/` | Landing — what is SendWyrd, single CTA to compose | None |
 | `/compose` | New wyrd composer | Seed loaded (passphrase entered) |
-| `/w/{handle}` | Fragment-form wyrd view | None (renderer decrypts client-side) |
-| `/w/{handle}/k/{K_read}` | Public-form wyrd view | None (host decrypts server-side) |
+| `/w/{handle}` | Wyrd view (single canonical form) | None (renderer decrypts client-side) |
+| `/w/{handle}/k/{K_read}` | Legacy redirect → fragment form (per ADR-021) | None |
 | `/inbox` | Author's inbox (HD-aggregated wyrds + replies) | Seed loaded |
 | `/settings` | Seed mgmt, theme toggle, advanced | Seed loaded |
 | `/onboarding` | First-run flow (generate seed, mnemonic, passphrase) | None (creates seed) |
@@ -296,7 +276,9 @@ Same screen inventory, mapped to native navigation patterns:
 
 **Motion exception**: the copy-icon → checkmark transition (200ms, opacity + crossfade) is the one motion not in § 8's enumerated budget. Justification: copy-feedback is operational not decorative; accessibility requires confirmation that the action took. This is a v1 sanctioned exception. Future motion additions require ADR-level justification.
 
-### 10.4 View — fragment form (`/w/{handle}`)
+### 10.4 View (`/w/{handle}`)
+
+The single canonical wyrd view. K_read lives in the URL fragment; renderer decrypts client-side after page load.
 
 **Layout**:
 - Wordmark (top, smaller — 24px — to give body real estate).
@@ -304,15 +286,12 @@ Same screen inventory, mapped to native navigation patterns:
 - Body, mono, in a max-640px column.
 - Embeds inline per renderer-contract § 7 (auto-embedded media + OG cards), each with hairline rule above.
 - Below body: small mono caption with `published_at` and `expires_at` (e.g., `Sent 2026-04-25 · expires 2026-07-24`).
-- If `replies_enabled`: a `Send a reply` affordance below the caption. Tapping reveals a textarea (max 1000 codepoints) with a `Send` button. Single one-shot submission per VISION P5 / ADR-008.
+- If `replies_enabled`: a `Send a reply` affordance below the caption. Single one-shot submission per VISION P5 / ADR-008.
 - No nav, no footer, no engagement metrics. Just the wyrd.
 
-### 10.5 View — public form (`/w/{handle}/k/{K_read}`)
+### 10.5 Legacy redirect (`/w/{handle}/k/{K_read}`)
 
-Identical to fragment-form view, but:
-- Privacy indicator shows **Open**.
-- The host has already decrypted; renderer just renders.
-- Server-rendered HTML includes OG metadata for social-card preview.
+Per ADR-021, the public path-form was removed. URLs of this shape — shared in the wild prior to that change — render a tiny client-side redirect page that immediately calls `window.location.replace("/w/{handle}#{K_read}")`. The host briefly logs the K_read once at redirect time (no worse than the legacy contract). After redirect the user lands on §10.4. No body is shown at the legacy URL; no SSR; no OG metadata.
 
 ### 10.6 View — tombstone (410 Gone)
 
@@ -329,7 +308,7 @@ Identical to fragment-form view, but:
 - One-line caption: `{N} wyrds · {M} unread replies` (or empty: a single line of mono prose, no illustration).
 - A vertical list of the user's wyrds (HD-aggregated per ADR-009). Each row:
   - First 60 codepoints of the wyrd body, truncated with ellipsis.
-  - Status pill (Sealed / Open / Expired / Burned / Replied) — text only, no fill, in the corresponding color from § 2.
+  - Status pill (Sealed / Expired / Burned / Replied) — text only, no fill, in the corresponding color from § 2.
   - `published_at` in mono caption.
   - Hairline rule between rows.
 - Tapping a row navigates to that wyrd's view route.
