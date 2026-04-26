@@ -8,6 +8,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { hasSeed, forgetSeed } from "@/lib/seedClient";
+import { Segmented } from "@/components/Segmented";
 
 type Theme = "system" | "dark" | "light";
 const THEME_KEY = "sendwyrd:theme";
@@ -44,20 +45,18 @@ export default function SettingsPage() {
 
       <section style={panelStyle}>
         <h2 style={sectionStyle}>Theme</h2>
-        <div style={{ display: "flex", gap: "var(--spacing-6)", marginBottom: "var(--spacing-12)" }}>
-          {(["system", "dark", "light"] as const).map((t) => (
-            <label key={t} style={radioStyle}>
-              <input
-                type="radio"
-                name="theme"
-                checked={theme === t}
-                onChange={() => changeTheme(t)}
-              />
-              <span style={{ color: theme === t ? "var(--color-ink)" : "var(--color-ink-muted)" }}>
-                {t}
-              </span>
-            </label>
-          ))}
+        <div style={{ marginBottom: "var(--spacing-12)" }}>
+          <Segmented
+            name="theme"
+            value={theme}
+            onChange={(v) => changeTheme(v as Theme)}
+            ariaLabel="Theme"
+            options={[
+              { value: "system", label: "system" },
+              { value: "dark", label: "dark" },
+              { value: "light", label: "light" },
+            ]}
+          />
         </div>
 
         <h2 style={sectionStyle}>About</h2>
@@ -131,14 +130,6 @@ const sectionStyle: React.CSSProperties = {
   marginBottom: "var(--spacing-4)",
   paddingBottom: "var(--spacing-2)",
   borderBottom: "1px solid var(--color-hairline)",
-};
-const radioStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "var(--spacing-2)",
-  fontFamily: "var(--font-mono)",
-  fontSize: "var(--text-caption)",
-  cursor: "pointer",
 };
 const metaStyle: React.CSSProperties = {
   margin: 0,

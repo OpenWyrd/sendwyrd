@@ -24,6 +24,7 @@ import {
 import { publishWyrd } from "@/lib/api";
 import { addHistoryEntry } from "@/lib/wyrdHistory";
 import { b64uEncode } from "@sendwyrd/core";
+import { Segmented, Toggle } from "@/components/Segmented";
 
 const TTL_PRESETS: Array<{ label: string; seconds: number }> = [
   { label: "1 day", seconds: 86_400 },
@@ -245,27 +246,26 @@ export default function ComposePage() {
       <h1 style={wordmarkStyle}>SendWyrd</h1>
       <form onSubmit={handleSend} style={panelStyle}>
         {/* Form toggle: Sealed (default) / Open */}
-        <div style={{ display: "flex", gap: "var(--spacing-6)", marginBottom: "var(--spacing-6)" }}>
-          <label style={radioRowStyle}>
-            <input
-              type="radio"
-              name="form"
-              checked={form === "sealed"}
-              onChange={() => setForm("sealed")}
-            />
-            <span style={{ color: "var(--color-mark-sealed)" }}>Sealed</span>
-            <span style={hintStyle}>host cannot read</span>
-          </label>
-          <label style={radioRowStyle}>
-            <input
-              type="radio"
-              name="form"
-              checked={form === "open"}
-              onChange={() => setForm("open")}
-            />
-            <span style={{ color: "var(--color-mark-open)" }}>Open</span>
-            <span style={hintStyle}>host can read; previewable</span>
-          </label>
+        <div style={{ marginBottom: "var(--spacing-6)" }}>
+          <Segmented
+            name="form"
+            value={form}
+            onChange={(v) => setForm(v)}
+            layout="wrap"
+            ariaLabel="Privacy form"
+            options={[
+              {
+                value: "sealed",
+                label: "Sealed · host cannot read",
+                accent: "var(--color-mark-sealed)",
+              },
+              {
+                value: "open",
+                label: "Open · host can read",
+                accent: "var(--color-mark-open)",
+              },
+            ]}
+          />
         </div>
 
         {/* Body */}
@@ -314,60 +314,39 @@ export default function ComposePage() {
         </p>
 
         {/* TTL selector */}
-        <fieldset
-          style={{
-            border: "none",
-            padding: 0,
-            margin: "var(--spacing-6) 0 0",
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "var(--spacing-3)",
-            color: "var(--color-ink-muted)",
-            fontFamily: "var(--font-mono)",
-            fontSize: "var(--text-caption)",
-          }}
-        >
-          {TTL_PRESETS.map((p) => (
-            <label key={p.seconds} style={{ display: "flex", alignItems: "center", gap: "var(--spacing-2)" }}>
-              <input
-                type="radio"
-                name="ttl"
-                checked={ttl === p.seconds}
-                onChange={() => setTtl(p.seconds)}
-              />
-              <span style={{ color: ttl === p.seconds ? "var(--color-ink)" : "var(--color-ink-muted)" }}>
-                {p.label}
-              </span>
-            </label>
-          ))}
-        </fieldset>
+        <div style={{ marginTop: "var(--spacing-6)" }}>
+          <p style={fieldLabelStyle}>Expires in</p>
+          <Segmented
+            name="ttl"
+            value={String(ttl)}
+            onChange={(v) => setTtl(Number(v))}
+            layout="wrap"
+            size="sm"
+            ariaLabel="Time to live"
+            options={TTL_PRESETS.map((p) => ({
+              value: String(p.seconds),
+              label: p.label,
+            }))}
+          />
+        </div>
 
         {/* Replies toggle */}
-        <label
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "var(--spacing-3)",
-            marginTop: "var(--spacing-6)",
-            color: "var(--color-ink-muted)",
-            fontFamily: "var(--font-mono)",
-            fontSize: "var(--text-caption)",
-          }}
-        >
-          <input
-            type="checkbox"
-            checked={repliesEnabled}
-            onChange={(e) => setRepliesEnabled(e.target.checked)}
-          />
-          <span>
-            Replies {repliesEnabled ? "on" : "off"}
-            <span style={{ marginLeft: "var(--spacing-3)", color: "var(--color-ink-subtle)" }}>
-              {repliesEnabled
-                ? "recipients may send you one anonymous reply each"
-                : "recipients cannot reply"}
-            </span>
-          </span>
-        </label>
+        <div style={{ marginTop: "var(--spacing-6)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "var(--spacing-4)", flexWrap: "wrap" }}>
+            <p style={{ ...fieldLabelStyle, margin: 0 }}>Replies</p>
+            <Toggle
+              name="replies"
+              value={repliesEnabled}
+              onChange={setRepliesEnabled}
+              ariaLabel="Allow replies"
+            />
+          </div>
+          <p style={{ ...hintStyle, marginTop: "var(--spacing-2)", marginBottom: 0 }}>
+            {repliesEnabled
+              ? "Recipients may send you one anonymous reply each."
+              : "Recipients cannot reply."}
+          </p>
+        </div>
 
         {error && <p style={errorStyle}>{error}</p>}
 
@@ -429,17 +408,20 @@ const inputStyle: React.CSSProperties = {
   fontSize: "var(--text-body)",
   outline: "none",
 };
-const radioRowStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "var(--spacing-2)",
+const fieldLabelStyle: React.CSSProperties = {
+  margin: 0,
+  marginBottom: "var(--spacing-2)",
   fontFamily: "var(--font-mono)",
-  fontSize: "var(--text-caption)",
-  cursor: "pointer",
+  fontSize: "var(--text-microcaption)",
+  textTransform: "lowercase",
+  letterSpacing: "0.05em",
+  color: "var(--color-ink-muted)",
 };
 const hintStyle: React.CSSProperties = {
+  margin: 0,
   color: "var(--color-ink-subtle)",
   fontSize: "var(--text-microcaption)",
+  fontFamily: "var(--font-mono)",
 };
 const errorStyle: React.CSSProperties = {
   color: "var(--color-danger)",
