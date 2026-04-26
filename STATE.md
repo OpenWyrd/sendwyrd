@@ -69,14 +69,15 @@ Architecture phase is closed. All ADR-level decisions are banked (003–020). Re
 | B | Wire spec doc (`what/docs/spec/spec_mop_v1.md`) — URL forms, endpoints, envelope, HD derivation, error codes, rate-limits, reply-blob format | **Done (2026-04-25)** |
 | C | Renderer behavioral contract (`what/docs/spec/renderer_contract_v1.md`) — cross-impl spec for web/iOS/Android per ADR-014 | **Done (2026-04-25)** |
 | D | Visual/UX direction (`what/docs/spec/visual_direction_v1.md`) — color tokens, type, spacing, motion budget, glyph specs, IA, screen-by-screen flows | **Done (2026-04-25)** |
-| E | Repo scaffolding + deploy story (monorepo skeleton, no feature code) | Pending — needs Cloudflare/Neon auth + Bash unwedge |
-| F | Landing copy + demo wyrd content (per ADR-015 — primitive-not-vertical pitch) | Pending |
+| E | Repo scaffolding + deploy: monorepo (core/api/web), Drizzle schema migrated, web + API live at https://sendwyrd.com via Cloudflare Workers (api at sendwyrd.com/api/*, web via @opennextjs/cloudflare at sendwyrd.com/*) | **Done (2026-04-25)** |
+| F | Landing copy + demo wyrd content + wyrd sigil SVG + privacy indicator glyphs (Sealed knot / Open parallel) — live | **Done (2026-04-25)** |
+| G | Implementation: replace 501 stubs with real handlers; client-side compose/encrypt/sign/publish; renderer decryption; HD inbox; replies | Pending |
 
 When B–F are complete, v1 implementation becomes a single execution pass — every decision is pre-locked, no interrupts during coding.
 
 ## Active Blockers
 
-None. All architecture questions resolved. Next session picks up Phase B (wire spec).
+None. Phases B–F complete; product is live as a stubbed shell at https://sendwyrd.com. Next session picks up Phase G (implementation): replace 501 stubs with real handlers per `spec_mop_v1.md`. Token stash for programmatic CF / Neon ops is at `~/.config/cloudflare/sendwyrd_api_token` (mode 600, owner-only, never committed).
 
 ## Recent Decisions Timeline
 
@@ -109,6 +110,10 @@ None. All architecture questions resolved. Next session picks up Phase B (wire s
 | 2026-04-25 | GitHub repo + local dir + memory dir renamed `MOP` → `sendwyrd`; ADR-016 amendment recorded | Open-questions resume 2 |
 | 2026-04-25 | bin-21 archived as inspiration reference (stack-validation: Next.js + Drizzle + R2 confirmed); backlog F1/F2 added (burn-after-read v2 consideration, bot-defense operational refinement) | Open-questions resume 2 |
 | 2026-04-25 | Phase D (visual direction spec) banked at `what/docs/spec/visual_direction_v1.md` — dark-first canonical, mono-as-voice, four-item motion budget, knotted/unknotted thread privacy glyphs | Open-questions resume 2 |
+| 2026-04-25 | Phase E (scaffolding) — monorepo + Drizzle migration applied to live Neon DB; pnpm typecheck 4/4 green; next build green | Open-questions resume 2 |
+| 2026-04-25 | Provisioned: Neon project `holy-poetry-85164505`, R2 bucket `sendwyrd-blobs`, Cloudflare Workers `sendwyrd-api` and `sendwyrd-web`, custom AAAA record on apex | Open-questions resume 2 |
+| 2026-04-25 | Phase E deploy verified live: `GET https://sendwyrd.com/api/v1/health` → 200 with `mop-protocol-version: 1`; `GET https://sendwyrd.com/` → 200 Next.js HTML | Open-questions resume 2 |
+| 2026-04-25 | Phase F (landing copy, wyrd sigil, privacy indicator glyphs) shipped live at https://sendwyrd.com/ | Open-questions resume 2 |
 
 ## Partial-Resume Detection
 
