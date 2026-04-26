@@ -92,6 +92,10 @@ app.onError((err, c) => {
 export default Sentry.withSentry(
   (env: Env) => ({
     dsn: env.SENTRY_DSN || undefined,
+    // Release identifier — plumbed by CI as `--var SENTRY_RELEASE:<sha>`
+    // on `wrangler deploy`. Lines up server-side events with the matching
+    // build for stack-trace resolution against uploaded source maps.
+    release: env.SENTRY_RELEASE || undefined,
     // Conservative default — no performance traces in v1; pure error
     // reporting. A future ADR may revisit if there's a defensible
     // privacy story for traces.
