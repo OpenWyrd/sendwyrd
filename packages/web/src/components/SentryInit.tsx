@@ -37,8 +37,15 @@ export function SentryInit() {
     // leisure; until then the SDK does nothing.
     if (!dsn) return;
 
+    // Release identifier — set by CI to `${{ github.sha }}` so uploaded
+    // source maps in Sentry match the deployed bundle. Falsy when the env
+    // var is unset (local dev / preview); Sentry then auto-generates a
+    // release name from the page hash, which is fine for non-prod.
+    const release = process.env.NEXT_PUBLIC_RELEASE || undefined;
+
     Sentry.init({
       dsn,
+      release,
       // No traces in v1. Pure error reporting; performance/profiling
       // requires a separate privacy review.
       tracesSampleRate: 0,
