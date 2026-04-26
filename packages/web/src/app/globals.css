@@ -149,6 +149,44 @@ body {
   }
 }
 
+/* Mobile bottom Compose bar — permanent thumb-zone CTA on small screens.
+   Hidden on desktop; visible at max-width: 640px. */
+.mobile-compose-bar {
+  display: none;
+}
+@media (max-width: 640px) {
+  .mobile-compose-bar {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-4);
+    padding-bottom: calc(var(--spacing-4) + env(safe-area-inset-bottom, 0px));
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-hairline-strong);
+    color: var(--color-ink);
+    text-decoration: none;
+    font-family: var(--font-mono);
+    font-size: var(--text-body);
+    letter-spacing: 0.04em;
+    min-height: 56px;
+  }
+  /* Hide the "compose" item in the top Nav on mobile — redundant with
+     the bottom bar. */
+  .nav-item-compose {
+    display: none !important;
+  }
+  /* Pages that render the bar (set by MobileComposeBar's effect) need
+     extra bottom padding on their main so content isn't hidden behind. */
+  body.has-mobile-compose-bar main {
+    padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
+
 /* Reduced motion — kill all animations per visual_direction_v1.md §12. */
 @media (prefers-reduced-motion: reduce) {
   *,

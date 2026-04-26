@@ -66,8 +66,11 @@ export function Nav() {
       >
         {ITEMS.map((item) => {
           const active = pathname === item.href;
+          // Compose link is replaced by the bottom Compose bar on mobile;
+          // the class hides this <li> below 640px.
+          const isCompose = item.href === "/compose";
           return (
-            <li key={item.href}>
+            <li key={item.href} className={isCompose ? "nav-item-compose" : undefined}>
               <Link
                 href={item.href}
                 style={{
