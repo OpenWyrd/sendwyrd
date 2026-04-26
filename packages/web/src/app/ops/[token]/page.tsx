@@ -81,12 +81,15 @@ async function fetchEdgeAnalytics(
   cfToken: string,
 ): Promise<{ stats?: EdgeStats; error?: string }> {
   try {
-    const since = new Date(Date.now() - 24 * 60 * 60 * 1000)
-      .toISOString()
-      .replace(/:\d\d\.\d+Z$/, ":00:00Z");
-    const until = new Date()
-      .toISOString()
-      .replace(/:\d\d\.\d+Z$/, ":00:00Z");
+    // Round to the hour boundary. CF's Time scalar accepts ISO8601;
+    // we strip seconds/millis so the bucketing aligns with hourly groups.
+    const roundHour = (d: Date): string => {
+      const t = new Date(d);
+      t.setUTCMinutes(0, 0, 0);
+      return t.toISOString().replace(/\.\d+Z$/, "Z");
+    };
+    const since = roundHour(new Date(Date.now() - 24 * 60 * 60 * 1000));
+    const until = roundHour(new Date());
     const query = `query($z:String!,$s:Time!,$u:Time!){viewer{zones(filter:{zoneTag:$z}){httpRequests1hGroups(limit:100,filter:{datetime_geq:$s,datetime_lt:$u},orderBy:[datetime_DESC]){sum{requests bytes pageViews}uniq{uniques}}}}}`;
     const r = await fetch("https://api.cloudflare.com/client/v4/graphql", {
       method: "POST",
