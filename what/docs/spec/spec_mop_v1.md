@@ -2,10 +2,10 @@
 type: spec
 created: 2026-04-25
 updated: 2026-04-26
-last_edited_by: agent_spec_patch
+last_edited_by: agent_michael
 status: draft
 tags: [spec, mop, protocol, wire, v1]
-spec_version: "1.0.3-draft"
+spec_version: "1.0.4-draft"
 ---
 
 # MOP Protocol Specification — v1
@@ -262,17 +262,26 @@ The renderer aggressively auto-embeds detected URLs per ADR-011.
 
 ### 8.2 Codepoint counting
 
-The 300-codepoint cap is enforced by counting **Unicode codepoints**, not bytes and not grapheme clusters. The composer MUST count using the same algorithm the server uses. Reference algorithm:
+The 300-codepoint cap is a **prose** budget, not a body budget. URLs (matching the §8.1 detection regex — `https?://...` and `sendwyrd://...`) are **excluded** from the count. Rationale: URLs are long and shouldn't crowd out actual prose content; a single shared link should not consume the user's entire compose budget.
+
+The composer MUST count using the same algorithm the server uses. Counting is **Unicode codepoint**, not bytes and not grapheme clusters. Reference algorithm:
 
 ```javascript
-function codepointCount(str) {
+function countCountableCodepoints(body) {
   let n = 0;
-  for (const _ of str) n++;  // for...of iterates by codepoint
+  for (const seg of parseBody(body)) {  // §8.1 segmentation
+    if (seg.kind === "text") {
+      for (const _ of seg.value) n++;   // for...of iterates by codepoint
+    }
+    // url segments contribute 0 to the cap.
+  }
   return n;
 }
 ```
 
 Empty body is allowed at the protocol layer (length zero) but composers SHOULD warn the user.
+
+This refines ADR-012's "300 codepoints" — the cap counts non-URL codepoints only. The body itself can be longer than 300 codepoints if the excess is entirely URLs.
 
 ### 8.3 Transitive capability references
 
@@ -862,6 +871,7 @@ Items that the wire spec deliberately leaves to implementation phase (Phase E) o
 
 ## 21. Changelog
 
+- **v1.0.4-draft (2026-04-26)** — refine §8.2 codepoint counting: URLs are excluded from the 300-cap; the cap is a *prose* budget, not a body budget. Refines ADR-012. Source already implements this (`countCountableCodepoints` in `packages/core/src/body.ts`); spec was the lagging artifact.
 - **v1.0.3-draft (2026-04-26)** — sync to shipped post-Tier-1. Six drift points reconciled with the deployed API (`packages/api/src/routes/{wyrds,authors,replies}.ts`):
   1. **`published_at` is client-asserted** (§6 wyrd-structure table, §9.3 step 7). The server stores `publish_timestamp_ms` as-is after validating it is within the ±60s replay window. The server never substitutes `server_now`. This preserves the AAD binding (§7.2) — `expires_at = publish_timestamp_ms + ttl_seconds * 1000` is computed from the client's signed timestamp, so the server cannot extend or contract TTL.
   2. **§15 empty list returns `200 OK` with `handles: []`** (§15.3). Proof-of-possession passed; "you have zero" is a valid answer. 404 is reserved for unknown-handle lookups, never for empty author results.
