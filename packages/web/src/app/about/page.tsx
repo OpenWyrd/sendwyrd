@@ -208,6 +208,14 @@ export default function AboutPage() {
             rails (iMessage, Signal, WhatsApp, Slack, email) rather than a
             native feed or discovery layer.
           </p>
+          <p style={pStyle}>
+            The result is a mesh network layered on top of existing
+            platforms — the same wyrd can hop from an iMessage thread to a
+            Twitter DM to a Slack channel to an email, routed by human
+            judgement rather than an algorithm. SendWyrd doesn&apos;t own
+            a network; it rides whatever channels people already use, and
+            crosses cleanly between them.
+          </p>
           <p style={pStyle}>The URL takes one canonical form:</p>
           <p
             style={{
