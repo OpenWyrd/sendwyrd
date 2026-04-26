@@ -90,7 +90,7 @@ async function fetchEdgeAnalytics(
     };
     const since = roundHour(new Date(Date.now() - 24 * 60 * 60 * 1000));
     const until = roundHour(new Date());
-    const query = `query($z:String!,$s:Time!,$u:Time!){viewer{zones(filter:{zoneTag:$z}){httpRequests1hGroups(limit:100,filter:{datetime_geq:$s,datetime_lt:$u},orderBy:[datetime_DESC]){sum{requests bytes pageViews}uniq{uniques}}}}}`;
+    const query = `query($z:String!,$s:Time!,$u:Time!){viewer{zones(filter:{zoneTag:$z}){httpRequests1hGroups(limit:100,filter:{datetime_geq:$s,datetime_lt:$u}){sum{requests bytes pageViews}uniq{uniques}}}}}`;
     const r = await fetch("https://api.cloudflare.com/client/v4/graphql", {
       method: "POST",
       headers: {
