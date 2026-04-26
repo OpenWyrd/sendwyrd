@@ -1,6 +1,6 @@
 # SendWyrd
 
-**Hyperlinks for conversation.** Social message objects you can pass anywhere, across any app or website by sharing a link. Encrypted, ephemeral, capability-URL-addressed.
+**Hyperlinks for conversational objects.** Social message objects you can pass anywhere, across any app or website by sharing a link. Encrypted, ephemeral, capability-URL-addressed. The conversation that emerges around them is up to the people passing them along.
 
 Protocol codename: **MOP** (Message Object Protocol). Consumer brand: **SendWyrd** (`sendwyrd.com`). Unit noun: a **wyrd** (lowercase).
 

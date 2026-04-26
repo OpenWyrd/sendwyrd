@@ -187,6 +187,54 @@ body {
   }
 }
 
+/* /about — collapsible sections (native <details>/<summary>) so the
+   page reads as a scannable table-of-contents that opens into prose. */
+.about-section {
+  border-bottom: 1px solid var(--color-hairline);
+}
+.about-section:first-of-type {
+  border-top: 1px solid var(--color-hairline);
+}
+.about-section-summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-3);
+  padding: var(--spacing-4) 0;
+  font-family: var(--font-display);
+  font-size: var(--text-h3);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--color-ink);
+  transition: color 120ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.about-section-summary:hover {
+  color: var(--color-accent);
+}
+.about-section-summary::-webkit-details-marker {
+  display: none;
+}
+.about-section-summary::marker {
+  content: "";
+}
+.about-section-chevron {
+  display: inline-block;
+  width: 1em;
+  flex-shrink: 0;
+  color: var(--color-ink-subtle);
+  transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.about-section[open] .about-section-chevron {
+  transform: rotate(90deg);
+}
+.about-section-body {
+  padding-bottom: var(--spacing-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+}
+
 /* Reduced motion — kill all animations per visual_direction_v1.md §12. */
 @media (prefers-reduced-motion: reduce) {
   *,

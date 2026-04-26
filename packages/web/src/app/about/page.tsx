@@ -31,36 +31,25 @@ const linkStyle: React.CSSProperties = {
   textUnderlineOffset: 2,
 };
 
-function Subhead({ children }: { children: React.ReactNode }) {
+function CollapsibleSection({
+  title,
+  children,
+  defaultOpen = true,
+}: {
+  title: string;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}) {
   return (
-    <h2
-      style={{
-        fontFamily: "var(--font-display)",
-        fontSize: "var(--text-h3)",
-        fontWeight: 600,
-        letterSpacing: "-0.01em",
-        margin: 0,
-        marginBottom: "calc(-1 * var(--spacing-8))",
-        paddingBottom: "var(--spacing-3)",
-        borderBottom: "1px solid var(--color-hairline)",
-      }}
-    >
-      {children}
-    </h2>
-  );
-}
-
-function Section({ children }: { children: React.ReactNode }) {
-  return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: "var(--spacing-4)",
-      }}
-    >
-      {children}
-    </div>
+    <details className="about-section" open={defaultOpen}>
+      <summary className="about-section-summary">
+        <span className="about-section-chevron" aria-hidden="true">
+          ›
+        </span>
+        <span>{title}</span>
+      </summary>
+      <div className="about-section-body">{children}</div>
+    </details>
   );
 }
 
@@ -98,9 +87,6 @@ export default function AboutPage() {
           maxWidth: "var(--max-content)",
           fontFamily: "var(--font-mono)",
           color: "var(--color-ink)",
-          textAlign: "justify",
-          hyphens: "auto",
-          WebkitHyphens: "auto",
         }}
       >
         <h1
@@ -113,7 +99,7 @@ export default function AboutPage() {
             marginBottom: "var(--spacing-4)",
           }}
         >
-          Hyperlinks for conversation.
+          Hyperlinks for conversational objects.
         </h1>
         <p
           style={{
@@ -123,73 +109,60 @@ export default function AboutPage() {
           }}
         >
           Social message objects you can pass anywhere, across any app or
-          website by sharing a link.
+          website by sharing a link. The conversation that emerges around
+          them is up to the people passing them along.
         </p>
       </header>
 
-      <ol
+      <div
         style={{
           width: "100%",
           maxWidth: "var(--max-content)",
-          padding: 0,
-          margin: 0,
-          listStyle: "none",
           fontFamily: "var(--font-mono)",
           color: "var(--color-ink)",
           lineHeight: 1.7,
-          counterReset: "about-counter",
-          textAlign: "justify",
-          hyphens: "auto",
-          WebkitHyphens: "auto",
         }}
       >
-        {points.map((p, i) => (
-          <li
-            key={i}
+        <CollapsibleSection title="The questions">
+          <ol
             style={{
-              counterIncrement: "about-counter",
-              padding: "var(--spacing-6) 0",
-              borderTop:
-                i === 0 ? "none" : "1px solid var(--color-hairline)",
-              display: "grid",
-              gridTemplateColumns: "auto 1fr",
-              gap: "var(--spacing-4)",
-              alignItems: "baseline",
+              padding: 0,
+              margin: 0,
+              listStyle: "none",
+              counterReset: "about-counter",
             }}
           >
-            <span
-              aria-hidden="true"
-              style={{
-                color: "var(--color-ink-subtle)",
-                fontVariantNumeric: "tabular-nums",
-                fontSize: "var(--text-microcaption)",
-              }}
-            >
-              {String(i + 1).padStart(2, "0")}
-            </span>
-            <p style={{ margin: 0 }}>{p}</p>
-          </li>
-        ))}
-      </ol>
+            {points.map((p, i) => (
+              <li
+                key={i}
+                style={{
+                  counterIncrement: "about-counter",
+                  padding: "var(--spacing-5) 0",
+                  borderTop:
+                    i === 0 ? "none" : "1px solid var(--color-hairline)",
+                  display: "grid",
+                  gridTemplateColumns: "auto 1fr",
+                  gap: "var(--spacing-4)",
+                  alignItems: "baseline",
+                }}
+              >
+                <span
+                  aria-hidden="true"
+                  style={{
+                    color: "var(--color-ink-subtle)",
+                    fontVariantNumeric: "tabular-nums",
+                    fontSize: "var(--text-microcaption)",
+                  }}
+                >
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <p style={{ margin: 0 }}>{p}</p>
+              </li>
+            ))}
+          </ol>
+        </CollapsibleSection>
 
-      <article
-        style={{
-          width: "100%",
-          maxWidth: "var(--max-content)",
-          fontFamily: "var(--font-mono)",
-          color: "var(--color-ink)",
-          lineHeight: 1.7,
-          display: "flex",
-          flexDirection: "column",
-          gap: "var(--spacing-12)",
-          textAlign: "justify",
-          hyphens: "auto",
-          WebkitHyphens: "auto",
-        }}
-      >
-        <Subhead>How it works</Subhead>
-
-        <Section>
+        <CollapsibleSection title="How it works">
           <p style={pStyle}>
             A wyrd is a 300-codepoint, end-to-end-encrypted text block that
             becomes a shareable URL — a portable, composable, forward-worthy
@@ -237,11 +210,9 @@ export default function AboutPage() {
             leaves the recipient&apos;s browser. This is the cypherpunk-
             on-content, pragmatic-on-rendering trade we accept in v1.
           </p>
-        </Section>
+        </CollapsibleSection>
 
-        <Subhead>Architecture</Subhead>
-
-        <Section>
+        <CollapsibleSection title="Architecture">
           <p style={pStyle}>
             The architecture refuses identity. The protocol carries text and
             capability keys; nothing else. No accounts, no usernames, no
@@ -260,11 +231,9 @@ export default function AboutPage() {
             point. There is no friend graph, no follower list, no broadcast
             surface, no &ldquo;who&rdquo; primitive of any kind.
           </p>
-        </Section>
+        </CollapsibleSection>
 
-        <Subhead>Cryptography</Subhead>
-
-        <Section>
+        <CollapsibleSection title="Cryptography">
           <ul style={ulStyle}>
             <li>
               <strong>Body envelope</strong>: AES-256-GCM via the Web Crypto
@@ -296,11 +265,9 @@ export default function AboutPage() {
               data. Tampering any field fails decryption.
             </li>
           </ul>
-        </Section>
+        </CollapsibleSection>
 
-        <Subhead>Brittleness</Subhead>
-
-        <Section>
+        <CollapsibleSection title="Brittleness">
           <p style={pStyle}>
             <Code>K_read</Code> is per-wyrd random, not derived from your seed.
             If you lose the URL, the body becomes unreadable — even if you
@@ -319,11 +286,9 @@ export default function AboutPage() {
             recovers identity, not content. Nietzschean: content fits a moment,
             then is gone.
           </p>
-        </Section>
+        </CollapsibleSection>
 
-        <Subhead>Authorship attestations</Subhead>
-
-        <Section>
+        <CollapsibleSection title="Authorship attestations">
           <p style={pStyle}>
             Each wyrd has its own random <Code>K_origin</Code> keypair, so
             two wyrds by the same person sign with different keys. That is
@@ -367,11 +332,9 @@ sig=<base64url-signature>`}
             a forwardable artifact. The mechanism exists for the case
             where it&apos;s the right tool, not for routine composition.
           </p>
-        </Section>
+        </CollapsibleSection>
 
-        <Subhead>Why not Nostr</Subhead>
-
-        <Section>
+        <CollapsibleSection title="Why not Nostr">
           <p style={pStyle}>
             Nostr is identity-first. Each user has a stable{" "}
             <Code>npub</Code>/<Code>nsec</Code> keypair. Events are signed by
@@ -404,11 +367,9 @@ sig=<base64url-signature>`}
             signed event log per identity. SendWyrd refuses the archive
             on purpose.
           </p>
-        </Section>
+        </CollapsibleSection>
 
-        <Subhead>Stack</Subhead>
-
-        <Section>
+        <CollapsibleSection title="Stack">
           <ul style={ulStyle}>
             <li>
               <strong>Web</strong>: Next.js on Cloudflare Workers (OpenNext);
@@ -440,8 +401,8 @@ sig=<base64url-signature>`}
               .
             </li>
           </ul>
-        </Section>
-      </article>
+        </CollapsibleSection>
+      </div>
 
       <Link
         href="/compose"
