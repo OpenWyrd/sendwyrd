@@ -169,12 +169,6 @@ export default function AboutPage() {
           </p>
           <SpecimenWyrd
             body={
-              "12-page paper I've been chewing on — counter-positioning in capital allocation when consensus runs the other way. Honest critique welcome. https://research.example.com/cp.pdf"
-            }
-            count={177}
-          />
-          <SpecimenWyrd
-            body={
               "Two sources flagging a serious supply disruption by Q3. Nothing public yet. Pass quietly to anyone who'd want time to think before the cycle catches up."
             }
             count={154}
@@ -184,6 +178,12 @@ export default function AboutPage() {
               "Looking for a staff systems engineer who's shipped at scale. Two-person team, post-revenue, intentionally quiet. Forward if a name comes to mind."
             }
             count={150}
+          />
+          <SpecimenWyrd
+            body={
+              "Have 20 cows to sell near Nairobi. Contact Alex at +54 660-540-7701 over WhatsApp if interested."
+            }
+            count={96}
           />
           <SpecimenWyrd
             body={
