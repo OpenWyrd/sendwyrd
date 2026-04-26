@@ -10,8 +10,9 @@
  * via lib/resolveBody.ts and passes the map in.
  */
 
-import { parseBody, type BodySegment } from "@sendwyrd/core";
+import { isAttestationBody, parseBody, type BodySegment } from "@sendwyrd/core";
 import type { ResolutionMap } from "@/lib/resolveBody";
+import { AttestationBanner } from "@/components/AttestationBanner";
 
 interface Props {
   body: string;
@@ -29,6 +30,13 @@ const SHARED_TEXT_STYLE: React.CSSProperties = {
 };
 
 export function WyrdBody({ body, transitives = {} }: Props) {
+  // Authorship-attestation wyrds get a verification banner instead of the
+  // raw structured body. The shape check is strict (entire-body match),
+  // so a normal body that merely mentions "sendwyrd-attestation/v1" still
+  // renders as text + URL segments.
+  if (isAttestationBody(body)) {
+    return <AttestationBanner body={body} />;
+  }
   const segments = parseBody(body);
   return (
     <div style={SHARED_TEXT_STYLE}>
