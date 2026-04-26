@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { generateSeed } from "@sendwyrd/core";
 import { hasSeed, storeSeed } from "@/lib/seedClient";
 import { requestPersistence } from "@/lib/persistentStorage";
+import { WyrdSigil } from "@/components/WyrdSigil";
 
 type Step = "generate" | "mnemonic" | "passphrase";
 
@@ -89,9 +90,13 @@ export default function OnboardingPage() {
           fontWeight: 600,
           margin: 0,
           color: "var(--color-ink)",
+          display: "flex",
+          alignItems: "center",
+          gap: "var(--spacing-3)",
         }}
       >
-        SendWyrd
+        <WyrdSigil size={40} ariaLabel="" />
+        <span>SendWyrd</span>
       </h1>
 
       <section
