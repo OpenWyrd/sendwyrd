@@ -39,6 +39,20 @@ The product surface is intentionally narrow per `feedback_anti_scope_creep_relay
 
 For the user (Michael), this also closes a loop with the sibling `~/lattice/personal_crm/` project — wyrds sent to contacts become attachments to their CRM record without either tool needing to know about the other beyond a URL.
 
+### Strategic significance: this validates the message-object architecture choice
+
+Beyond being a nice-to-have, integratability with networked-thinking tools is **one of the strongest arguments for the message-object form itself** — and a reason this primitive deserves to exist alongside (not instead of) chat apps.
+
+A wyrd is a *persistent, reference-able artifact at a stable URL*. Chat messages are *ephemeral, sequence-bound, and trapped inside their host app*. The two are different shapes of communication, and only the first one composes with knowledge graphs:
+
+- **Roam-style PKM treats backlinking as the primary epistemic operation.** A wyrd has a URL; it's a node by construction. A Slack message is text inside a thread inside a channel inside a workspace — to backlink it you screenshot or paste-quote, losing identity.
+- **Power brokering is graph operations on people.** *"X is looking for someone who can help with Y; pass it on."* That's VISION use-case 2 (intro / ask routing) and use-case 3 (whisper-network dissemination). Both are graph traversals where the artifact (the wyrd) is the edge label and the URL is the persistent identity. You cannot do this on chat — chat lives inside an app, doesn't survive forwarding, doesn't cite cleanly into a PKM where the relationship-thinking actually happens.
+- **Finding opportunities is graph search through trust networks.** A user maintains a Roam-graph of who they know, what those people care about, and what they're looking for. Wyrds become the *forwardable signals* that flow through that graph. Each forward is an edge; each wyrd is a node; the user's Roam is the substrate.
+
+This is the substrate-vs-content distinction we've been articulating since the founding session: **MOP is object-first as practical implementation, relational-first as distribution substrate** (per VISION). The PKM-integration aspiration is the same point made concrete — the user's existing knowledge graph IS the relational substrate. Wyrds become first-class nodes inside it. The integration isn't a feature on top of the protocol; it's the natural consequence of having chosen the message-object form in the first place.
+
+Conversely: if we ever drift toward chat semantics (threads, real-time, server-held conversation state), we lose this property. **Maintaining the message-object form isn't just minimalism — it's preserving the integration surface that makes the product strategically distinctive.** This locks the anti-scope-creep instinct (per `feedback_anti_scope_creep_relay_layer.md`) to a concrete strategic gain: the more SendWyrd stays narrow as a relay layer, the better it integrates with everything else.
+
 ### What it would architecturally require
 
 All integrations layer **above** the existing wire spec — none require core protocol changes:
