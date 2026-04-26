@@ -101,9 +101,12 @@ export default function LandingPage() {
           when its time is up. You compose. You share the URL through the
           channels you already use. The protocol stays out of the way.
         </p>
-        <p style={{ margin: 0 }}>
+        <p style={{ margin: 0, marginBottom: "var(--spacing-4)" }}>
           No accounts. No feed. No archive. Capability over identity. The thing
           you send takes its course.
+        </p>
+        <p style={{ margin: 0 }}>
+          Intent and action over theatrical consensus. Depth over breadth.
         </p>
       </section>
 
@@ -131,7 +134,13 @@ export default function LandingPage() {
           textAlign: "center",
         }}
       >
-        no account · no signup · just compose
+        no account · no signup · just compose ·{" "}
+        <Link
+          href="/about"
+          style={{ color: "inherit", textDecoration: "underline", textUnderlineOffset: 2 }}
+        >
+          why
+        </Link>
       </p>
     </main>
   );
