@@ -1,12 +1,426 @@
+"use client";
+
 /**
- * Compose page placeholder — visual_direction_v1.md §10.2 specifies layout.
- * Implementation in Phase G.
+ * Compose page per visual_direction_v1.md §10.2.
  */
 
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import {
+  composeWyrd,
+  countCodepoints,
+  buildFragmentUrl,
+  buildPublicUrl,
+  BODY_CODEPOINT_CAP,
+  TTL_SECONDS_DEFAULT,
+} from "@sendwyrd/core";
+import {
+  hasSeed,
+  isUnlocked,
+  unlockSeed,
+  getSeed,
+  consumeNextIndex,
+} from "@/lib/seedClient";
+import { publishWyrd } from "@/lib/api";
+
+const TTL_PRESETS: Array<{ label: string; seconds: number }> = [
+  { label: "1 day", seconds: 86_400 },
+  { label: "1 week", seconds: 604_800 },
+  { label: "1 month", seconds: 2_592_000 },
+  { label: "90 days", seconds: 7_776_000 },
+  { label: "1 year", seconds: 31_536_000 },
+];
+
 export default function ComposePage() {
+  const router = useRouter();
+  const [unlocked, setUnlocked] = useState(false);
+  const [passphrase, setPassphrase] = useState("");
+  const [unlockError, setUnlockError] = useState<string | null>(null);
+  const [body, setBody] = useState("");
+  const [ttl, setTtl] = useState(TTL_SECONDS_DEFAULT);
+  const [form, setForm] = useState<"sealed" | "open">("sealed");
+  const [repliesEnabled, setRepliesEnabled] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!hasSeed()) {
+      router.replace("/onboarding");
+      return;
+    }
+    setUnlocked(isUnlocked());
+  }, [router]);
+
+  const count = countCodepoints(body);
+  const overCap = count > BODY_CODEPOINT_CAP;
+
+  async function handleUnlock(e: React.FormEvent) {
+    e.preventDefault();
+    setUnlockError(null);
+    try {
+      await unlockSeed(passphrase);
+      setUnlocked(true);
+      setPassphrase("");
+    } catch {
+      setUnlockError("Wrong passphrase.");
+    }
+  }
+
+  async function handleSend(e: React.FormEvent) {
+    e.preventDefault();
+    if (overCap || count === 0 || sending) return;
+    setError(null);
+    setSending(true);
+    try {
+      const seedRec = getSeed();
+      if (!seedRec) {
+        setUnlocked(false);
+        setError("Session expired — passphrase needed again.");
+        setSending(false);
+        return;
+      }
+
+      // Need passphrase to persist the bumped counter pre-publish.
+      const pp = window.prompt("Confirm passphrase to consume the next index");
+      if (!pp) {
+        setSending(false);
+        return;
+      }
+      let n: number;
+      try {
+        n = await consumeNextIndex(pp);
+      } catch {
+        setError("Passphrase incorrect — index not consumed.");
+        setSending(false);
+        return;
+      }
+
+      const result = await composeWyrd({
+        plaintext: body,
+        seed: seedRec.seed,
+        n,
+        ttl_seconds: ttl,
+        replies_enabled: repliesEnabled,
+      });
+
+      const resp = await publishWyrd(result.publish_payload);
+      if ("error" in resp) {
+        setError(`Publish failed: ${resp.error}`);
+        setSending(false);
+        return;
+      }
+
+      const origin = window.location.origin;
+      const url =
+        form === "sealed"
+          ? buildFragmentUrl(origin, result.handle, result.k_read_b64u)
+          : buildPublicUrl(origin, result.handle, result.k_read_b64u);
+      setShareUrl(url);
+    } catch (e: any) {
+      setError(e?.message ?? "Compose failed.");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  async function handleCopy() {
+    if (!shareUrl) return;
+    await navigator.clipboard.writeText(shareUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  if (!unlocked) {
+    return (
+      <main style={pageStyle}>
+        <h1 style={wordmarkStyle}>SendWyrd</h1>
+        <form onSubmit={handleUnlock} style={panelStyle}>
+          <p style={{ margin: 0, marginBottom: "var(--spacing-6)", color: "var(--color-ink-muted)" }}>
+            Enter your passphrase to unlock the seed for this session.
+          </p>
+          <input
+            type="password"
+            autoComplete="current-password"
+            value={passphrase}
+            onChange={(e) => setPassphrase(e.target.value)}
+            placeholder="passphrase"
+            autoFocus
+            style={inputStyle}
+          />
+          {unlockError && (
+            <p style={errorStyle}>{unlockError}</p>
+          )}
+          <button type="submit" style={{ ...btnStyle, marginTop: "var(--spacing-6)" }}>
+            Unlock
+          </button>
+        </form>
+      </main>
+    );
+  }
+
+  if (shareUrl) {
+    return (
+      <main style={pageStyle}>
+        <h1 style={wordmarkStyle}>SendWyrd</h1>
+        <article style={panelStyle}>
+          <p style={{ margin: 0, marginBottom: "var(--spacing-4)", color: "var(--color-ink-muted)" }}>
+            Sent. Share this URL — it&apos;s the only way to read your wyrd.
+          </p>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "var(--spacing-3)",
+              padding: "var(--spacing-3) var(--spacing-4)",
+              border: "1px solid var(--color-hairline)",
+              borderRadius: 4,
+              fontSize: "var(--text-caption)",
+              color: "var(--color-ink)",
+              wordBreak: "break-all",
+            }}
+          >
+            <span style={{ flex: 1 }}>{shareUrl}</span>
+            <button
+              onClick={handleCopy}
+              aria-label="Copy share URL"
+              style={{
+                background: "transparent",
+                border: "none",
+                color: copied ? "var(--color-mark-sealed)" : "var(--color-accent)",
+                cursor: "pointer",
+                fontFamily: "var(--font-mono)",
+                fontSize: "var(--text-caption)",
+                transition: "opacity 200ms linear",
+              }}
+            >
+              {copied ? "✓ copied" : "copy"}
+            </button>
+          </div>
+          <button
+            onClick={() => {
+              setShareUrl(null);
+              setBody("");
+              setRepliesEnabled(false);
+              setForm("sealed");
+              setTtl(TTL_SECONDS_DEFAULT);
+            }}
+            style={{ ...btnStyle, marginTop: "var(--spacing-8)" }}
+          >
+            Compose another
+          </button>
+        </article>
+      </main>
+    );
+  }
+
   return (
-    <main style={{ padding: "var(--spacing-12)", color: "var(--color-ink-muted)" }}>
-      <p>compose — not implemented yet</p>
+    <main style={pageStyle}>
+      <h1 style={wordmarkStyle}>SendWyrd</h1>
+      <form onSubmit={handleSend} style={panelStyle}>
+        {/* Form toggle: Sealed (default) / Open */}
+        <div style={{ display: "flex", gap: "var(--spacing-6)", marginBottom: "var(--spacing-6)" }}>
+          <label style={radioRowStyle}>
+            <input
+              type="radio"
+              name="form"
+              checked={form === "sealed"}
+              onChange={() => setForm("sealed")}
+            />
+            <span style={{ color: "var(--color-mark-sealed)" }}>Sealed</span>
+            <span style={hintStyle}>host cannot read</span>
+          </label>
+          <label style={radioRowStyle}>
+            <input
+              type="radio"
+              name="form"
+              checked={form === "open"}
+              onChange={() => setForm("open")}
+            />
+            <span style={{ color: "var(--color-mark-open)" }}>Open</span>
+            <span style={hintStyle}>host can read; previewable</span>
+          </label>
+        </div>
+
+        {/* Body */}
+        <textarea
+          value={body}
+          onChange={(e) => {
+            const next = e.target.value;
+            // Cap by codepoints — slice if user pastes beyond cap.
+            if (countCodepoints(next) > BODY_CODEPOINT_CAP) {
+              const arr = Array.from(next).slice(0, BODY_CODEPOINT_CAP);
+              setBody(arr.join(""));
+            } else {
+              setBody(next);
+            }
+          }}
+          placeholder="A wyrd…"
+          rows={6}
+          autoFocus
+          style={{
+            width: "100%",
+            background: "transparent",
+            border: "none",
+            borderBottom: "1px solid var(--color-hairline)",
+            color: "var(--color-ink)",
+            fontFamily: "var(--font-mono)",
+            fontSize: "var(--text-body)",
+            lineHeight: 1.6,
+            resize: "vertical",
+            padding: "var(--spacing-3) 0",
+            outline: "none",
+          }}
+        />
+
+        {/* Counter */}
+        <p
+          style={{
+            margin: 0,
+            marginTop: "var(--spacing-2)",
+            textAlign: "right",
+            fontFamily: "var(--font-mono)",
+            fontSize: "var(--text-caption)",
+            color: overCap ? "var(--color-danger)" : "var(--color-ink-muted)",
+            transition: "color 120ms cubic-bezier(0.4, 0, 0.2, 1)",
+          }}
+        >
+          {count} / {BODY_CODEPOINT_CAP}
+        </p>
+
+        {/* TTL selector */}
+        <fieldset
+          style={{
+            border: "none",
+            padding: 0,
+            margin: "var(--spacing-6) 0 0",
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "var(--spacing-3)",
+            color: "var(--color-ink-muted)",
+            fontFamily: "var(--font-mono)",
+            fontSize: "var(--text-caption)",
+          }}
+        >
+          {TTL_PRESETS.map((p) => (
+            <label key={p.seconds} style={{ display: "flex", alignItems: "center", gap: "var(--spacing-2)" }}>
+              <input
+                type="radio"
+                name="ttl"
+                checked={ttl === p.seconds}
+                onChange={() => setTtl(p.seconds)}
+              />
+              <span style={{ color: ttl === p.seconds ? "var(--color-ink)" : "var(--color-ink-muted)" }}>
+                {p.label}
+              </span>
+            </label>
+          ))}
+        </fieldset>
+
+        {/* Replies toggle */}
+        <label
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "var(--spacing-3)",
+            marginTop: "var(--spacing-6)",
+            color: "var(--color-ink-muted)",
+            fontFamily: "var(--font-mono)",
+            fontSize: "var(--text-caption)",
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={repliesEnabled}
+            onChange={(e) => setRepliesEnabled(e.target.checked)}
+          />
+          <span>
+            Replies {repliesEnabled ? "on" : "off"}
+            <span style={{ marginLeft: "var(--spacing-3)", color: "var(--color-ink-subtle)" }}>
+              {repliesEnabled
+                ? "recipients may send you one anonymous reply each"
+                : "recipients cannot reply"}
+            </span>
+          </span>
+        </label>
+
+        {error && <p style={errorStyle}>{error}</p>}
+
+        <button
+          type="submit"
+          disabled={overCap || count === 0 || sending}
+          style={{
+            ...btnStyle,
+            marginTop: "var(--spacing-8)",
+            opacity: overCap || count === 0 || sending ? 0.4 : 1,
+            cursor: overCap || count === 0 || sending ? "not-allowed" : "pointer",
+          }}
+        >
+          {sending ? "Sending…" : "Send"}
+        </button>
+      </form>
     </main>
   );
 }
+
+const pageStyle: React.CSSProperties = {
+  minHeight: "100vh",
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  padding: "var(--spacing-12) var(--spacing-6)",
+  gap: "var(--spacing-12)",
+};
+const wordmarkStyle: React.CSSProperties = {
+  fontFamily: "var(--font-display)",
+  fontSize: "var(--text-h2)",
+  fontWeight: 600,
+  margin: 0,
+  color: "var(--color-ink)",
+};
+const panelStyle: React.CSSProperties = {
+  width: "100%",
+  maxWidth: "var(--max-content)",
+  fontFamily: "var(--font-mono)",
+  color: "var(--color-ink)",
+};
+const btnStyle: React.CSSProperties = {
+  padding: "var(--spacing-3) var(--spacing-6)",
+  border: "1px solid var(--color-hairline-strong)",
+  background: "transparent",
+  color: "var(--color-ink)",
+  fontFamily: "var(--font-mono)",
+  fontSize: "var(--text-body)",
+  cursor: "pointer",
+};
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  padding: "var(--spacing-3) var(--spacing-4)",
+  background: "transparent",
+  border: "none",
+  borderBottom: "1px solid var(--color-hairline)",
+  color: "var(--color-ink)",
+  fontFamily: "var(--font-mono)",
+  fontSize: "var(--text-body)",
+  outline: "none",
+};
+const radioRowStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "var(--spacing-2)",
+  fontFamily: "var(--font-mono)",
+  fontSize: "var(--text-caption)",
+  cursor: "pointer",
+};
+const hintStyle: React.CSSProperties = {
+  color: "var(--color-ink-subtle)",
+  fontSize: "var(--text-microcaption)",
+};
+const errorStyle: React.CSSProperties = {
+  color: "var(--color-danger)",
+  margin: 0,
+  marginTop: "var(--spacing-3)",
+  fontFamily: "var(--font-mono)",
+  fontSize: "var(--text-caption)",
+};

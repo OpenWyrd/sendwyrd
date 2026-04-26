@@ -22,6 +22,16 @@ const config: NextConfig = {
   },
   // Transpile workspace package.
   transpilePackages: ["@sendwyrd/core"],
+  // Webpack: map `.js` import suffixes to `.ts` source so the workspace
+  // package's NodeNext-style imports resolve. (Next 15 still uses webpack
+  // by default; add for Turbopack too in case it gets enabled.)
+  webpack: (config) => {
+    config.resolve.extensionAlias = {
+      ".js": [".ts", ".tsx", ".js"],
+      ".mjs": [".mts", ".mjs"],
+    };
+    return config;
+  },
 };
 
 export default config;

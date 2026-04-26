@@ -30,6 +30,8 @@ function concat(...parts: Uint8Array[]): Uint8Array {
 }
 
 export function publishMessage(args: {
+  /** 12-byte client-generated handle. */
+  handle: Uint8Array;
   envelope: Uint8Array;
   ttl_seconds: number;
   replies_enabled: boolean;
@@ -37,6 +39,7 @@ export function publishMessage(args: {
 }): Uint8Array {
   const m = concat(
     enc.encode("mop:v1:publish"),
+    args.handle,
     args.envelope,
     be8(args.ttl_seconds),
     new Uint8Array([args.replies_enabled ? 1 : 0]),
