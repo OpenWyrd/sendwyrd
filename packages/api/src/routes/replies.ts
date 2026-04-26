@@ -19,6 +19,7 @@ import {
 } from "@sendwyrd/core";
 import type { Env } from "../env.js";
 import { makeDb, schema } from "../db.js";
+import { rateLimit, clientIp } from "../rateLimit.js";
 
 const HANDLE_PATTERN = new RegExp(`^[A-Za-z0-9_-]{${HANDLE_CHARS}}$`);
 
@@ -27,6 +28,14 @@ export const repliesRoutes = new Hono<{ Bindings: Env }>()
   .post("/:handle/replies", async (c) => {
     const handle = c.req.param("handle");
     if (!HANDLE_PATTERN.test(handle)) return c.json({ error: "not_found" }, 404);
+
+    // Two independent budgets: per-IP (curbs an attacker spamming many
+    // wyrds from one source) and per-handle (curbs a reply-flood against
+    // one wyrd from rotated IPs). ADR-013 §Per-object reply-blob rate-limit.
+    const rlIp = await rateLimit(c, "RL_REPLY_IP", clientIp(c));
+    if (rlIp) return rlIp;
+    const rlHandle = await rateLimit(c, "RL_REPLY_HANDLE", handle);
+    if (rlHandle) return rlHandle;
 
     let body: any;
     try {
@@ -95,6 +104,9 @@ export const repliesRoutes = new Hono<{ Bindings: Env }>()
 
   /* GET /:handle/replies — author-only, signed */
   .get("/:handle/replies", async (c) => {
+    const rl = await rateLimit(c, "RL_READ", clientIp(c));
+    if (rl) return rl;
+
     const handle = c.req.param("handle");
     if (!HANDLE_PATTERN.test(handle)) return c.json({ error: "not_found" }, 404);
 
