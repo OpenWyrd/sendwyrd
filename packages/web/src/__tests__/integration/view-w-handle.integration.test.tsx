@@ -1,16 +1,23 @@
 /**
- * View page (`/w/[handle]`) integration — fragment-form decrypt path.
+ * Fragment-form view integration — decrypt path against an SSR-fetched
+ * envelope.
+ *
+ * The page server component (`page.tsx`) does the envelope fetch and
+ * passes the result to `FragmentClient` as the `initial` prop. These
+ * tests render `FragmentClient` directly with that prop populated, which
+ * matches the live data flow without us needing to stub the SSR fetch.
  *
  * Mocks:
- *   - next/navigation        (useParams returns the test handle)
- *   - @/lib/api              (fetchWyrd / burnWyrd stubs we drive per-test)
- *   - @/lib/resolveBody      (no transitive resolution noise in tests)
- *   - global fetch           (any stray fetch falls through to jsdom)
+ *   - next/navigation        (router stub; useParams is unused now since
+ *                             handle arrives as a prop, but other Nav
+ *                             internals reach for these)
+ *   - @/lib/api              (burnWyrd stub for the burn-flow test)
+ *   - @/lib/resolveBody      (skip transitive resolution noise)
  *
  * Real:
- *   - core composeWyrd, decryptFromBase64Url, deriveOriginKey — we generate
- *     a real envelope at test setup so the decrypt path exercises real
- *     crypto, not a mock.
+ *   - core composeWyrd, decryptFromBase64Url, deriveOriginKey — we
+ *     compose a real envelope at setup so the decrypt path exercises
+ *     real crypto, not a mock.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -18,15 +25,12 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 const stableRouter = { push: vi.fn(), replace: vi.fn() };
-const mockUseParams = vi.fn(() => ({ handle: "" }));
-
 vi.mock("next/navigation", () => ({
-  useParams: () => mockUseParams(),
+  useParams: () => ({}),
   useRouter: () => stableRouter,
   usePathname: () => "/w/test",
 }));
 
-const fetchWyrdMock = vi.fn();
 const burnWyrdMock = vi.fn();
 vi.mock("@/lib/api", async () => {
   const actual = await vi.importActual<typeof import("@/lib/api")>(
@@ -34,7 +38,6 @@ vi.mock("@/lib/api", async () => {
   );
   return {
     ...actual,
-    fetchWyrd: (...args: unknown[]) => fetchWyrdMock(...args),
     burnWyrd: (...args: unknown[]) => burnWyrdMock(...args),
   };
 });
@@ -45,7 +48,9 @@ vi.mock("@/lib/resolveBody", () => ({
 }));
 
 import { b64uEncode, composeWyrd, generateSeed } from "@sendwyrd/core";
-import FragmentView from "@/app/w/[handle]/page";
+import FragmentClient, {
+  type InitialFetch,
+} from "@/app/w/[handle]/FragmentClient";
 import { storeOpenSeed, forgetSeed } from "@/lib/seedClient";
 import {
   addHistoryEntry,
@@ -93,14 +98,24 @@ function setHashFragment(k_read_b64u: string) {
   window.history.replaceState(null, "", `/w/${"X".repeat(16)}#${k_read_b64u}`);
 }
 
+function okInitial(fx: ComposedFixture): InitialFetch {
+  return {
+    kind: "ok",
+    data: {
+      handle: fx.handle,
+      envelope: fx.envelope_b64u,
+      k_origin_pub: fx.k_origin_pub_b64u,
+      published_at: fx.published_at,
+      expires_at: fx.expires_at,
+      replies_enabled: fx.replies_enabled,
+    },
+  };
+}
+
 beforeEach(() => {
   forgetSeed();
   clearHistory();
-  fetchWyrdMock.mockReset();
   burnWyrdMock.mockReset();
-  mockUseParams.mockReset();
-  // Default route param — individual tests override.
-  mockUseParams.mockReturnValue({ handle: "AAAAAAAAAAAAAAAA" });
 });
 
 afterEach(() => {
@@ -108,24 +123,12 @@ afterEach(() => {
   window.history.replaceState(null, "", "/");
 });
 
-describe("View page — happy path (decrypt + render)", () => {
+describe("FragmentClient — happy path (decrypt + render)", () => {
   it("loads, decrypts via K_read from fragment, renders body", async () => {
     const fx = await composeFixture("hello sealed body");
-    mockUseParams.mockReturnValue({ handle: fx.handle });
     setHashFragment(fx.k_read_b64u);
-    fetchWyrdMock.mockResolvedValue({
-      kind: "live",
-      data: {
-        handle: fx.handle,
-        envelope: fx.envelope_b64u,
-        k_origin_pub: fx.k_origin_pub_b64u,
-        published_at: fx.published_at,
-        expires_at: fx.expires_at,
-        replies_enabled: fx.replies_enabled,
-      },
-    });
 
-    render(<FragmentView />);
+    render(<FragmentClient handle={fx.handle} initial={okInitial(fx)} />);
 
     await waitFor(() => {
       expect(screen.getByText("hello sealed body")).toBeInTheDocument();
@@ -133,20 +136,16 @@ describe("View page — happy path (decrypt + render)", () => {
   });
 });
 
-describe("View page — gone tombstone", () => {
+describe("FragmentClient — gone tombstone", () => {
   it("renders the tombstone copy and not the body", async () => {
-    mockUseParams.mockReturnValue({ handle: "BBBBBBBBBBBBBBBB" });
     setHashFragment("a".repeat(43));
-    fetchWyrdMock.mockResolvedValue({
+    const initial: InitialFetch = {
       kind: "gone",
-      data: {
-        status: "gone" as const,
-        reason: "burned",
-        gone_at: "2026-01-01T00:00:00.000Z",
-      },
-    });
+      reason: "burned",
+      gone_at: "2026-01-01T00:00:00.000Z",
+    };
 
-    render(<FragmentView />);
+    render(<FragmentClient handle="BBBBBBBBBBBBBBBB" initial={initial} />);
 
     await waitFor(() => {
       expect(
@@ -156,17 +155,15 @@ describe("View page — gone tombstone", () => {
   });
 });
 
-describe("View page — network error", () => {
+describe("FragmentClient — network error", () => {
   it("renders the network-error fallback", async () => {
-    mockUseParams.mockReturnValue({ handle: "CCCCCCCCCCCCCCCC" });
     setHashFragment("b".repeat(43));
-    fetchWyrdMock.mockResolvedValue({
-      kind: "error",
-      status: 500,
-      body: { error: "server" },
-    });
-
-    render(<FragmentView />);
+    render(
+      <FragmentClient
+        handle="CCCCCCCCCCCCCCCC"
+        initial={{ kind: "error" }}
+      />,
+    );
 
     await waitFor(() => {
       expect(
@@ -176,10 +173,9 @@ describe("View page — network error", () => {
   });
 });
 
-describe("View page — author-only burn affordance", () => {
+describe("FragmentClient — author-only burn affordance", () => {
   it("renders BurnAffordance when historyEntry matches K_origin_pub", async () => {
     const fx = await composeFixture("body");
-    mockUseParams.mockReturnValue({ handle: fx.handle });
     setHashFragment(fx.k_read_b64u);
     storeOpenSeed({ seed: fx.seed, counter: 1 });
     const entry: HistoryEntry = {
@@ -192,31 +188,18 @@ describe("View page — author-only burn affordance", () => {
       replies_enabled: true,
     };
     addHistoryEntry(entry);
-    fetchWyrdMock.mockResolvedValue({
-      kind: "live",
-      data: {
-        handle: fx.handle,
-        envelope: fx.envelope_b64u,
-        k_origin_pub: fx.k_origin_pub_b64u,
-        published_at: fx.published_at,
-        expires_at: fx.expires_at,
-        replies_enabled: fx.replies_enabled,
-      },
-    });
 
-    render(<FragmentView />);
+    render(<FragmentClient handle={fx.handle} initial={okInitial(fx)} />);
 
     await waitFor(() => {
       expect(screen.getByText("body")).toBeInTheDocument();
     });
-    // The trigger row sits at the bottom of the article.
     const burnTrigger = await screen.findByRole("button", { name: /^burn$/ });
     expect(burnTrigger).toBeInTheDocument();
   });
 
   it("does NOT render BurnAffordance when K_origin_pub mismatches", async () => {
     const fx = await composeFixture("body");
-    mockUseParams.mockReturnValue({ handle: fx.handle });
     setHashFragment(fx.k_read_b64u);
     storeOpenSeed({ seed: fx.seed, counter: 1 });
     addHistoryEntry({
@@ -229,19 +212,8 @@ describe("View page — author-only burn affordance", () => {
       expires_at: fx.expires_at,
       replies_enabled: true,
     });
-    fetchWyrdMock.mockResolvedValue({
-      kind: "live",
-      data: {
-        handle: fx.handle,
-        envelope: fx.envelope_b64u,
-        k_origin_pub: fx.k_origin_pub_b64u,
-        published_at: fx.published_at,
-        expires_at: fx.expires_at,
-        replies_enabled: fx.replies_enabled,
-      },
-    });
 
-    render(<FragmentView />);
+    render(<FragmentClient handle={fx.handle} initial={okInitial(fx)} />);
 
     await waitFor(() => {
       expect(screen.getByText("body")).toBeInTheDocument();
@@ -251,7 +223,6 @@ describe("View page — author-only burn affordance", () => {
 
   it("burn flow: click → confirm → submit → tombstone state", async () => {
     const fx = await composeFixture("body");
-    mockUseParams.mockReturnValue({ handle: fx.handle });
     setHashFragment(fx.k_read_b64u);
     storeOpenSeed({ seed: fx.seed, counter: 1 });
     addHistoryEntry({
@@ -263,17 +234,6 @@ describe("View page — author-only burn affordance", () => {
       expires_at: fx.expires_at,
       replies_enabled: true,
     });
-    fetchWyrdMock.mockResolvedValue({
-      kind: "live",
-      data: {
-        handle: fx.handle,
-        envelope: fx.envelope_b64u,
-        k_origin_pub: fx.k_origin_pub_b64u,
-        published_at: fx.published_at,
-        expires_at: fx.expires_at,
-        replies_enabled: fx.replies_enabled,
-      },
-    });
     const goneAt = Date.now();
     burnWyrdMock.mockResolvedValue({
       kind: "burned",
@@ -281,7 +241,7 @@ describe("View page — author-only burn affordance", () => {
     });
 
     const user = userEvent.setup();
-    render(<FragmentView />);
+    render(<FragmentClient handle={fx.handle} initial={okInitial(fx)} />);
 
     await waitFor(() => {
       expect(screen.getByText("body")).toBeInTheDocument();
@@ -304,12 +264,17 @@ describe("View page — author-only burn affordance", () => {
   });
 });
 
-describe("View page — missing key in fragment", () => {
+describe("FragmentClient — missing key in fragment", () => {
   it("renders the 'missing read key' message when fragment is empty", async () => {
-    mockUseParams.mockReturnValue({ handle: "DDDDDDDDDDDDDDDD" });
     // No fragment.
     window.history.replaceState(null, "", "/w/DDDDDDDDDDDDDDDD");
-    render(<FragmentView />);
+    const fx = await composeFixture("doesn't matter — won't decrypt");
+    render(
+      <FragmentClient
+        handle="DDDDDDDDDDDDDDDD"
+        initial={okInitial(fx)}
+      />,
+    );
     await waitFor(() => {
       expect(
         screen.getByText(/missing its read key/i),
