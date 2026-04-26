@@ -24,9 +24,12 @@ import {
   protectWithPassphrase,
   unprotectSeed,
   regenerateSeed,
+  installRecoveredSeed,
   type SeedMode,
 } from "@/lib/seedClient";
-import { generateSeed } from "@sendwyrd/core";
+import { generateSeed, isValidMnemonic, mnemonicToSeed } from "@sendwyrd/core";
+import { mergeHistoryEntries } from "@/lib/wyrdHistory";
+import { sweepFromMnemonic, type SweepProgress } from "@/lib/recovery";
 import { Segmented } from "@/components/Segmented";
 import { Nav } from "@/components/Nav";
 
@@ -48,6 +51,15 @@ export default function SettingsPage() {
   // Mnemonic reveal state
   const [mnemonicShown, setMnemonicShown] = useState(false);
   const [mnemonic, setMnemonic] = useState<string | null>(null);
+
+  // Recovery state
+  const [recoveryOpen, setRecoveryOpen] = useState(false);
+  const [recoveryMnemonic, setRecoveryMnemonic] = useState("");
+  const [recoveryStoragePassphrase, setRecoveryStoragePassphrase] = useState("");
+  const [recoveryStoragePassphraseConfirm, setRecoveryStoragePassphraseConfirm] = useState("");
+  const [recoveryProgress, setRecoveryProgress] = useState<SweepProgress | null>(null);
+  const [recoveryRunning, setRecoveryRunning] = useState(false);
+  const [recoveryMessage, setRecoveryMessage] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
 
   useEffect(() => {
     const stored = (localStorage.getItem(THEME_KEY) as Theme | null) ?? "system";
@@ -122,6 +134,63 @@ export default function SettingsPage() {
       setMnemonic(getMnemonic());
     }
     setMnemonicShown(true);
+  }
+
+  async function handleRecoverFromMnemonic(e: React.FormEvent) {
+    e.preventDefault();
+    setRecoveryMessage(null);
+    const phrase = recoveryMnemonic.trim().replace(/\s+/g, " ");
+    if (!isValidMnemonic(phrase)) {
+      setRecoveryMessage({ kind: "err", text: "Invalid mnemonic — check spelling and word count (12 or 24)." });
+      return;
+    }
+    if (recoveryStoragePassphrase) {
+      if (recoveryStoragePassphrase.length < 8) {
+        setRecoveryMessage({ kind: "err", text: "Storage passphrase must be at least 8 characters (or leave blank for open mode)." });
+        return;
+      }
+      if (recoveryStoragePassphrase !== recoveryStoragePassphraseConfirm) {
+        setRecoveryMessage({ kind: "err", text: "Storage passphrases don't match." });
+        return;
+      }
+    }
+    setRecoveryRunning(true);
+    setRecoveryProgress({ kind: "starting" });
+    try {
+      const sweep = await sweepFromMnemonic({
+        mnemonic: phrase,
+        onProgress: (p) => setRecoveryProgress(p),
+      });
+      const seedBytes = mnemonicToSeed(phrase);
+      await installRecoveredSeed({
+        seed: seedBytes,
+        mnemonic: phrase,
+        counter: sweep.nextN,
+        storagePassphrase: recoveryStoragePassphrase || undefined,
+      });
+      const added = mergeHistoryEntries(sweep.entries);
+      const word = sweep.foundHandles === 1 ? "wyrd" : "wyrds";
+      const note =
+        sweep.foundHandles === 0
+          ? "No wyrds found for this mnemonic."
+          : `Recovered ${sweep.foundHandles} ${word} (${added} new). Burn / replies will work; body decryption requires the original share URLs.`;
+      setRecoveryMessage({ kind: "ok", text: note });
+      setRecoveryMnemonic("");
+      setRecoveryStoragePassphrase("");
+      setRecoveryStoragePassphraseConfirm("");
+      refreshState();
+    } catch (e: unknown) {
+      const swe = (e as { sweepError?: { kind: string; detail?: string; n?: number } }).sweepError;
+      let msg = "Recovery failed.";
+      if (swe?.kind === "invalid_mnemonic") msg = "Invalid mnemonic.";
+      else if (swe?.kind === "network") msg = `Network error during sweep: ${swe.detail ?? "unknown"}.`;
+      else if (swe?.kind === "signature_mismatch") msg = `Signature mismatch at index ${swe.n} — host rejected proof-of-possession (unexpected; please retry).`;
+      else if (e instanceof Error) msg = `Recovery failed: ${e.message}`;
+      setRecoveryMessage({ kind: "err", text: msg });
+    } finally {
+      setRecoveryRunning(false);
+      setRecoveryProgress(null);
+    }
   }
 
   function doForgetSeed() {
@@ -291,6 +360,118 @@ export default function SettingsPage() {
               window.prompt("Raw seed (base64url) — copy this somewhere safe. Not a standard BIP-39 phrase.", raw);
             }}
           />
+        )}
+        <div style={{ marginBottom: "var(--spacing-12)" }} />
+
+        <h2 style={sectionStyle}>Recover from mnemonic</h2>
+        <p style={{ ...metaStyle, marginBottom: "var(--spacing-4)" }}>
+          Have a 12- or 24-word phrase from another device? Sweep the host
+          for wyrds derived from this seed. Burn / fetch-replies will work
+          on recovered wyrds; body decryption requires the original share
+          URLs (read keys aren&apos;t derived from the seed).
+        </p>
+        {!recoveryOpen && (
+          <button
+            onClick={() => {
+              setRecoveryOpen(true);
+              setRecoveryMessage(null);
+            }}
+            style={btnStyle}
+          >
+            Recover from mnemonic
+          </button>
+        )}
+        {recoveryOpen && (
+          <form onSubmit={handleRecoverFromMnemonic}>
+            <textarea
+              value={recoveryMnemonic}
+              onChange={(e) => setRecoveryMnemonic(e.target.value)}
+              placeholder="word1 word2 word3 …"
+              rows={3}
+              spellCheck={false}
+              autoComplete="off"
+              autoCapitalize="off"
+              disabled={recoveryRunning}
+              style={{
+                ...inputStyle,
+                resize: "vertical",
+                lineHeight: 1.6,
+              }}
+            />
+            <p style={{ ...metaStyle, marginTop: "var(--spacing-3)", marginBottom: "var(--spacing-3)" }}>
+              Optional — set a passphrase to encrypt the recovered seed at
+              rest. Leave blank for open mode.
+            </p>
+            <input
+              type="password"
+              autoComplete="new-password"
+              value={recoveryStoragePassphrase}
+              onChange={(e) => setRecoveryStoragePassphrase(e.target.value)}
+              placeholder="passphrase (optional)"
+              disabled={recoveryRunning}
+              style={inputStyle}
+            />
+            {recoveryStoragePassphrase && (
+              <input
+                type="password"
+                autoComplete="new-password"
+                value={recoveryStoragePassphraseConfirm}
+                onChange={(e) => setRecoveryStoragePassphraseConfirm(e.target.value)}
+                placeholder="confirm"
+                disabled={recoveryRunning}
+                style={{ ...inputStyle, marginTop: "var(--spacing-3)" }}
+              />
+            )}
+            <div style={{ display: "flex", gap: "var(--spacing-3)", marginTop: "var(--spacing-4)", flexWrap: "wrap" }}>
+              <button type="submit" style={btnStyle} disabled={recoveryRunning}>
+                {recoveryRunning ? "Sweeping…" : "Begin sweep"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setRecoveryOpen(false);
+                  setRecoveryMnemonic("");
+                  setRecoveryStoragePassphrase("");
+                  setRecoveryStoragePassphraseConfirm("");
+                  setRecoveryMessage(null);
+                }}
+                disabled={recoveryRunning}
+                style={btnStyle}
+              >
+                Cancel
+              </button>
+            </div>
+            {recoveryProgress && recoveryProgress.kind === "deriving" && (
+              <p style={{ ...metaStyle, marginTop: "var(--spacing-3)", color: "var(--color-ink-subtle)" }}>
+                Sweeping index {recoveryProgress.n} (gap {recoveryProgress.gap}/20) — {recoveryProgress.foundHandles} found
+              </p>
+            )}
+            {recoveryProgress && recoveryProgress.kind === "starting" && (
+              <p style={{ ...metaStyle, marginTop: "var(--spacing-3)", color: "var(--color-ink-subtle)" }}>
+                Deriving keys…
+              </p>
+            )}
+          </form>
+        )}
+        {recoveryMessage && (
+          <p
+            style={{
+              margin: 0,
+              marginTop: "var(--spacing-3)",
+              fontFamily: "var(--font-mono)",
+              fontSize: "var(--text-microcaption)",
+              color: recoveryMessage.kind === "ok" ? "var(--color-mark-sealed)" : "var(--color-danger)",
+              lineHeight: 1.6,
+            }}
+          >
+            {recoveryMessage.text}
+            {recoveryMessage.kind === "ok" && (
+              <>
+                {" "}
+                <a href="/inbox" style={linkStyle}>View inbox →</a>
+              </>
+            )}
+          </p>
         )}
         <div style={{ marginBottom: "var(--spacing-12)" }} />
 

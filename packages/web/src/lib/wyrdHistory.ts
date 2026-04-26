@@ -8,6 +8,12 @@
  * published_at, expires_at, replies_enabled, k_read (the read key, which
  * the author needs to view their own wyrds; not a secret beyond the share
  * URL itself).
+ *
+ * `k_read_b64u` is optional because mnemonic-recovered entries do not have
+ * it (K_read is per-wyrd random and not seed-derived; recovering from a
+ * mnemonic alone reconstructs everything except the body-decryption key).
+ * `recovered: true` flags such entries so the UI can render them
+ * appropriately (no share-URL link; burn/replies still work via K_origin).
  */
 
 "use client";
@@ -18,7 +24,8 @@ export interface HistoryEntry {
   handle: string;
   n: number;
   k_origin_pub_b64u: string;
-  k_read_b64u: string;
+  /** Per-wyrd 32-byte read key, base64url. Absent on mnemonic-recovered entries. */
+  k_read_b64u?: string;
   published_at: number;
   expires_at: number;
   replies_enabled: boolean;
@@ -32,6 +39,8 @@ export interface HistoryEntry {
    */
   gone_at?: number;
   gone_reason?: "burned" | "expired";
+  /** True if this entry was reconstructed via HD recovery sweep. */
+  recovered?: boolean;
 }
 
 export function listHistory(): HistoryEntry[] {
@@ -56,6 +65,31 @@ export function addHistoryEntry(entry: HistoryEntry): void {
 export function clearHistory(): void {
   if (typeof window === "undefined") return;
   localStorage.removeItem(STORAGE_KEY);
+}
+
+/**
+ * Merge new entries into history, deduping by handle.
+ * Existing entries take precedence (we never overwrite a local entry that
+ * has k_read_b64u with a recovered one that lacks it). Returns the count
+ * of newly added entries.
+ */
+export function mergeHistoryEntries(entries: HistoryEntry[]): number {
+  if (typeof window === "undefined") return 0;
+  const existing = listHistory();
+  const byHandle = new Map<string, HistoryEntry>();
+  for (const e of existing) byHandle.set(e.handle, e);
+  let added = 0;
+  for (const e of entries) {
+    if (byHandle.has(e.handle)) continue;
+    byHandle.set(e.handle, e);
+    added++;
+  }
+  // Sort newest-first by published_at.
+  const merged = Array.from(byHandle.values()).sort(
+    (a, b) => b.published_at - a.published_at,
+  );
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+  return added;
 }
 
 /** Rename (or clear by passing empty string) a wyrd's local nickname. */
