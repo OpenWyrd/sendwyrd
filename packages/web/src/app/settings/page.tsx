@@ -20,10 +20,13 @@ import {
   isUnlocked,
   unlockSeed,
   getMnemonic,
+  getSeedBackupString,
   protectWithPassphrase,
   unprotectSeed,
+  regenerateSeed,
   type SeedMode,
 } from "@/lib/seedClient";
+import { generateSeed } from "@sendwyrd/core";
 import { Segmented } from "@/components/Segmented";
 import { Nav } from "@/components/Nav";
 
@@ -262,7 +265,32 @@ export default function SettingsPage() {
           </>
         )}
         {seedMode && mnemonicShown && !mnemonic && (
-          <p style={metaStyle}>Mnemonic not stored for this seed (pre-dates backup support).</p>
+          <NoMnemonicHelp
+            onRegenerate={async () => {
+              if (!confirm("Generate a new seed? This invalidates the current seed — wyrds you've already published can't be burned or have their replies fetched after this. The new seed will have a mnemonic backup.")) return;
+              if (!confirm("Last chance — really replace?")) return;
+              try {
+                const { seed, mnemonic } = generateSeed(12);
+                let pp: string | undefined;
+                if (seedMode === "protected") {
+                  pp = window.prompt("Enter your current passphrase to re-encrypt the new seed") ?? undefined;
+                  if (!pp) return;
+                  await unlockSeed(pp);
+                }
+                await regenerateSeed({ newSeed: seed, newMnemonic: mnemonic, passphraseIfProtected: pp });
+                refreshState();
+                setMnemonicShown(false);
+                alert("New seed generated. Click 'Reveal mnemonic' again to see your fresh 12 words.");
+              } catch (e: any) {
+                alert(`Regenerate failed: ${e?.message ?? "unknown"}`);
+              }
+            }}
+            onExportRaw={() => {
+              const raw = getSeedBackupString();
+              if (!raw) return;
+              window.prompt("Raw seed (base64url) — copy this somewhere safe. Not a standard BIP-39 phrase.", raw);
+            }}
+          />
         )}
         <div style={{ marginBottom: "var(--spacing-12)" }} />
 
@@ -296,6 +324,59 @@ export default function SettingsPage() {
     </main>
   );
 }
+
+function NoMnemonicHelp({
+  onRegenerate,
+  onExportRaw,
+}: {
+  onRegenerate: () => void;
+  onExportRaw: () => void;
+}) {
+  return (
+    <div>
+      <p style={{ ...metaStyleLocal, marginBottom: "var(--spacing-3)" }}>
+        This seed was created before the mnemonic was being persisted. The
+        mnemonic existed for one moment at generation; it&apos;s mathematically
+        impossible to recover the words from the seed bytes (BIP-39 PBKDF2 is
+        one-way).
+      </p>
+      <p style={{ ...metaStyleLocal, marginBottom: "var(--spacing-4)" }}>
+        Two options:
+      </p>
+      <div style={{ display: "flex", gap: "var(--spacing-3)", flexWrap: "wrap" }}>
+        <button onClick={onRegenerate} style={btnStyleLocal}>
+          Regenerate seed
+        </button>
+        <button onClick={onExportRaw} style={btnStyleLocal}>
+          Export raw seed (non-standard backup)
+        </button>
+      </div>
+      <p style={{ ...metaStyleLocal, marginTop: "var(--spacing-3)", color: "var(--color-ink-subtle)" }}>
+        Regenerating creates a fresh BIP-39-backed seed. The downside: any
+        wyrds you&apos;ve already published become unsigned-deletable and
+        unfetchable for replies (the author key changes). For most early
+        testing, regenerating is the right move.
+      </p>
+    </div>
+  );
+}
+
+const metaStyleLocal: React.CSSProperties = {
+  margin: 0,
+  fontFamily: "var(--font-mono)",
+  fontSize: "var(--text-caption)",
+  color: "var(--color-ink-muted)",
+  lineHeight: 1.6,
+};
+const btnStyleLocal: React.CSSProperties = {
+  padding: "var(--spacing-2) var(--spacing-5)",
+  border: "1px solid var(--color-hairline-strong)",
+  background: "transparent",
+  color: "var(--color-ink)",
+  fontFamily: "var(--font-mono)",
+  fontSize: "var(--text-caption)",
+  cursor: "pointer",
+};
 
 function applyTheme(theme: Theme) {
   const html = document.documentElement;
