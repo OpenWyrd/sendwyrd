@@ -20,8 +20,9 @@ import {
   schnorrSign,
 } from "@sendwyrd/core";
 import { hasSeed, isUnlocked, unlockSeed, getSeed } from "@/lib/seedClient";
-import { listHistory, type HistoryEntry } from "@/lib/wyrdHistory";
+import { listHistory, renameHistoryEntry, type HistoryEntry } from "@/lib/wyrdHistory";
 import { Segmented } from "@/components/Segmented";
+import { Nav } from "@/components/Nav";
 
 type Filter = "all" | "live" | "gone";
 
@@ -45,6 +46,23 @@ export default function InboxPage() {
   const [filter, setFilter] = useState<Filter>("all");
   const [now, setNow] = useState(Date.now());
   const [repliesByHandle, setRepliesByHandle] = useState<Record<string, RepliesView>>({});
+  const [renamingHandle, setRenamingHandle] = useState<string | null>(null);
+  const [renameDraft, setRenameDraft] = useState("");
+
+  function startRename(entry: HistoryEntry) {
+    setRenamingHandle(entry.handle);
+    setRenameDraft(entry.nickname ?? "");
+  }
+  function commitRename(handle: string) {
+    renameHistoryEntry(handle, renameDraft);
+    setRenamingHandle(null);
+    setRenameDraft("");
+    setHistory(listHistory());
+  }
+  function cancelRename() {
+    setRenamingHandle(null);
+    setRenameDraft("");
+  }
 
   useEffect(() => {
     if (!hasSeed()) {
@@ -55,6 +73,19 @@ export default function InboxPage() {
     setHistory(listHistory());
     setNow(Date.now());
   }, [router]);
+
+  // Auto-load replies for every wyrd that has them enabled, after unlock.
+  useEffect(() => {
+    if (!unlocked) return;
+    const seedRec = getSeed();
+    if (!seedRec) return;
+    const live = history.filter((e) => e.replies_enabled && e.expires_at > Date.now());
+    for (const entry of live) {
+      if (repliesByHandle[entry.handle]) continue;
+      void loadReplies(entry);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unlocked, history]);
 
   async function handleUnlock(e: React.FormEvent) {
     e.preventDefault();
@@ -134,7 +165,7 @@ export default function InboxPage() {
   if (!unlocked) {
     return (
       <main style={pageStyle}>
-        <h1 style={wordmarkStyle}>SendWyrd</h1>
+        <Nav />
         <form onSubmit={handleUnlock} style={panelStyle}>
           <p style={{ margin: 0, marginBottom: "var(--spacing-6)", color: "var(--color-ink-muted)" }}>
             Enter your passphrase to unlock the seed for this session.
@@ -166,7 +197,7 @@ export default function InboxPage() {
 
   return (
     <main style={pageStyle}>
-      <h1 style={wordmarkStyle}>SendWyrd</h1>
+      <Nav />
       <section style={{ ...panelStyle, maxWidth: "var(--max-list)" }}>
         <p style={{ margin: 0, marginBottom: "var(--spacing-6)", color: "var(--color-ink-muted)", fontSize: "var(--text-caption)" }}>
           {history.length} wyrd{history.length === 1 ? "" : "s"} on this device
@@ -208,55 +239,108 @@ export default function InboxPage() {
                 borderTop: "1px solid var(--color-hairline)",
               }}
             >
-              <div style={{ display: "flex", justifyContent: "space-between", gap: "var(--spacing-3)", flexWrap: "wrap" }}>
-                <a
-                  href={url}
-                  style={{
-                    color: "var(--color-ink)",
-                    textDecoration: "none",
-                    fontFamily: "var(--font-mono)",
-                    fontSize: "var(--text-caption)",
-                    overflowWrap: "anywhere",
-                    flex: "1 1 0",
-                    minWidth: 0,
-                  }}
-                >
-                  {entry.handle}
-                </a>
-                <span
-                  style={{
-                    fontFamily: "var(--font-mono)",
-                    fontSize: "var(--text-microcaption)",
-                    color: isGone ? "var(--color-ink-subtle)" : "var(--color-mark-sealed)",
-                  }}
-                >
-                  {isGone ? "expired" : "live"}
-                </span>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: "var(--spacing-3)", flexWrap: "wrap", alignItems: "flex-start" }}>
+                <div style={{ flex: "1 1 0", minWidth: 0 }}>
+                  {renamingHandle === entry.handle ? (
+                    <form
+                      onSubmit={(e) => { e.preventDefault(); commitRename(entry.handle); }}
+                      style={{ display: "flex", gap: "var(--spacing-2)", alignItems: "center" }}
+                    >
+                      <input
+                        type="text"
+                        value={renameDraft}
+                        onChange={(e) => setRenameDraft(e.target.value)}
+                        autoFocus
+                        placeholder="add a name…"
+                        maxLength={80}
+                        style={{
+                          flex: "1 1 0",
+                          minWidth: 0,
+                          background: "transparent",
+                          border: "none",
+                          borderBottom: "1px solid var(--color-hairline-strong)",
+                          color: "var(--color-ink)",
+                          fontFamily: "var(--font-mono)",
+                          fontSize: "var(--text-caption)",
+                          outline: "none",
+                          padding: "var(--spacing-1) 0",
+                        }}
+                      />
+                      <button type="submit" style={inlineBtn}>save</button>
+                      <button type="button" onClick={cancelRename} style={inlineBtn}>cancel</button>
+                    </form>
+                  ) : (
+                    <a
+                      href={url}
+                      style={{
+                        color: "var(--color-ink)",
+                        textDecoration: "none",
+                        fontFamily: "var(--font-mono)",
+                        fontSize: "var(--text-caption)",
+                        overflowWrap: "anywhere",
+                        display: "block",
+                      }}
+                    >
+                      {entry.nickname || entry.handle}
+                    </a>
+                  )}
+                  {entry.nickname && renamingHandle !== entry.handle && (
+                    <span
+                      style={{
+                        display: "block",
+                        fontFamily: "var(--font-mono)",
+                        fontSize: "var(--text-microcaption)",
+                        color: "var(--color-ink-subtle)",
+                        marginTop: "var(--spacing-1)",
+                        overflowWrap: "anywhere",
+                      }}
+                    >
+                      {entry.handle}
+                    </span>
+                  )}
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "var(--spacing-3)", flexShrink: 0 }}>
+                  {entry.replies_enabled && replyState?.replies && replyState.replies.length > 0 && (
+                    <span
+                      style={{
+                        fontFamily: "var(--font-mono)",
+                        fontSize: "var(--text-microcaption)",
+                        color: "var(--color-accent)",
+                        padding: "2px 6px",
+                        border: "1px solid var(--color-hairline-strong)",
+                      }}
+                    >
+                      {replyState.replies.length} {replyState.replies.length === 1 ? "reply" : "replies"}
+                    </span>
+                  )}
+                  <span
+                    style={{
+                      fontFamily: "var(--font-mono)",
+                      fontSize: "var(--text-microcaption)",
+                      color: isGone ? "var(--color-ink-subtle)" : "var(--color-mark-sealed)",
+                    }}
+                  >
+                    {isGone ? "expired" : "live"}
+                  </span>
+                </div>
               </div>
-              <p style={{ margin: 0, marginTop: "var(--spacing-2)", color: "var(--color-ink-subtle)", fontSize: "var(--text-microcaption)", fontFamily: "var(--font-mono)" }}>
-                Sent {formatDate(entry.published_at)} · expires {formatDate(entry.expires_at)}
-                {entry.replies_enabled && " · replies on"}
+              <p style={{ margin: 0, marginTop: "var(--spacing-2)", color: "var(--color-ink-subtle)", fontSize: "var(--text-microcaption)", fontFamily: "var(--font-mono)", display: "flex", gap: "var(--spacing-3)", flexWrap: "wrap", alignItems: "center" }}>
+                <span>
+                  Sent {formatDate(entry.published_at)} · expires {formatDate(entry.expires_at)}
+                  {entry.replies_enabled && " · replies on"}
+                </span>
+                {renamingHandle !== entry.handle && (
+                  <button onClick={() => startRename(entry)} style={inlineBtn}>
+                    {entry.nickname ? "rename" : "add name"}
+                  </button>
+                )}
               </p>
               {entry.replies_enabled && !isGone && (
                 <div style={{ marginTop: "var(--spacing-3)" }}>
-                  {!replyState && (
-                    <button
-                      onClick={() => loadReplies(entry)}
-                      style={{
-                        background: "transparent",
-                        border: "1px solid var(--color-hairline)",
-                        color: "var(--color-ink-muted)",
-                        fontFamily: "var(--font-mono)",
-                        fontSize: "var(--text-microcaption)",
-                        padding: "var(--spacing-2) var(--spacing-3)",
-                        cursor: "pointer",
-                      }}
-                    >
-                      Load replies
-                    </button>
-                  )}
                   {replyState?.loading && (
-                    <span style={{ color: "var(--color-ink-subtle)", fontSize: "var(--text-microcaption)" }}>…</span>
+                    <span style={{ color: "var(--color-ink-subtle)", fontSize: "var(--text-microcaption)" }}>
+                      loading replies…
+                    </span>
                   )}
                   {replyState?.error && (
                     <span style={{ color: "var(--color-danger)", fontSize: "var(--text-microcaption)" }}>
@@ -265,7 +349,7 @@ export default function InboxPage() {
                   )}
                   {replyState?.replies && replyState.replies.length === 0 && (
                     <p style={{ margin: 0, color: "var(--color-ink-subtle)", fontSize: "var(--text-microcaption)" }}>
-                      No replies.
+                      no replies yet
                     </p>
                   )}
                   {replyState?.replies && replyState.replies.length > 0 && (
@@ -327,13 +411,6 @@ const pageStyle: React.CSSProperties = {
   padding: "var(--spacing-12) var(--spacing-6)",
   gap: "var(--spacing-8)",
 };
-const wordmarkStyle: React.CSSProperties = {
-  fontFamily: "var(--font-display)",
-  fontSize: "var(--text-h2)",
-  fontWeight: 600,
-  margin: 0,
-  color: "var(--color-ink)",
-};
 const panelStyle: React.CSSProperties = {
   width: "100%",
   maxWidth: "var(--max-content)",
@@ -366,4 +443,15 @@ const errorStyle: React.CSSProperties = {
   marginTop: "var(--spacing-3)",
   fontFamily: "var(--font-mono)",
   fontSize: "var(--text-caption)",
+};
+const inlineBtn: React.CSSProperties = {
+  background: "transparent",
+  border: "none",
+  padding: 0,
+  color: "var(--color-ink-muted)",
+  fontFamily: "var(--font-mono)",
+  fontSize: "var(--text-microcaption)",
+  cursor: "pointer",
+  textDecoration: "underline",
+  textUnderlineOffset: 2,
 };

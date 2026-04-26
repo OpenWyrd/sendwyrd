@@ -22,6 +22,8 @@ export interface HistoryEntry {
   published_at: number;
   expires_at: number;
   replies_enabled: boolean;
+  /** Optional client-side nickname; never transmitted to the host. */
+  nickname?: string;
 }
 
 export function listHistory(): HistoryEntry[] {
@@ -46,4 +48,15 @@ export function addHistoryEntry(entry: HistoryEntry): void {
 export function clearHistory(): void {
   if (typeof window === "undefined") return;
   localStorage.removeItem(STORAGE_KEY);
+}
+
+/** Rename (or clear by passing empty string) a wyrd's local nickname. */
+export function renameHistoryEntry(handle: string, nickname: string): void {
+  if (typeof window === "undefined") return;
+  const all = listHistory();
+  const idx = all.findIndex((e) => e.handle === handle);
+  if (idx === -1) return;
+  const trimmed = nickname.trim();
+  all[idx] = { ...all[idx]!, nickname: trimmed || undefined };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
 }

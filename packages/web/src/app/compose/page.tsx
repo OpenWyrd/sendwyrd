@@ -2,15 +2,20 @@
 
 /**
  * Compose page per visual_direction_v1.md §10.2.
+ *
+ * Flow (post-account-less redesign):
+ *   - If no seed exists, auto-generate one in open mode and proceed silently.
+ *   - If seed is in open mode, no unlock UI is shown — the user just types.
+ *   - If seed is in protected mode, prompt for passphrase to unlock.
  */
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import {
   composeWyrd,
   countCountableCodepoints,
   buildFragmentUrl,
   buildPublicUrl,
+  generateSeed,
   BODY_CODEPOINT_CAP,
   TTL_SECONDS_DEFAULT,
 } from "@sendwyrd/core";
@@ -19,12 +24,15 @@ import {
   isUnlocked,
   unlockSeed,
   getSeed,
+  getSeedMode,
+  storeOpenSeed,
   consumeNextIndex,
 } from "@/lib/seedClient";
 import { publishWyrd } from "@/lib/api";
 import { addHistoryEntry } from "@/lib/wyrdHistory";
 import { b64uEncode } from "@sendwyrd/core";
 import { Segmented, Toggle } from "@/components/Segmented";
+import { Nav } from "@/components/Nav";
 
 const TTL_PRESETS: Array<{ label: string; seconds: number }> = [
   { label: "1 day", seconds: 86_400 },
@@ -35,7 +43,7 @@ const TTL_PRESETS: Array<{ label: string; seconds: number }> = [
 ];
 
 export default function ComposePage() {
-  const router = useRouter();
+  const [ready, setReady] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
   const [passphrase, setPassphrase] = useState("");
   const [unlockError, setUnlockError] = useState<string | null>(null);
@@ -48,15 +56,18 @@ export default function ComposePage() {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
+  // First-mount: ensure a seed exists. If not, auto-generate in open mode.
   useEffect(() => {
-    if (!hasSeed()) {
-      router.replace("/onboarding");
-      return;
-    }
-    setUnlocked(isUnlocked());
-  }, [router]);
+    (async () => {
+      if (!hasSeed()) {
+        const { seed, mnemonic } = generateSeed(12);
+        storeOpenSeed({ seed, counter: 0, mnemonic });
+      }
+      setUnlocked(isUnlocked());
+      setReady(true);
+    })();
+  }, []);
 
-  // URLs are excluded from the cap (spec amendment §8.2 / ADR-012).
   const count = countCountableCodepoints(body);
   const overCap = count > BODY_CODEPOINT_CAP;
 
@@ -86,19 +97,22 @@ export default function ComposePage() {
         return;
       }
 
-      // Need passphrase to persist the bumped counter pre-publish.
-      const pp = window.prompt("Confirm passphrase to consume the next index");
-      if (!pp) {
-        setSending(false);
-        return;
-      }
       let n: number;
-      try {
-        n = await consumeNextIndex(pp);
-      } catch {
-        setError("Passphrase incorrect — index not consumed.");
-        setSending(false);
-        return;
+      if (getSeedMode() === "open") {
+        n = await consumeNextIndex();
+      } else {
+        const pp = window.prompt("Confirm passphrase to consume the next index");
+        if (!pp) {
+          setSending(false);
+          return;
+        }
+        try {
+          n = await consumeNextIndex(pp);
+        } catch {
+          setError("Passphrase incorrect — index not consumed.");
+          setSending(false);
+          return;
+        }
       }
 
       const result = await composeWyrd({
@@ -116,7 +130,6 @@ export default function ComposePage() {
         return;
       }
 
-      // Persist to local wyrd history so the inbox can find this wyrd later.
       addHistoryEntry({
         handle: result.handle,
         n,
@@ -147,10 +160,19 @@ export default function ComposePage() {
     setTimeout(() => setCopied(false), 2000);
   }
 
-  if (!unlocked) {
+  if (!ready) {
     return (
       <main style={pageStyle}>
-        <h1 style={wordmarkStyle}>SendWyrd</h1>
+        <Nav />
+      </main>
+    );
+  }
+
+  if (!unlocked) {
+    // Only protected-mode seeds can be locked. Open mode is always unlocked.
+    return (
+      <main style={pageStyle}>
+        <Nav />
         <form onSubmit={handleUnlock} style={panelStyle}>
           <p style={{ margin: 0, marginBottom: "var(--spacing-6)", color: "var(--color-ink-muted)" }}>
             Enter your passphrase to unlock the seed for this session.
@@ -164,9 +186,7 @@ export default function ComposePage() {
             autoFocus
             style={inputStyle}
           />
-          {unlockError && (
-            <p style={errorStyle}>{unlockError}</p>
-          )}
+          {unlockError && <p style={errorStyle}>{unlockError}</p>}
           <button type="submit" style={{ ...btnStyle, marginTop: "var(--spacing-6)" }}>
             Unlock
           </button>
@@ -178,7 +198,7 @@ export default function ComposePage() {
   if (shareUrl) {
     return (
       <main style={pageStyle}>
-        <h1 style={wordmarkStyle}>SendWyrd</h1>
+        <Nav />
         <article style={panelStyle}>
           <p style={{ margin: 0, marginBottom: "var(--spacing-4)", color: "var(--color-ink-muted)" }}>
             Sent. Share this URL — it&apos;s the only way to read your wyrd.
@@ -243,9 +263,8 @@ export default function ComposePage() {
 
   return (
     <main style={pageStyle}>
-      <h1 style={wordmarkStyle}>SendWyrd</h1>
+      <Nav />
       <form onSubmit={handleSend} style={panelStyle}>
-        {/* Form toggle: Sealed (default) / Open */}
         <div style={{ marginBottom: "var(--spacing-6)" }}>
           <Segmented
             name="form"
@@ -268,15 +287,12 @@ export default function ComposePage() {
           />
         </div>
 
-        {/* Body */}
         <textarea
           value={body}
           onChange={(e) => {
             const next = e.target.value;
-            // Cap by *countable* codepoints (URLs excluded). Allow pastes that
-            // contain a long URL; only block when prose exceeds the cap.
             if (countCountableCodepoints(next) > BODY_CODEPOINT_CAP) {
-              return; // refuse the keystroke / paste
+              return;
             }
             setBody(next);
           }}
@@ -298,7 +314,6 @@ export default function ComposePage() {
           }}
         />
 
-        {/* Counter */}
         <p
           style={{
             margin: 0,
@@ -313,7 +328,6 @@ export default function ComposePage() {
           {count} / {BODY_CODEPOINT_CAP}
         </p>
 
-        {/* TTL selector */}
         <div style={{ marginTop: "var(--spacing-6)" }}>
           <p style={fieldLabelStyle}>Expires in</p>
           <Segmented
@@ -330,7 +344,6 @@ export default function ComposePage() {
           />
         </div>
 
-        {/* Replies toggle */}
         <div style={{ marginTop: "var(--spacing-6)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "var(--spacing-4)", flexWrap: "wrap" }}>
             <p style={{ ...fieldLabelStyle, margin: 0 }}>Replies</p>
@@ -374,13 +387,6 @@ const pageStyle: React.CSSProperties = {
   alignItems: "center",
   padding: "var(--spacing-12) var(--spacing-6)",
   gap: "var(--spacing-12)",
-};
-const wordmarkStyle: React.CSSProperties = {
-  fontFamily: "var(--font-display)",
-  fontSize: "var(--text-h2)",
-  fontWeight: 600,
-  margin: 0,
-  color: "var(--color-ink)",
 };
 const panelStyle: React.CSSProperties = {
   width: "100%",

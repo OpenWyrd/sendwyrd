@@ -1,14 +1,17 @@
 /**
- * Browser-side seed management.
+ * Browser-side seed management. Two modes:
  *
- * Persistence: encrypted seed record (passphrase-protected, AES-256-GCM,
- * PBKDF2-SHA256) stored in localStorage under STORAGE_KEY. Plaintext seed
- * never touches disk.
+ * - **open** (default): seed stored as JSON in localStorage. Always
+ *   available, no unlock step. Trade-off: any JS on the same origin can
+ *   read it (XSS, browser extensions, devtools). Per-user choice.
  *
- * Session cache: once the user enters their passphrase, the decrypted seed
- * lives in a module-level variable for the rest of the tab's lifetime
- * (cleared on visibilitychange→hidden after IDLE_MS, per renderer-contract
- * §17.1).
+ * - **protected**: seed stored encrypted (PBKDF2-AES-256-GCM). Requires
+ *   passphrase per session. Memory-cached after unlock; cleared on tab
+ *   visibility-hidden + 30 min idle.
+ *
+ * One-of-the-two storage keys is populated at any time. Promotion (open
+ * → protected) and demotion (protected → open) flow through dedicated
+ * helpers.
  */
 
 "use client";
@@ -16,11 +19,21 @@
 import {
   decryptSeedRecord,
   encryptSeedRecord,
+  b64uDecode,
+  b64uEncode,
   type SeedAndCounter,
 } from "@sendwyrd/core";
 
-const STORAGE_KEY = "sendwyrd:seed:v1";
+const STORAGE_KEY_PROTECTED = "sendwyrd:seed:v1";
+const STORAGE_KEY_OPEN = "sendwyrd:open_seed:v1";
 const IDLE_MS = 30 * 60 * 1000;
+
+interface OpenSeedJson {
+  v: 1;
+  counter: number;
+  mnemonic: string | null;
+  seed_b64u: string;
+}
 
 let cached: SeedAndCounter | null = null;
 let idleTimer: ReturnType<typeof setTimeout> | null = null;
@@ -35,75 +48,145 @@ function armIdleTimer() {
 if (typeof window !== "undefined") {
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden") {
-      cached = null;
-      if (idleTimer) {
-        clearTimeout(idleTimer);
-        idleTimer = null;
+      // Only clear cache for protected mode — open mode re-reads localStorage.
+      if (getSeedMode() === "protected") {
+        cached = null;
+        if (idleTimer) {
+          clearTimeout(idleTimer);
+          idleTimer = null;
+        }
       }
     }
   });
 }
 
-/** Whether an encrypted seed record is present in localStorage. */
-export function hasSeed(): boolean {
-  if (typeof window === "undefined") return false;
-  return !!localStorage.getItem(STORAGE_KEY);
+export type SeedMode = "open" | "protected" | null;
+
+export function getSeedMode(): SeedMode {
+  if (typeof window === "undefined") return null;
+  if (localStorage.getItem(STORAGE_KEY_PROTECTED)) return "protected";
+  if (localStorage.getItem(STORAGE_KEY_OPEN)) return "open";
+  return null;
 }
 
-/** Whether the seed is currently unlocked in memory. */
+export function hasSeed(): boolean {
+  return getSeedMode() !== null;
+}
+
+/** Open mode is always unlocked. Protected requires explicit unlock. */
 export function isUnlocked(): boolean {
+  if (getSeedMode() === "open") return true;
   return cached !== null;
 }
 
-/** Persist a fresh seed under a passphrase. Overwrites any existing record. */
-export async function storeSeed(args: {
-  seed: Uint8Array;
-  counter: number;
-  passphrase: string;
-}): Promise<void> {
+/** Get the seed if available (open mode always; protected only if unlocked). */
+export function getSeed(): SeedAndCounter | null {
+  const mode = getSeedMode();
+  if (mode === "open") {
+    const raw = localStorage.getItem(STORAGE_KEY_OPEN);
+    if (!raw) return null;
+    try {
+      const j = JSON.parse(raw) as OpenSeedJson;
+      return {
+        seed: b64uDecode(j.seed_b64u),
+        counter: j.counter,
+        mnemonic: j.mnemonic ?? undefined,
+      };
+    } catch {
+      return null;
+    }
+  }
+  if (cached) armIdleTimer();
+  return cached;
+}
+
+/** Store a seed in open (unencrypted) mode. */
+export function storeOpenSeed(args: SeedAndCounter): void {
+  const json: OpenSeedJson = {
+    v: 1,
+    counter: args.counter,
+    mnemonic: args.mnemonic ?? null,
+    seed_b64u: b64uEncode(args.seed),
+  };
+  localStorage.setItem(STORAGE_KEY_OPEN, JSON.stringify(json));
+  localStorage.removeItem(STORAGE_KEY_PROTECTED);
+  cached = args;
+}
+
+/** Store a seed in protected (passphrase-encrypted) mode. */
+export async function storeProtectedSeed(args: SeedAndCounter & { passphrase: string }): Promise<void> {
   const record = await encryptSeedRecord(args);
-  localStorage.setItem(STORAGE_KEY, record);
-  cached = { seed: args.seed, counter: args.counter };
+  localStorage.setItem(STORAGE_KEY_PROTECTED, record);
+  localStorage.removeItem(STORAGE_KEY_OPEN);
+  cached = { seed: args.seed, counter: args.counter, mnemonic: args.mnemonic };
   armIdleTimer();
 }
 
-/** Load and decrypt the seed using the user's passphrase. */
+/** Compatibility alias used elsewhere — defaults to protected. */
+export const storeSeed = storeProtectedSeed;
+
+/** Decrypt the protected seed using the user's passphrase. */
 export async function unlockSeed(passphrase: string): Promise<SeedAndCounter> {
-  const record = localStorage.getItem(STORAGE_KEY);
-  if (!record) throw new Error("no_seed_stored");
+  const record = localStorage.getItem(STORAGE_KEY_PROTECTED);
+  if (!record) throw new Error("no_protected_seed");
   const data = await decryptSeedRecord(record, passphrase);
   cached = data;
   armIdleTimer();
   return data;
 }
 
-/** Get the unlocked seed (or null if locked / not stored). */
-export function getSeed(): SeedAndCounter | null {
-  if (cached) armIdleTimer();
-  return cached;
-}
-
 /**
- * Increment the counter after a publish, persist, return the consumed `n`.
- * Caller MUST persist before publish per spec §5.2 — this function persists
- * synchronously but does NOT publish. Caller publishes after.
+ * Increment the counter, persist, return the consumed `n`.
+ * Open mode: no passphrase needed.
+ * Protected mode: passphrase required.
  */
-export async function consumeNextIndex(passphrase: string): Promise<number> {
-  if (!cached) throw new Error("seed_locked");
-  const n = cached.counter;
-  const next: SeedAndCounter = { seed: cached.seed, counter: n + 1 };
-  await storeSeed({ ...next, passphrase });
-  cached = next;
+export async function consumeNextIndex(passphrase?: string): Promise<number> {
+  const mode = getSeedMode();
+  const cur = getSeed();
+  if (!cur) throw new Error("no_seed");
+  const n = cur.counter;
+  const next: SeedAndCounter = {
+    seed: cur.seed,
+    counter: n + 1,
+    mnemonic: cur.mnemonic,
+  };
+  if (mode === "open") {
+    storeOpenSeed(next);
+  } else {
+    if (!passphrase) throw new Error("passphrase_required");
+    await storeProtectedSeed({ ...next, passphrase });
+  }
   return n;
 }
 
-/** Wipe the local seed record. Use with care. */
+/** Promote open → protected by encrypting under a passphrase. */
+export async function protectWithPassphrase(passphrase: string): Promise<void> {
+  if (passphrase.length < 8) throw new Error("passphrase_too_short");
+  const cur = getSeed();
+  if (!cur) throw new Error("no_seed");
+  await storeProtectedSeed({ ...cur, passphrase });
+}
+
+/** Demote protected → open. Caller must have unlocked first via unlockSeed. */
+export function unprotectSeed(): void {
+  if (!cached) throw new Error("seed_locked");
+  storeOpenSeed(cached);
+}
+
+/** Wipe both seed records. Use with care. */
 export function forgetSeed(): void {
   if (typeof window === "undefined") return;
-  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(STORAGE_KEY_PROTECTED);
+  localStorage.removeItem(STORAGE_KEY_OPEN);
   cached = null;
   if (idleTimer) {
     clearTimeout(idleTimer);
     idleTimer = null;
   }
+}
+
+/** Get the mnemonic for backup display. May be null if seed pre-dates mnemonic storage. */
+export function getMnemonic(): string | null {
+  const seed = getSeed();
+  return seed?.mnemonic ?? null;
 }
