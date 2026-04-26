@@ -10,7 +10,12 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { decryptFromBase64Url, b64uDecode, type FetchEnvelopeResponse } from "@sendwyrd/core";
+import {
+  decryptFromBase64Url,
+  b64uDecode,
+  PERMANENT_EXPIRES_AT_MS,
+  type FetchEnvelopeResponse,
+} from "@sendwyrd/core";
 import { fetchWyrd } from "@/lib/api";
 import { PrivacyIndicator } from "@/components/PrivacyIndicator";
 import { WyrdBody } from "@/components/WyrdBody";
@@ -138,10 +143,12 @@ export default function FragmentView() {
 
       {state.kind === "ready" && (
         <article style={panelStyle}>
-          <PrivacyIndicator state="sealed" />
+          <header style={{ display: "flex", justifyContent: "flex-end", marginBottom: "var(--spacing-3)" }}>
+            <PrivacyIndicator state="sealed" />
+          </header>
           <div
             style={{
-              paddingTop: "var(--spacing-6)",
+              paddingTop: "var(--spacing-2)",
               paddingBottom: "var(--spacing-3)",
             }}
           >
@@ -155,8 +162,10 @@ export default function FragmentView() {
               fontFamily: "var(--font-mono)",
             }}
           >
-            Sent {formatDate(new Date(state.data.published_at).toISOString())} ·
-            expires {formatDate(new Date(state.data.expires_at).toISOString())}
+            Sent {formatDate(new Date(state.data.published_at).toISOString())}
+            {!isPermanent(state.data.expires_at) && (
+              <> · expires {formatDate(new Date(state.data.expires_at).toISOString())}</>
+            )}
           </p>
           {state.data.replies_enabled && (
             <ReplyForm
@@ -177,6 +186,10 @@ function formatDate(iso: string): string {
     month: "long",
     day: "numeric",
   });
+}
+
+function isPermanent(expires_at_ms: number): boolean {
+  return expires_at_ms >= PERMANENT_EXPIRES_AT_MS - 1000;
 }
 
 const panelStyle: React.CSSProperties = {

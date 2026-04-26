@@ -18,6 +18,7 @@ import {
   deriveOriginKey,
   fetchRepliesMessage,
   schnorrSign,
+  PERMANENT_EXPIRES_AT_MS,
 } from "@sendwyrd/core";
 import { hasSeed, isUnlocked, unlockSeed, getSeed } from "@/lib/seedClient";
 import { listHistory, renameHistoryEntry, type HistoryEntry } from "@/lib/wyrdHistory";
@@ -326,7 +327,10 @@ export default function InboxPage() {
               </div>
               <p style={{ margin: 0, marginTop: "var(--spacing-2)", color: "var(--color-ink-subtle)", fontSize: "var(--text-microcaption)", fontFamily: "var(--font-mono)", display: "flex", gap: "var(--spacing-3)", flexWrap: "wrap", alignItems: "center" }}>
                 <span>
-                  Sent {formatDate(entry.published_at)} · expires {formatDate(entry.expires_at)}
+                  Sent {formatDate(entry.published_at)}
+                  {entry.expires_at >= PERMANENT_EXPIRES_AT_MS - 1000
+                    ? " · never expires"
+                    : ` · expires ${formatDate(entry.expires_at)}`}
                   {entry.replies_enabled && " · replies on"}
                 </span>
                 {renamingHandle !== entry.handle && (

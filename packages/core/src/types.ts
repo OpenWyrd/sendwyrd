@@ -16,9 +16,13 @@ export const BODY_CODEPOINT_CAP = 300;
 export const ENVELOPE_BYTE_CEILING = 1500;
 export const REPLY_CODEPOINT_CAP = 1000;
 export const REPLY_BLOB_BYTE_CEILING = 5000;
-export const TTL_SECONDS_MIN = 1;
-export const TTL_SECONDS_MAX = 31_536_000; // 1 year
+export const TTL_SECONDS_MIN = 0; // 0 means permanent (no expiry)
+export const TTL_SECONDS_MAX = 31_536_000; // 1 year (server clamp); 0 is the sentinel for permanent
 export const TTL_SECONDS_DEFAULT = 7_776_000; // 90 days
+/** Sentinel timestamp used for non-expiring wyrds (year 9999). Far enough out
+ *  that JS / Postgres handle it cleanly; both client and server agree on this
+ *  value so the AAD binding holds. */
+export const PERMANENT_EXPIRES_AT_MS = 253_370_764_800_000;
 export const REPLAY_WINDOW_MS = 60_000;
 export const TOMBSTONE_RETENTION_DAYS = 30;
 

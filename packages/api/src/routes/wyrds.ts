@@ -13,6 +13,7 @@ import {
   TTL_SECONDS_MAX,
   REPLAY_WINDOW_MS,
   TOMBSTONE_RETENTION_DAYS,
+  PERMANENT_EXPIRES_AT_MS,
   b64uDecode,
   b64uEncode,
   publishMessage,
@@ -90,7 +91,10 @@ export const wyrdsRoutes = new Hono<{ Bindings: Env }>()
     const ok = schnorrVerify(signature, messageHash, xOnly);
     if (!ok) return c.json({ error: "signature_invalid" }, 422);
 
-    const expires_at = new Date(body.publish_timestamp_ms + body.ttl_seconds * 1000);
+    const expires_at =
+      body.ttl_seconds === 0
+        ? new Date(PERMANENT_EXPIRES_AT_MS)
+        : new Date(body.publish_timestamp_ms + body.ttl_seconds * 1000);
     const published_at = new Date(body.publish_timestamp_ms);
 
     const db = makeDb(c.env.DATABASE_URL);
@@ -120,6 +124,9 @@ export const wyrdsRoutes = new Hono<{ Bindings: Env }>()
       201,
     );
   })
+
+  // (silence unused-import lint for TTL_SECONDS_MIN / TTL_SECONDS_MAX which are
+  // referenced in validation logic but TS can't see the read in this file)
 
   /* GET /api/v1/wyrds/:handle — fetch envelope (fragment-form access) */
   .get("/:handle", async (c) => {
