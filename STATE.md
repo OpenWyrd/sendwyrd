@@ -93,6 +93,8 @@ None. Product live at `https://sendwyrd.com`, verified end-to-end. Token stash a
 
 **Tier-3 (deferred)**: Native iOS / Android (ADR-014 post-v1); Söhne typography swap; federation; defensive domain registrations.
 
+**Future horizons** (aspirational, see `who/governance/future_horizons.md`): PKM (Roam / Obsidian / Logseq / Tana) and personal-CRM integration via OG metadata enrichment, webhook-on-publish, browser extensions, and an iCal/RSS feed of the user's wyrd history. Layered above the wire spec; no core protocol changes. Not v1. Trigger to revisit: when there are real users and at least one is manually pasting wyrds into a PKM.
+
 ## Recent Decisions Timeline
 
 | Date | Decision | Source |
@@ -140,7 +142,8 @@ SendWyrd v1 is **live and shipping**. Read order:
 1. `CLAUDE.md` (auto-loaded — default Berthier identity uncustomized).
 2. `MANIFEST.md` — project identity.
 3. This `STATE.md` — Tier-1 punch list (you are here).
-4. Memory pointers (auto-loaded via `MEMORY.md`):
+4. `who/governance/future_horizons.md` — aspirational non-v1 ideas (e.g. H1 PKM / CRM integration). Read once for context; do not act unless explicitly asked.
+5. Memory pointers (auto-loaded via `MEMORY.md`):
    - `project_sendwyrd_v1_live.md` — current shipped state, infra pointers, e2e smoke scripts
    - `feedback_anti_scope_creep_relay_layer.md` — guard against XKCD-927; SendWyrd is a relay primitive, never a chat app
    - `feedback_zero_friction_default.md` — account-less default; security opt-in
