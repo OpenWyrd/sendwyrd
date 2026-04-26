@@ -14,6 +14,39 @@ import { WyrdSigil } from "@/components/WyrdSigil";
 import { PrivacyIndicator } from "@/components/PrivacyIndicator";
 import { InstallAffordance } from "@/components/InstallAffordance";
 
+function SpecimenWyrd({ body, count }: { body: string; count: number }) {
+  return (
+    <article
+      className="landing-specimen"
+      style={{ width: "100%", fontFamily: "var(--font-mono)" }}
+    >
+      <PrivacyIndicator />
+      <p
+        style={{
+          margin: 0,
+          paddingTop: "var(--spacing-4)",
+          paddingBottom: "var(--spacing-2)",
+          color: "var(--color-ink)",
+          whiteSpace: "pre-wrap",
+          lineHeight: 1.6,
+        }}
+      >
+        {body}
+      </p>
+      <p
+        style={{
+          margin: 0,
+          color: "var(--color-ink-muted)",
+          fontSize: "var(--text-caption)",
+          textAlign: "right",
+        }}
+      >
+        {count} / 300
+      </p>
+    </article>
+  );
+}
+
 export default function LandingPage() {
   return (
     <main
@@ -51,45 +84,27 @@ export default function LandingPage() {
         />
       </span>
 
-      {/* Specimen — a real-feeling rendered wyrd, demonstrating the form.
-          Per ADR-015 (use-case agnostic), the body reads naturally for any
-          of the four candidate use cases. */}
-      <article
-        className="landing-specimen"
+      {/* Specimens — two real-feeling rendered wyrds, demonstrating the form
+          across distinct use cases (per ADR-015, use-case agnostic). */}
+      <div
+        className="landing-specimens"
         style={{
           width: "100%",
           maxWidth: "var(--max-content)",
-          fontFamily: "var(--font-mono)",
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--spacing-5)",
         }}
       >
-        <PrivacyIndicator />
-
-        <p
-          style={{
-            margin: 0,
-            paddingTop: "var(--spacing-6)",
-            paddingBottom: "var(--spacing-3)",
-            color: "var(--color-ink)",
-            whiteSpace: "pre-wrap",
-            lineHeight: 1.6,
-          }}
-        >
-          {
-            "Looking for someone who's worked through a SAFE conversion when there are bridge notes outstanding. The cap-table math gets tangled fast. Pass this along if it lands — happy to compare notes."
-          }
-        </p>
-
-        <p
-          style={{
-            margin: 0,
-            color: "var(--color-ink-muted)",
-            fontSize: "var(--text-caption)",
-            textAlign: "right",
-          }}
-        >
-          192 / 300
-        </p>
-      </article>
+        <SpecimenWyrd
+          body="Anyone worked through a SAFE conversion with bridge notes outstanding? Pass forward if so."
+          count={90}
+        />
+        <SpecimenWyrd
+          body="I have 100 cows to sell at XYZ location. Any buyers in the area?"
+          count={64}
+        />
+      </div>
 
       {/* Prose — what is this. Per ADR-015, no use-case lead. */}
       <section
