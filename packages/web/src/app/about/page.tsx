@@ -208,14 +208,6 @@ export default function AboutPage() {
             rails (iMessage, Signal, WhatsApp, Slack, email) rather than a
             native feed or discovery layer.
           </p>
-          <p style={pStyle}>
-            The result is a mesh network layered on top of existing
-            platforms — the same wyrd can hop from an iMessage thread to a
-            Twitter DM to a Slack channel to an email, routed by human
-            judgement rather than an algorithm. SendWyrd doesn&apos;t own
-            a network; it rides whatever channels people already use, and
-            crosses cleanly between them.
-          </p>
           <p style={pStyle}>The URL takes one canonical form:</p>
           <p
             style={{
@@ -354,10 +346,15 @@ export default function AboutPage() {
 
         <CollapsibleSection title="Mosaic Quality">
           <p style={pStyle}>
-            Each wyrd is a tile in a mosaic. Tiles are individually
-            meaningful; lost tiles leave gaps but don&apos;t break the
-            wyrds that remain. The architecture refuses a single archive
-            that would hold the whole picture.
+            SendWyrd is a <strong>mosaic mesh network</strong>. Mesh:
+            each wyrd hops across whatever platforms people already use
+            — iMessage to Twitter DM to Slack to email — routed by human
+            judgement, not algorithms. Mosaic: each wyrd is a tile,
+            independently meaningful; lost tiles leave gaps but
+            don&apos;t break the wyrds that remain. SendWyrd doesn&apos;t
+            own a network and refuses an archive that would hold the
+            whole picture; the assembly lives in the social graph
+            itself.
           </p>
           <p style={pStyle}>
             <Code>K_read</Code> is per-wyrd random, not derived from your seed.
