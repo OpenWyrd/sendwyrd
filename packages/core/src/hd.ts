@@ -10,6 +10,13 @@ import { mnemonicToSeedSync, validateMnemonic } from "@scure/bip39";
 import { wordlist } from "@scure/bip39/wordlists/english";
 import { secp256k1 } from "@noble/curves/secp256k1";
 
+/**
+ * The English BIP-39 wordlist (2048 words). Re-exported so consumers can
+ * power per-word autocomplete and prefix validation in mnemonic-input UIs
+ * without pulling in @scure/bip39 directly.
+ */
+export const BIP39_ENGLISH_WORDLIST = wordlist as readonly string[];
+
 export const PURPOSE = 300;
 export const HARDENED_OFFSET = 0x80000000;
 

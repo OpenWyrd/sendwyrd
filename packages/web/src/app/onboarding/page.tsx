@@ -162,7 +162,8 @@ export default function OnboardingPage() {
           <>
             <p style={{ margin: 0, marginBottom: "var(--spacing-6)" }}>
               Set a passphrase. It encrypts your seed at rest on this device.
-              You&apos;ll enter it each time you compose.
+              You&apos;ll enter it once per session — the seed stays unlocked
+              until you close this tab.
             </p>
             <input
               type="password"

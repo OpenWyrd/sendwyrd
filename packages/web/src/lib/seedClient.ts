@@ -6,8 +6,13 @@
  *   read it (XSS, browser extensions, devtools). Per-user choice.
  *
  * - **protected**: seed stored encrypted (PBKDF2-AES-256-GCM). Requires
- *   passphrase per session. Memory-cached after unlock; cleared on tab
- *   visibility-hidden + 30 min idle.
+ *   passphrase to unlock. Once unlocked, both the decrypted seed and the
+ *   passphrase live in module-level memory for the lifetime of the tab.
+ *   The passphrase is held alongside the seed because counter writes
+ *   re-encrypt on every consumeNextIndex; without it cached we'd have to
+ *   re-prompt on every send, which the unlock-once-per-tab UX is meant
+ *   to avoid. Memory is cleared when the tab closes (JS runtime tears
+ *   down) or when the caller explicitly calls lockSeed/forgetSeed.
  *
  * One-of-the-two storage keys is populated at any time. Promotion (open
  * → protected) and demotion (protected → open) flow through dedicated
@@ -26,7 +31,6 @@ import {
 
 const STORAGE_KEY_PROTECTED = "sendwyrd:seed:v1";
 const STORAGE_KEY_OPEN = "sendwyrd:open_seed:v1";
-const IDLE_MS = 30 * 60 * 1000;
 
 interface OpenSeedJson {
   v: 1;
@@ -36,29 +40,7 @@ interface OpenSeedJson {
 }
 
 let cached: SeedAndCounter | null = null;
-let idleTimer: ReturnType<typeof setTimeout> | null = null;
-
-function armIdleTimer() {
-  if (idleTimer) clearTimeout(idleTimer);
-  idleTimer = setTimeout(() => {
-    cached = null;
-  }, IDLE_MS);
-}
-
-if (typeof window !== "undefined") {
-  document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "hidden") {
-      // Only clear cache for protected mode — open mode re-reads localStorage.
-      if (getSeedMode() === "protected") {
-        cached = null;
-        if (idleTimer) {
-          clearTimeout(idleTimer);
-          idleTimer = null;
-        }
-      }
-    }
-  });
-}
+let cachedPassphrase: string | null = null;
 
 export type SeedMode = "open" | "protected" | null;
 
@@ -96,7 +78,6 @@ export function getSeed(): SeedAndCounter | null {
       return null;
     }
   }
-  if (cached) armIdleTimer();
   return cached;
 }
 
@@ -111,6 +92,7 @@ export function storeOpenSeed(args: SeedAndCounter): void {
   localStorage.setItem(STORAGE_KEY_OPEN, JSON.stringify(json));
   localStorage.removeItem(STORAGE_KEY_PROTECTED);
   cached = args;
+  cachedPassphrase = null;
 }
 
 /** Store a seed in protected (passphrase-encrypted) mode. */
@@ -119,7 +101,7 @@ export async function storeProtectedSeed(args: SeedAndCounter & { passphrase: st
   localStorage.setItem(STORAGE_KEY_PROTECTED, record);
   localStorage.removeItem(STORAGE_KEY_OPEN);
   cached = { seed: args.seed, counter: args.counter, mnemonic: args.mnemonic };
-  armIdleTimer();
+  cachedPassphrase = args.passphrase;
 }
 
 /** Compatibility alias used elsewhere — defaults to protected. */
@@ -131,14 +113,25 @@ export async function unlockSeed(passphrase: string): Promise<SeedAndCounter> {
   if (!record) throw new Error("no_protected_seed");
   const data = await decryptSeedRecord(record, passphrase);
   cached = data;
-  armIdleTimer();
+  cachedPassphrase = passphrase;
   return data;
+}
+
+/**
+ * Drop the in-memory seed + passphrase without touching storage. Use this
+ * for an explicit "lock now" UI action; otherwise the cache lives until the
+ * tab closes. Storage is untouched, so the next unlockSeed call still works.
+ */
+export function lockSeed(): void {
+  cached = null;
+  cachedPassphrase = null;
 }
 
 /**
  * Increment the counter, persist, return the consumed `n`.
  * Open mode: no passphrase needed.
- * Protected mode: passphrase required.
+ * Protected mode: uses the cached passphrase from unlock; an explicit
+ * passphrase argument overrides the cache (e.g., for tests).
  */
 export async function consumeNextIndex(passphrase?: string): Promise<number> {
   const mode = getSeedMode();
@@ -153,8 +146,9 @@ export async function consumeNextIndex(passphrase?: string): Promise<number> {
   if (mode === "open") {
     storeOpenSeed(next);
   } else {
-    if (!passphrase) throw new Error("passphrase_required");
-    await storeProtectedSeed({ ...next, passphrase });
+    const pp = passphrase ?? cachedPassphrase;
+    if (!pp) throw new Error("passphrase_required");
+    await storeProtectedSeed({ ...next, passphrase: pp });
   }
   return n;
 }
@@ -179,10 +173,7 @@ export function forgetSeed(): void {
   localStorage.removeItem(STORAGE_KEY_PROTECTED);
   localStorage.removeItem(STORAGE_KEY_OPEN);
   cached = null;
-  if (idleTimer) {
-    clearTimeout(idleTimer);
-    idleTimer = null;
-  }
+  cachedPassphrase = null;
 }
 
 /** Get the mnemonic for backup display. May be null if seed pre-dates mnemonic storage. */
