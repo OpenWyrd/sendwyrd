@@ -99,6 +99,31 @@ async function fetchUnfurl(target: URL): Promise<UnfurlMeta | UnfurlError> {
   const controller = new AbortController();
   const t = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
+    // HEAD-check first to learn the content-type without pulling the body.
+    // If it's an image, return the URL itself as the card image — that
+    // covers CDN image URLs (gstatic, imgur direct, cloudfront) which
+    // serve images at extensionless paths.
+    const head = await fetch(target.toString(), {
+      method: "HEAD",
+      headers: {
+        "User-Agent": "SendWyrdUnfurl/1.0 (+https://sendwyrd.com)",
+      },
+      redirect: "follow",
+      signal: controller.signal,
+    });
+    if (head.ok) {
+      const ct = head.headers.get("content-type") ?? "";
+      if (ct.startsWith("image/")) {
+        return {
+          ok: true,
+          title: null,
+          description: null,
+          image: target.toString(),
+          hostname: target.hostname,
+        };
+      }
+    }
+
     const res = await fetch(target.toString(), {
       method: "GET",
       headers: {
@@ -110,6 +135,16 @@ async function fetchUnfurl(target: URL): Promise<UnfurlMeta | UnfurlError> {
     });
     if (!res.ok) return { ok: false, reason: "fetch_failed" };
     const ct = res.headers.get("content-type") ?? "";
+    if (ct.startsWith("image/")) {
+      // Some servers ignore HEAD requests; double-check on the GET path.
+      return {
+        ok: true,
+        title: null,
+        description: null,
+        image: target.toString(),
+        hostname: target.hostname,
+      };
+    }
     if (!ct.includes("text/html") && !ct.includes("application/xhtml")) {
       return { ok: false, reason: "non_html" };
     }
