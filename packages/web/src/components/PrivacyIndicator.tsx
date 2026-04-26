@@ -1,17 +1,18 @@
 /**
- * Privacy-posture indicator per ADR-019.
+ * Privacy-posture indicator per ADR-019 (amended by ADR-021).
  *
- * v2 (post-UX-feedback): minimal lock glyph only — closed for Sealed,
- * open for Public. Hover/tap reveals the explanation. No verbose lines
- * of crypto detail in the primary surface.
+ * Single-form architecture: every wyrd is sealed. The indicator is now
+ * monomorphic — a closed lock affirming that the host stays blind. Kept
+ * for pedagogical visibility (users see the lock, understand the
+ * fragment-form contract). Removable if it later becomes noise.
  */
 
-interface IndicatorProps {
+interface SealedGlyphProps {
   size?: number;
   className?: string;
 }
 
-export function SealedGlyph({ size = 18, className }: IndicatorProps) {
+export function SealedGlyph({ size = 18, className }: SealedGlyphProps) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -44,65 +45,19 @@ export function SealedGlyph({ size = 18, className }: IndicatorProps) {
   );
 }
 
-export function OpenGlyph({ size = 18, className }: IndicatorProps) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 18 16"
-      width={size}
-      height={size}
-      role="img"
-      aria-label="Public"
-      className={className}
-      style={{ display: "block" }}
-    >
-      {/* Body */}
-      <rect
-        x="2"
-        y="8"
-        width="9"
-        height="6"
-        rx="1"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.25"
-      />
-      {/* Shackle: anchored at left foot inside body, swung up-and-right
-         so the right foot floats clearly above + right of the body —
-         distinctly "open" not just "detached". */}
-      <path
-        d="M 3.5 8 V 5 Q 3.5 1 8 1 Q 13.5 1 15 5 L 15 6.5"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.25"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-interface PrivacyIndicatorProps {
-  state: "sealed" | "open";
-}
-
-export function PrivacyIndicator({ state }: PrivacyIndicatorProps) {
-  const isSealed = state === "sealed";
-  const color = isSealed ? "var(--color-mark-sealed)" : "var(--color-mark-open)";
-  const tooltip = isSealed
-    ? "Sealed · decrypted on your device. AES-256-GCM body, secp256k1 author key. The decryption key lives in the URL fragment, which browsers never send to the host."
-    : "Public · readable by the host (and by anyone with the URL). The decryption key lives in the URL path; the host can decrypt server-side for previews and search.";
+export function PrivacyIndicator() {
   return (
     <div
       style={{
         display: "inline-flex",
         alignItems: "center",
-        color,
+        color: "var(--color-mark-sealed)",
         cursor: "help",
       }}
-      title={tooltip}
-      aria-label={isSealed ? "Sealed" : "Public"}
+      title="Sealed · decrypted on your device. AES-256-GCM body, secp256k1 author key. The decryption key lives in the URL fragment, which browsers never send to the host."
+      aria-label="Sealed"
     >
-      {isSealed ? <SealedGlyph /> : <OpenGlyph />}
+      <SealedGlyph />
     </div>
   );
 }

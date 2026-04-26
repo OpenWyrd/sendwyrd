@@ -70,16 +70,6 @@ export interface FetchEnvelopeResponse {
   replies_enabled: boolean;
 }
 
-/** Per spec §11 — public-form fetch (host already decrypted). */
-export interface FetchPlaintextResponse {
-  handle: Base64Url;
-  body: string;
-  k_origin_pub: Base64Url;
-  published_at: number;
-  expires_at: number;
-  replies_enabled: boolean;
-}
-
 /** Per spec §13 — 410 Gone tombstone. */
 export interface TombstoneResponse {
   status: "gone";

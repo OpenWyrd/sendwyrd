@@ -3,20 +3,22 @@ type: decision
 adr_id: adr_019
 adr_number: 19
 title: "Renderer displays a symmetric privacy-posture indicator on every wyrd view"
-status: accepted
+status: amended
 created: 2026-04-25
-updated: 2026-04-25
+updated: 2026-04-26
 last_edited_by: agent_michael
 supersedes:
-superseded_by:
+superseded_by: adr_021
 tags: [adr, decision, mop, renderer, privacy, ux, transparency]
 ---
 
 # ADR-019: Renderer Displays a Symmetric Privacy-Posture Indicator on Every Wyrd View
 
+> **Amended by ADR-021 (2026-04-26).** With single-form addressing (fragment only) the indicator is **monomorphic Sealed**, not symmetric. The "Open" state is removed. The indicator persists as an affirmative reassurance affordance — every wyrd shows the closed-lock glyph. The pedagogy-through-contrast argument that motivated the symmetric design is moot when there is only one form.
+
 ## Status
 
-Accepted (closes backlog item B9).
+Amended by ADR-021. Original status: accepted (2026-04-25, closed backlog item B9).
 
 ## Context
 
