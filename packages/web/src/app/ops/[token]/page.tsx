@@ -67,6 +67,82 @@ async function fetchStats(token: string): Promise<{ stats?: UsageStats; error?: 
   }
 }
 
+interface EdgeStats {
+  hours: number;
+  requests: number;
+  uniques: number;
+  page_views: number;
+  bytes: number;
+}
+
+const ZONE_ID = "8c4dd97cddeb4550d6a885cd17c5e5ce";
+
+async function fetchEdgeAnalytics(
+  cfToken: string,
+): Promise<{ stats?: EdgeStats; error?: string }> {
+  try {
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000)
+      .toISOString()
+      .replace(/:\d\d\.\d+Z$/, ":00:00Z");
+    const until = new Date()
+      .toISOString()
+      .replace(/:\d\d\.\d+Z$/, ":00:00Z");
+    const query = `query($z:String!,$s:Time!,$u:Time!){viewer{zones(filter:{zoneTag:$z}){httpRequests1hGroups(limit:100,filter:{datetime_geq:$s,datetime_lt:$u},orderBy:[datetime_DESC]){sum{requests bytes pageViews}uniq{uniques}}}}}`;
+    const r = await fetch("https://api.cloudflare.com/client/v4/graphql", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${cfToken}`,
+        "Content-Type": "application/json",
+      },
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+      body: JSON.stringify({
+        query,
+        variables: { z: ZONE_ID, s: since, u: until },
+      }),
+    });
+    if (!r.ok) return { error: `HTTP ${r.status}` };
+    const data = (await r.json()) as {
+      errors?: Array<{ message: string }>;
+      data?: {
+        viewer?: {
+          zones?: Array<{
+            httpRequests1hGroups?: Array<{
+              sum: { requests: number; bytes: number; pageViews: number };
+              uniq: { uniques: number };
+            }>;
+          }>;
+        };
+      };
+    };
+    if (data.errors?.length) return { error: data.errors[0]?.message ?? "unknown" };
+    const groups =
+      data.data?.viewer?.zones?.[0]?.httpRequests1hGroups ?? [];
+    let requests = 0;
+    let uniques = 0;
+    let page_views = 0;
+    let bytes = 0;
+    for (const g of groups) {
+      requests += g.sum.requests;
+      uniques += g.uniq.uniques;
+      page_views += g.sum.pageViews;
+      bytes += g.sum.bytes;
+    }
+    return {
+      stats: { hours: groups.length, requests, uniques, page_views, bytes },
+    };
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
+}
+
+function formatBytes(b: number): string {
+  if (b < 1024) return `${b}B`;
+  if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)}KB`;
+  if (b < 1024 * 1024 * 1024) return `${(b / 1024 / 1024).toFixed(1)}MB`;
+  return `${(b / 1024 / 1024 / 1024).toFixed(2)}GB`;
+}
+
 function formatNum(n: number): string {
   if (n < 1000) return String(n);
   if (n < 1_000_000) return `${(n / 1000).toFixed(n < 10000 ? 1 : 0)}k`;
@@ -150,11 +226,16 @@ export default async function OpsPage({
     notFound();
   }
 
-  // Parallel fetch: health + per-project issues + usage stats.
-  const [apiHealth, webHealth, statsResult, ...projectResults] = await Promise.all([
+  const cfAnalyticsToken = process.env.CF_ANALYTICS_TOKEN || "";
+
+  // Parallel fetch: health + per-project issues + usage stats + edge analytics.
+  const [apiHealth, webHealth, statsResult, edgeResult, ...projectResults] = await Promise.all([
     checkHealth(`${SITE_ORIGIN}/api/v1/health`),
     checkHealth(`${SITE_ORIGIN}/`),
     fetchStats(token),
+    cfAnalyticsToken
+      ? fetchEdgeAnalytics(cfAnalyticsToken)
+      : Promise.resolve({ error: "no cf analytics token" } as { stats?: EdgeStats; error?: string }),
     ...PROJECTS.map((p) =>
       sentryToken
         ? fetchIssues(p, sentryToken)
@@ -256,6 +337,41 @@ export default async function OpsPage({
                 ok
                 muted
               />
+            </>
+          ) : (
+            <Row label="stats" value="loading" ok muted />
+          )}
+        </Section>
+
+        {/* Edge analytics (Cloudflare) */}
+        <Section title="edge · last 24h">
+          {edgeResult.error ? (
+            <Row label="cloudflare" value={`error: ${edgeResult.error}`} ok={false} />
+          ) : edgeResult.stats ? (
+            <>
+              <Row
+                label="distinct IPs"
+                value={formatNum(edgeResult.stats.uniques)}
+                ok
+              />
+              <Row
+                label="page views"
+                value={formatNum(edgeResult.stats.page_views)}
+                ok
+                muted
+              />
+              <Row
+                label="requests"
+                value={formatNum(edgeResult.stats.requests)}
+                ok
+                muted
+              />
+              <Row
+                label="bytes served"
+                value={formatBytes(edgeResult.stats.bytes)}
+                ok
+                muted
+              />
               <p
                 style={{
                   margin: 0,
@@ -265,14 +381,14 @@ export default async function OpsPage({
                   lineHeight: 1.6,
                 }}
               >
-                no per-user identity primitive — these are aggregate counts.
-                distinct-IP estimates from cloudflare are a deferred follow-up
-                (needs a scoped read-only cf analytics token; deploy token must
-                not live in a runtime worker).
+                distinct IPs ≠ distinct users. mobile IPs change; multiple
+                people behind one NAT count as one; one person across networks
+                counts as many. closest legible &ldquo;traffic&rdquo; signal
+                the protocol can produce without violating P3.
               </p>
             </>
           ) : (
-            <Row label="stats" value="loading" ok muted />
+            <Row label="edge" value="loading" ok muted />
           )}
         </Section>
 
@@ -390,6 +506,22 @@ export default async function OpsPage({
             ok
           />
         </Section>
+
+        <p
+          style={{
+            margin: 0,
+            marginTop: "var(--spacing-4)",
+            fontSize: "var(--text-microcaption)",
+            color: "var(--color-ink-subtle)",
+          }}
+        >
+          <a
+            href={`/ops/${token}/secrets`}
+            style={{ color: "inherit", textDecoration: "underline", textUnderlineOffset: 2 }}
+          >
+            set a worker secret →
+          </a>
+        </p>
 
         <footer
           style={{
