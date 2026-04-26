@@ -1,10 +1,10 @@
 ---
 type: state
 created: 2026-04-24
-updated: 2026-04-24
+updated: 2026-04-25
 status: active
 last_edited_by: agent_michael
-last_session: session_michael_20260424_mop_open_questions_resume
+last_session: session_michael_20260425_mop_open_questions_resume_2
 tags: [state, governance, mop]
 ---
 
@@ -12,7 +12,7 @@ tags: [state, governance, mop]
 
 ## Current Phase
 
-**Architecture resolution, ~75% complete.** MOP was forked from the aDNA template on 2026-04-24. The founding session banked ADRs 003–008. The follow-on open-questions-resume session (also 2026-04-24) banked ADRs 009–013, resolving B1–B5 + B7. Six backlog items remain (B6, B8, B9, S1–S4) for the next session.
+**Architecture resolution complete; entering v1 build-readiness prep.** MOP was forked from the aDNA template on 2026-04-24. The founding session banked ADRs 003–008. Open-questions sessions on 2026-04-24 and 2026-04-25 closed all 13 remaining backlog items, banking ADRs 009–020. Working agreement reframed mid-session: technical/aesthetic calls delegated to agent (CTO mode); user reserves CEO calls (scope, branding, trust posture). All architecture decisions are now banked. Next phase is **one-shot build readiness**: wire spec, renderer contract, visual/UX direction, repo scaffolding, and landing copy — completed before implementation begins.
 
 ## What's Banked
 
@@ -39,6 +39,13 @@ tags: [state, governance, mop]
 | 011 | Body is plain text; renderer aggressively auto-embeds non-MOP URLs (UX over recipient-side privacy) |
 | 012 | Object body size cap: 300 Unicode codepoints (Spartan reference) |
 | 013 | v1 abuse posture: edge + per-IP rate-limits + size caps; no PoW |
+| 014 | Single canonical renderer; first-party clients only across web + iOS + Android in v1 |
+| 015 | v1 is unopinionated about which use case leads (closes S1) |
+| 016 | Brand is SendWyrd; canonical domain is sendwyrd.com; protocol codename remains MOP; unit noun is wyrd (closes S2) |
+| 017 | HD path convention: BIP-43 flat purpose `300'`, hardened indices `m/300'/n'` (closes B6) |
+| 018 | TTL expiry response: 410 Gone with structured tombstone metadata, 30-day retention (closes B8) |
+| 019 | Renderer displays a symmetric privacy-posture indicator (Sealed / Open) on every wyrd view (closes B9) |
+| 020 | v1 stack: Next.js + Hono on Cloudflare + Neon + R2; Web Crypto + noble + scure; AES-GCM + Schnorr (closes S3) |
 
 ### Use cases identified (`who/governance/VISION.md`)
 
@@ -55,19 +62,21 @@ tags: [state, governance, mop]
 
 ## What's Pending
 
-See `how/backlog/backlog_open_questions_v1.md` for the full list. Highest-priority open questions:
+Architecture phase is closed. All ADR-level decisions are banked (003–020). Remaining v1 prep work moves to spec/build phases:
 
-| ID | Question | Why it matters |
-|----|----------|----------------|
-| B6 | HD path convention (BIP-44 vs custom) | Locked-in shape needed before client code |
-| B8 | Tombstone vs. vanish on TTL expiry | Broken-link UX vs. ephemerality |
-| B9 | Public-form privacy banner on rendered page | Recipient comprehension |
-| S1 | v1 launch scope (which use cases lead) | Marketing & demo content depend on this |
-| S2 | Domain & branding | `mop.app` is a placeholder |
+| Phase | Deliverable | Status |
+|-------|-------------|--------|
+| B | Wire spec doc (`what/docs/spec/spec_mop_v1.md`) — URL forms, endpoints, envelope, HD derivation, error codes, rate-limits, reply-blob format | **Done (2026-04-25)** |
+| C | Renderer behavioral contract (`what/docs/spec/renderer_contract_v1.md`) — cross-impl spec for web/iOS/Android per ADR-014 | **Done (2026-04-25)** |
+| D | Visual/UX direction (`what/docs/spec/visual_direction_v1.md`) — color tokens, type, spacing, motion budget, glyph specs, IA, screen-by-screen flows | **Done (2026-04-25)** |
+| E | Repo scaffolding + deploy story (monorepo skeleton, no feature code) | Pending — needs Cloudflare/Neon auth + Bash unwedge |
+| F | Landing copy + demo wyrd content (per ADR-015 — primitive-not-vertical pitch) | Pending |
+
+When B–F are complete, v1 implementation becomes a single execution pass — every decision is pre-locked, no interrupts during coding.
 
 ## Active Blockers
 
-None. Open-questions-resume session paused for sleep, not for any unresolved blocker. Mid-question on B6 (HD path convention).
+None. All architecture questions resolved. Next session picks up Phase B (wire spec).
 
 ## Recent Decisions Timeline
 
@@ -79,35 +88,49 @@ None. Open-questions-resume session paused for sleep, not for any unresolved blo
 | 2026-04-24 | ADR-011 banked: body is plain text; renderer aggressively auto-embeds non-MOP URLs (B3 resolved; B7 settled collateral) | Open-questions resume session |
 | 2026-04-24 | ADR-012 banked: body size cap is 300 codepoints — Spartan reference (B4 resolved) | Open-questions resume session |
 | 2026-04-24 | ADR-013 banked: v1 abuse posture is edge + rate-limits + size caps; no PoW (B5 resolved) | Open-questions resume session |
+| 2026-04-25 | Working agreement reframed: CTO calls delegated to agent (technical + aesthetic); CEO calls reserved for user (scope + branding + trust posture) | Open-questions resume 2 |
+| 2026-04-25 | ADR-014 banked: single canonical renderer; first-party clients only across web + iOS + Android (S4 resolved) | Open-questions resume 2 |
+| 2026-04-25 | ADR-015 banked: v1 is unopinionated about which use case leads (S1 resolved) | Open-questions resume 2 |
+| 2026-04-25 | ADR-016 banked: Brand is SendWyrd at sendwyrd.com; protocol codename remains MOP; unit noun is *wyrd* (S2 resolved) | Open-questions resume 2 |
+| 2026-04-25 | ADR-017 banked: HD path is `m/300'/n'` — BIP-43 flat purpose, hardened indices (B6 resolved) | Open-questions resume 2 |
+| 2026-04-25 | ADR-018 banked: TTL expiry returns 410 Gone with tombstone metadata; 30-day retention (B8 resolved) | Open-questions resume 2 |
+| 2026-04-25 | ADR-019 banked: renderer displays symmetric Sealed/Open privacy-posture indicator (B9 resolved) | Open-questions resume 2 |
+| 2026-04-25 | ADR-020 banked: v1 stack is Next.js + Hono on Cloudflare + Neon + R2; Web Crypto + noble/scure; AES-GCM + Schnorr (S3 resolved) | Open-questions resume 2 |
 
 ## Recent Upgrades
 
 | Date | Upgrade | Source |
 |------|---------|--------|
 | 2026-04-24 | Forked from aDNA template; MOP project identity established | Initial commit |
+| 2026-04-25 | Brand banked as SendWyrd; placeholder names swept from MANIFEST/VISION; backlog architecture phase closed | Open-questions resume 2 |
+| 2026-04-25 | `sendwyrd.com` and `sendwyrd.app` domains registered (user) | Open-questions resume 2 |
+| 2026-04-25 | Phase B (wire spec) banked at `what/docs/spec/spec_mop_v1.md`; ADR-020 amended with Drizzle ORM | Open-questions resume 2 |
+| 2026-04-25 | Phase C (renderer behavioral contract) banked at `what/docs/spec/renderer_contract_v1.md` | Open-questions resume 2 |
+| 2026-04-25 | GitHub repo + local dir + memory dir renamed `MOP` → `sendwyrd`; ADR-016 amendment recorded | Open-questions resume 2 |
+| 2026-04-25 | bin-21 archived as inspiration reference (stack-validation: Next.js + Drizzle + R2 confirmed); backlog F1/F2 added (burn-after-read v2 consideration, bot-defense operational refinement) | Open-questions resume 2 |
+| 2026-04-25 | Phase D (visual direction spec) banked at `what/docs/spec/visual_direction_v1.md` — dark-first canonical, mono-as-voice, four-item motion budget, knotted/unknotted thread privacy glyphs | Open-questions resume 2 |
 
 ## Partial-Resume Detection
 
-Session history at `how/sessions/history/2026-04/` contains two completed sessions (founding + open-questions resume). MANIFEST.md does not carry `role: template`; `last_edited_by: agent_michael` (not `agent_init`). Onboarding does **not** need to run. Next session picks up directly from this STATE.md and the `Next Session Prompt` in the most recent session log (`session_michael_20260424_mop_open_questions_resume.md`).
+Session history at `how/sessions/history/2026-04/` contains the completed founding + first open-questions sessions. The current open-questions-resume-2 session (2026-04-25) is in `how/sessions/active/` until close. MANIFEST.md does not carry `role: template`; `last_edited_by: agent_michael` (not `agent_init`). Onboarding does **not** need to run. Next session picks up directly from this STATE.md and the `Next Session Prompt` in the most recent session log.
 
 ## Next Session Prompt
 
 A self-contained paragraph for the next agent. Read in this order:
 
-1. `CLAUDE.md` (auto-loaded — note that the **Identity & Personality** section still says "Berthier"; the user has not yet customized this and it remains the default)
-2. `MANIFEST.md` — MOP project identity and structure
-3. `who/governance/VISION.md` — five design principles + scope walls; immutable within v1 phase
-4. `what/decisions/adr_003*.md` through `adr_013*.md` — **all 11 banked architectural commitments**, in number order
+1. `CLAUDE.md` (auto-loaded — Identity & Personality is still default *Berthier*; user has not customized)
+2. `MANIFEST.md` — project identity (consumer brand SendWyrd, protocol codename MOP, unit noun *wyrd*)
+3. `who/governance/VISION.md` — five immutable design principles + scope walls
+4. `what/decisions/adr_003*.md` through `adr_020*.md` — **all 18 banked architectural commitments**, in number order. Architecture phase is closed.
 5. This STATE.md
-6. `how/backlog/backlog_open_questions_v1.md` — open question queue (B6, B8, B9, S1–S4 still open)
-7. `how/sessions/history/2026-04/session_michael_20260424_mop_open_questions_resume.md` — most recent session log; its Next Session Prompt is the canonical resume instructions for the rapid-fire (more detailed than this paragraph)
+6. `how/sessions/history/2026-04/session_michael_20260425_mop_open_questions_resume_2.md` — most recent session log; its SITREP and Next Session Prompt drive the active phase
 
-**Then resume rapid-fire architecture questions** with the user, one question at a time. B1 → ADR-009; B2 → ADR-010; B3 + B7 → ADR-011; B4 → ADR-012; B5 → ADR-013. Next on deck is **B6** (HD path convention — re-open with the BIP-43 / BIP-44 / custom fork; lean is BIP-43 purpose code `300'` flat). Then B8 → B9 → S1 → S2 → S3 → S4.
+**Phase ahead is one-shot build readiness.** When B–F (wire spec, renderer contract, visual direction, scaffolding, content) are all complete, v1 implementation becomes a single execution pass with zero open architecture questions. Start the next session at **Phase B (wire spec)**: write the consolidated v1 MOP protocol spec under `what/docs/` capturing every ADR-level decision in implementation-grade detail (URL canonical forms, endpoint inventory with HTTP methods/payloads/error codes, encryption envelope layout, HD derivation reference, reply-blob format, rate-limit numbers).
 
-**Apply the pragmatic privacy posture heuristic** (memory: `~/.claude/projects/-home-michael-lattice-MOP/memory/feedback_pragmatic_privacy_posture.md`) when forks pit recipient-side privacy or maximalist defense against UX. The user has repeatedly chosen UX in v1.
+**Working agreement (CTO/CEO mode)**: technical and aesthetic decisions are delegated to agent. User reserves CEO calls (scope, branding, trust posture). Memory: `~/.claude/projects/-home-michael-lattice-MOP/memory/feedback_decision_delegation.md`.
 
-The user is **DeltaClimbs / Michael** (mrchapiro@gmail.com), working in `~/lattice/MOP/` on a Fedora workspace. Cypherpunk-Nostr-adjacent, Nietzschean, anti-feed/anti-algorithm; terse declarative ADRs; rule-light protocols. Match the register; do not corporate-neutralize.
+**Apply the pragmatic privacy posture heuristic** (memory: `feedback_pragmatic_privacy_posture.md`) for any future fork pitting recipient-side privacy against UX.
 
-The architecture pack and inspiration docs the user shared in the founding session are NOT in the repo — they were verbatim conversation context. The pack's substance is captured in MANIFEST + VISION + ADRs; the inspiration is at `what/context/inspiration/`. Do not re-ingest the pack from scratch; treat the ADRs as canonical.
+The user is **DeltaClimbs / Michael** (mrchapiro@gmail.com), working in `~/lattice/MOP/` on a Fedora workspace. Cypherpunk-Nostr-adjacent, Nietzschean, anti-feed/anti-algorithm; terse declarative docs; rule-light protocols. Match the register; do not corporate-neutralize.
 
-**Crucially**: do NOT re-debate banked decisions (ADRs 003–013) unless the user explicitly reopens them. Banked is banked.
+**Crucially**: do NOT re-debate banked decisions (ADRs 003–020) unless the user explicitly reopens them. Banked is banked.
