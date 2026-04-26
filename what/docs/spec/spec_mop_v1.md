@@ -2,10 +2,10 @@
 type: spec
 created: 2026-04-25
 updated: 2026-04-25
-last_edited_by: agent_michael
+last_edited_by: agent_spec_sync
 status: draft
 tags: [spec, mop, protocol, wire, v1]
-spec_version: "1.0.0-draft"
+spec_version: "1.0.1-draft"
 ---
 
 # MOP Protocol Specification — v1
@@ -47,7 +47,7 @@ This is **MOP v1**. The protocol-version marker is `1` (integer). Clients and se
 | Term | Meaning |
 |------|---------|
 | **wyrd** | One published unit. Tweet-sized (≤300 codepoints), end-to-end encrypted, capability-addressed, immutable post-publish, default-90-day-TTL. Plural: *wyrds*. |
-| **handle** | A 12-byte server-issued random identifier for a wyrd, base64url-encoded (16 chars no padding) for transport. Globally unique within the host. |
+| **handle** | A 12-byte client-generated random identifier for a wyrd, base64url-encoded (16 chars no padding) for transport. Globally unique within the host (uniqueness validated server-side; collision-on-insert returns 409). Client-generated because the AAD per §7.2 binds the ciphertext to the handle, and `publish_message` (§9.2) signs the handle — both require the handle to exist before the envelope is encrypted and signed. |
 | **K_read** | A 32-byte symmetric key, AES-256 used for the body envelope. Generated client-side at compose time. Distributed via the URL (in the fragment for private form, in the path for public form). |
 | **K_origin** | A secp256k1 keypair (`K_origin_priv` / `K_origin_pub`) bound to one wyrd. Authorizes destructive (delete) and reply-fetch operations on that wyrd. Derived from the user's HD seed at path `m/300'/n'`. |
 | **seed** | The user's BIP-39 mnemonic (encoded as 32 bytes via PBKDF2 per BIP-39). The root of all `K_origin` derivations on this user's device. |
@@ -183,7 +183,7 @@ A wyrd at rest on the host consists of:
 
 | Field | Type | Source |
 |-------|------|--------|
-| `handle` | 12 bytes binary (16 chars b64u in transport) | Server-generated at publish |
+| `handle` | 12 bytes binary (16 chars b64u in transport) | Client-generated at compose; server validates uniqueness on insert and rejects collisions with 409 |
 | `K_origin_pub` | 33 bytes binary (SEC1 compressed; 44 chars b64u in transport) | Client; derived from seed at `m/300'/n'` |
 | `envelope` | binary blob (see §7) | Client; encrypted body |
 | `published_at` | unix epoch milliseconds (uint64) | Server; assigned at publish |
@@ -292,6 +292,7 @@ MOP-Protocol-Version: 1
 
 ```json
 {
+  "handle": "<base64url 16-char client-generated handle>",
   "envelope": "<base64url envelope, see §7.1>",
   "k_origin_pub": "<base64url 33-byte SEC1 compressed pubkey>",
   "ttl_seconds": 7776000,
@@ -302,9 +303,10 @@ MOP-Protocol-Version: 1
 ```
 
 Fields:
+- `handle` — REQUIRED. 12 random bytes from CSPRNG, base64url-encoded (16 chars). Client-generated. Server validates format and uniqueness; collision returns 409 with `error: "handle_collision_retry"` (client retries with a fresh handle).
 - `envelope` — REQUIRED. The encrypted body envelope.
 - `k_origin_pub` — REQUIRED. The per-wyrd origin pubkey, derived from the seed at `m/300'/n'`.
-- `ttl_seconds` — REQUIRED. Unsigned integer. Server-clamped to `[1, 31_536_000]` (1 year max). Default in composer SHOULD be `7_776_000` (90 days, ADR-006). Value `0` means permanent and is REJECTED by the server in v1 (permanence is discouraged per ADR-006; revisitable in a later ADR).
+- `ttl_seconds` — REQUIRED. Unsigned integer. Server-accepted range is `[0, 31_536_000]` (1 year max). Default in composer SHOULD be `7_776_000` (90 days, ADR-006). Value `0` is the **permanent-storage sentinel**: the server stores `expires_at = 253_370_764_800_000` (year 9999, unix ms) and the wyrd never naturally expires (it can still be burned). Permanence is discouraged per ADR-006 — composers SHOULD NOT default to `0` and SHOULD warn the user when `0` is selected — but it is a valid value.
 - `replies_enabled` — REQUIRED. Per ADR-008.
 - `publish_signature` — REQUIRED. BIP-340 Schnorr signature by `K_origin_priv` over `publish_message` (defined below).
 - `publish_timestamp_ms` — REQUIRED. Client-asserted unix epoch ms. Server rejects if outside `[server_now - 60s, server_now + 60s]` (replay-window guard).
@@ -314,6 +316,7 @@ Fields:
 ```
 publish_message := SHA-256(
   "mop:v1:publish" ||
+  handle(12) ||
   envelope ||
   ttl_seconds_be(8) ||
   replies_enabled(1) ||
@@ -321,17 +324,18 @@ publish_message := SHA-256(
 )
 ```
 
-This binds the signature to the exact envelope, TTL, reply mode, and timestamp. Note the handle is NOT in the signed payload — the handle is server-issued *after* signature verification.
+This binds the signature to the exact handle, envelope, TTL, reply mode, and timestamp. The handle IS in the signed payload because it is client-generated: the client picks 12 random bytes, encrypts the envelope with the handle bound into the AAD (§7.2), then signs the resulting `publish_message`. The server validates the signature against the handle the client supplied and rejects on uniqueness collision (§9.3 step 5).
 
 ### 9.3 Server behavior
 
-1. Validate envelope size (≤ 1500 bytes).
-2. Validate `k_origin_pub` is a valid secp256k1 SEC1-compressed pubkey.
-3. Validate `publish_timestamp_ms` is within ±60s of server clock.
-4. Reconstruct `publish_message` and verify `publish_signature` against `k_origin_pub`.
-5. Generate a fresh 12-byte random handle. Reject collisions; retry. Collision probability at v1 scale is negligible.
-6. Persist the wyrd record with `published_at := server_now`, `expires_at := server_now + ttl_seconds * 1000`.
-7. Return 201.
+1. Validate `handle` matches `^[A-Za-z0-9_-]{16}$` (base64url, 12 bytes).
+2. Validate envelope size (≤ 1500 bytes).
+3. Validate `k_origin_pub` is a valid secp256k1 SEC1-compressed pubkey.
+4. Validate `ttl_seconds` is in `[0, 31_536_000]`.
+5. Validate `publish_timestamp_ms` is within ±60s of server clock.
+6. Reconstruct `publish_message` (including the client-supplied handle) and verify `publish_signature` against `k_origin_pub`.
+7. Insert the wyrd record with `published_at := publish_timestamp_ms`, `expires_at := publish_timestamp_ms + ttl_seconds * 1000` (or `253_370_764_800_000` if `ttl_seconds == 0`). Handle uniqueness is enforced as a primary-key constraint; on duplicate insertion the server returns `409 Conflict` with `error: "handle_collision_retry"` and the client SHOULD retry with a fresh 12-byte handle. Collision probability at 96-bit entropy is negligible (~1 in 2^48 after 2^48 wyrds by birthday bound), so retry is a safety net rather than a hot path.
+8. Return 201.
 
 ### 9.4 Response (success)
 
@@ -349,11 +353,12 @@ MOP-Protocol-Version: 1
 
 ### 9.5 Response (failure)
 
-See §15 for error codes. Common failure responses:
-- `400 Bad Request` — malformed JSON, invalid base64url, wrong field types.
+See §17 for error codes. Common failure responses:
+- `400 Bad Request` — malformed JSON, invalid base64url, wrong field types, handle format mismatch.
+- `409 Conflict` — handle already exists (`error: "handle_collision_retry"`). Client retries with a fresh handle.
 - `413 Payload Too Large` — envelope exceeds 1500 bytes.
-- `422 Unprocessable Entity` — signature verification failed; pubkey malformed; timestamp outside replay window.
-- `429 Too Many Requests` — rate-limit (see §14).
+- `422 Unprocessable Entity` — signature verification failed; pubkey malformed; timestamp outside replay window; `ttl_seconds` out of range.
+- `429 Too Many Requests` — rate-limit (see §16).
 
 ---
 
@@ -678,7 +683,7 @@ Decryption (by author, with `K_origin_priv`): mirror steps 2–6 with `shared :=
 
 ### 14.4 Reply size limits
 
-Reply plaintext: ≤ 1000 codepoints (≥3× wyrd body; replies need more room than the original; tunable in a future ADR if needed). Blob ≤ 5000 bytes hard ceiling.
+Reply plaintext: ≤ `REPLY_CODEPOINT_CAP = 300` codepoints — **the same cap as a wyrd body**. Replies are a forensic primitive, not a chat surface; making them as terse as the wyrds they reply to keeps the protocol from drifting toward conversation-hosting (anti-XKCD-927). Reply blob hard ceiling: `REPLY_BLOB_BYTE_CEILING = 2500` bytes (envelope overhead headroom over the wyrd 1500-byte ceiling, accommodating the 33-byte ephemeral pubkey and reply-specific framing). Tunable in a future ADR if real usage demands it; the current values are deliberate.
 
 ### 14.5 Reply replay protection
 
@@ -782,12 +787,13 @@ The `Retry-After` HTTP header SHOULD also be set. Numbers are ADR-013 starting p
 | 401 | `signature_required` | Endpoint needs `X-Mop-Auth` and it's missing. |
 | 403 | `replies_disabled` | Reply-submit on a wyrd where `replies_enabled = false`. |
 | 404 | `not_found` | Handle does not exist (or tombstone retention expired). |
+| 409 | `handle_collision_retry` | Client-supplied handle is already taken. Client retries with fresh 12-byte handle. |
 | 410 | (see §13) | Tombstone — wyrd is gone. |
 | 413 | `payload_too_large` | Envelope or reply blob exceeds size cap. |
 | 422 | `signature_invalid` | Schnorr signature failed verification. |
 | 422 | `timestamp_outside_window` | Client timestamp outside ±60s replay window. |
 | 422 | `pubkey_invalid` | `k_origin_pub` not a valid secp256k1 point. |
-| 422 | `ttl_out_of_range` | `ttl_seconds` outside `[1, 31_536_000]` (or `0`, which is rejected in v1). |
+| 422 | `ttl_out_of_range` | `ttl_seconds` outside `[0, 31_536_000]`. (`0` is the permanent-storage sentinel and is accepted; see §9.2.) |
 | 426 | `protocol_version_unsupported` | Client sent a `MOP-Protocol-Version` the server doesn't speak. |
 | 429 | `rate_limited` | Rate-limit hit. |
 | 500 | `internal` | Unexpected server error. Body is intentionally generic. |
@@ -838,3 +844,10 @@ Items that the wire spec deliberately leaves to implementation phase (Phase E) o
 - ADR-018 — Tombstone with structured metadata.
 - ADR-019 — Symmetric privacy-posture indicator.
 - ADR-020 — v1 stack.
+
+---
+
+## 21. Changelog
+
+- **v1.0.1-draft (2026-04-25)** — sync to shipped: client-generated handle (now signed in `publish_message`), `ttl_seconds = 0` accepted as permanent-storage sentinel (year-9999 `expires_at`), `REPLY_CODEPOINT_CAP = 300` and `REPLY_BLOB_BYTE_CEILING = 2500` (replies match wyrd-body terseness; anti-scope-creep). Cross-ref fixes: error-code section renumbered §15→§17 and rate-limits §14→§16 in §9.5.
+- **v1.0.0-draft (2026-04-25)** — initial wire spec consolidating ADRs 003–020.
