@@ -4,11 +4,11 @@ compatibility_date = "2026-04-01"
 compatibility_flags = ["nodejs_compat"]
 account_id = "***"
 
-# Mount the worker at sendwyrd.com/api/* once the zone is wired.
-# Routes are populated post-first-deploy via `wrangler deploy --route ...` or the dashboard.
-# routes = [
-#   { pattern = "sendwyrd.com/api/*", zone_name = "sendwyrd.com" }
-# ]
+# Mount the worker at sendwyrd.com/api/*. The zone exists automatically because
+# sendwyrd.com is registered through Cloudflare Registrar.
+routes = [
+  { pattern = "sendwyrd.com/api/*", zone_name = "sendwyrd.com" }
+]
 
 # R2 binding (per ADR-020 §Backend; bucket created 2026-04-25).
 [[r2_buckets]]
