@@ -5,7 +5,13 @@
  */
 
 import { notFound } from "next/navigation";
-import { decryptFromBase64Url, b64uDecode, HANDLE_CHARS, K_READ_CHARS } from "@sendwyrd/core";
+import {
+  decryptFromBase64Url,
+  b64uDecode,
+  HANDLE_CHARS,
+  K_READ_CHARS,
+  PERMANENT_EXPIRES_AT_MS,
+} from "@sendwyrd/core";
 import { PrivacyIndicator } from "@/components/PrivacyIndicator";
 import { WyrdBody } from "@/components/WyrdBody";
 import { Nav } from "@/components/Nav";
@@ -121,10 +127,12 @@ export default async function PublicFormView({ params }: PageProps) {
     <main style={pageStyle}>
       <Nav />
       <article style={panelStyle}>
-        <PrivacyIndicator state="open" />
+        <header style={{ display: "flex", justifyContent: "flex-end", marginBottom: "var(--spacing-3)" }}>
+          <PrivacyIndicator state="open" />
+        </header>
         <div
           style={{
-            paddingTop: "var(--spacing-6)",
+            paddingTop: "var(--spacing-2)",
             paddingBottom: "var(--spacing-3)",
           }}
         >
@@ -138,8 +146,10 @@ export default async function PublicFormView({ params }: PageProps) {
             fontFamily: "var(--font-mono)",
           }}
         >
-          Sent {formatDate(new Date(result.published_at!).toISOString())} ·
-          expires {formatDate(new Date(result.expires_at!).toISOString())}
+          Sent {formatDate(new Date(result.published_at!).toISOString())}
+          {result.expires_at! < PERMANENT_EXPIRES_AT_MS - 1000 && (
+            <> · expires {formatDate(new Date(result.expires_at!).toISOString())}</>
+          )}
         </p>
       </article>
     </main>

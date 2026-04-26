@@ -36,10 +36,9 @@ import { Nav } from "@/components/Nav";
 
 const TTL_PRESETS: Array<{ label: string; seconds: number }> = [
   { label: "1 day", seconds: 86_400 },
-  { label: "1 week", seconds: 604_800 },
-  { label: "1 month", seconds: 2_592_000 },
+  { label: "10 days", seconds: 864_000 },
   { label: "90 days", seconds: 7_776_000 },
-  { label: "1 year", seconds: 31_536_000 },
+  { label: "never", seconds: 0 },
 ];
 
 export default function ComposePage() {
@@ -275,12 +274,12 @@ export default function ComposePage() {
             options={[
               {
                 value: "sealed",
-                label: "Sealed · host cannot read",
+                label: "Sealed · private",
                 accent: "var(--color-mark-sealed)",
               },
               {
                 value: "open",
-                label: "Open · host can read",
+                label: "Open · public sharing",
                 accent: "var(--color-mark-open)",
               },
             ]}

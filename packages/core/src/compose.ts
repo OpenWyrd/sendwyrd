@@ -13,7 +13,12 @@
  * publish_message hash also includes the handle (was: not included).
  */
 
-import { HANDLE_BYTES, BODY_CODEPOINT_CAP, type Base64Url } from "./types.js";
+import {
+  HANDLE_BYTES,
+  BODY_CODEPOINT_CAP,
+  PERMANENT_EXPIRES_AT_MS,
+  type Base64Url,
+} from "./types.js";
 import { b64uEncode, b64uDecode } from "./encoding.js";
 import { encryptEnvelope, generateKRead } from "./envelope.js";
 import { deriveOriginKey, type OriginKeyPair } from "./hd.js";
@@ -71,7 +76,7 @@ export async function composeWyrd(args: ComposeArgs): Promise<ComposeResult> {
   if (codepointCount === 0) {
     throw new Error("body is empty");
   }
-  if (args.ttl_seconds < 1 || args.ttl_seconds > 31_536_000) {
+  if (args.ttl_seconds < 0 || args.ttl_seconds > 31_536_000) {
     throw new Error("ttl_seconds out of range");
   }
 
@@ -84,7 +89,12 @@ export async function composeWyrd(args: ComposeArgs): Promise<ComposeResult> {
   const k_read_b64u = b64uEncode(k_read);
 
   const publish_timestamp_ms = args.now_ms ?? Date.now();
-  const expires_at_ms = publish_timestamp_ms + args.ttl_seconds * 1000;
+  // ttl_seconds === 0 is the sentinel for "permanent" — both client and
+  // server use PERMANENT_EXPIRES_AT_MS for the AAD-bound expiry.
+  const expires_at_ms =
+    args.ttl_seconds === 0
+      ? PERMANENT_EXPIRES_AT_MS
+      : publish_timestamp_ms + args.ttl_seconds * 1000;
 
   const envelope = await encryptEnvelope({
     plaintext: args.plaintext,
