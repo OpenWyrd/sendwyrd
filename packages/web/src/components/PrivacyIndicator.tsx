@@ -94,13 +94,18 @@ export function PrivacyIndicator({ state }: PrivacyIndicatorProps) {
   const isSealed = state === "sealed";
   const color = isSealed ? "var(--color-mark-sealed)" : "var(--color-mark-open)";
   const label = isSealed ? "Sealed" : "Open";
-  const detail = isSealed ? "host cannot read this" : "host can read this";
+  const detail = isSealed
+    ? "decrypted on your device"
+    : "host can read · readable by anyone with the URL";
+  const tech = isSealed
+    ? "AES-256-GCM body · secp256k1 author key · key in URL fragment, never sent to the host"
+    : "AES-256-GCM body · key in URL path, host can decrypt for previews";
   return (
     <div
       style={{
         display: "flex",
-        alignItems: "center",
-        gap: "var(--spacing-2)",
+        flexDirection: "column",
+        gap: "var(--spacing-1)",
         color,
         fontFamily: "var(--font-mono)",
         fontSize: "var(--text-caption)",
@@ -110,16 +115,24 @@ export function PrivacyIndicator({ state }: PrivacyIndicatorProps) {
         borderTop: "1px solid var(--color-hairline)",
         borderBottom: "1px solid var(--color-hairline)",
       }}
-      title={
-        isSealed
-          ? "The body of this wyrd lives in the URL fragment; the host serves opaque ciphertext."
-          : "The body of this wyrd lives in the URL path; the host can render it for previews and search."
-      }
+      title={tech}
     >
-      {isSealed ? <SealedGlyph /> : <OpenGlyph />}
-      <span>
-        {label} · {detail}
-      </span>
+      <div style={{ display: "flex", alignItems: "center", gap: "var(--spacing-2)" }}>
+        {isSealed ? <SealedGlyph /> : <OpenGlyph />}
+        <span>
+          {label} · {detail}
+        </span>
+      </div>
+      <div
+        style={{
+          paddingLeft: "calc(16px + var(--spacing-2))",
+          color: "var(--color-ink-subtle)",
+          fontSize: "var(--text-microcaption)",
+          overflowWrap: "anywhere",
+        }}
+      >
+        {tech}
+      </div>
     </div>
   );
 }

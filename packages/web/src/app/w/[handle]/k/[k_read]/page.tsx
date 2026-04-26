@@ -7,6 +7,8 @@
 import { notFound } from "next/navigation";
 import { decryptFromBase64Url, b64uDecode, HANDLE_CHARS, K_READ_CHARS } from "@sendwyrd/core";
 import { PrivacyIndicator } from "@/components/PrivacyIndicator";
+import { WyrdBody } from "@/components/WyrdBody";
+import { resolveTransitives, type ResolutionMap } from "@/lib/resolveBody";
 import type { Metadata } from "next";
 
 interface PageProps {
@@ -16,6 +18,7 @@ interface PageProps {
 interface FetchResult {
   kind: "ready" | "gone";
   body?: string;
+  transitives?: ResolutionMap;
   reason?: string;
   gone_at?: string;
   published_at?: number;
@@ -48,9 +51,11 @@ async function fetchAndDecrypt(handle: string, k_read: string): Promise<FetchRes
       expires_at_ms: data.expires_at,
       replies_enabled: data.replies_enabled,
     });
+    const transitives = await resolveTransitives(body);
     return {
       kind: "ready",
       body,
+      transitives,
       published_at: data.published_at,
       expires_at: data.expires_at,
     };
@@ -116,19 +121,14 @@ export default async function PublicFormView({ params }: PageProps) {
       <h1 style={wordmarkStyle}>SendWyrd</h1>
       <article style={panelStyle}>
         <PrivacyIndicator state="open" />
-        <p
+        <div
           style={{
-            margin: 0,
             paddingTop: "var(--spacing-6)",
             paddingBottom: "var(--spacing-3)",
-            color: "var(--color-ink)",
-            fontFamily: "var(--font-mono)",
-            whiteSpace: "pre-wrap",
-            lineHeight: 1.6,
           }}
         >
-          {result.body}
-        </p>
+          <WyrdBody body={result.body!} transitives={result.transitives} />
+        </div>
         <p
           style={{
             margin: 0,

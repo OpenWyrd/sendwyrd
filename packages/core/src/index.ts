@@ -12,6 +12,8 @@ export * from "./envelope.js";
 export * from "./hd.js";
 export * from "./sign.js";
 export * from "./seedStore.js";
+export * from "./body.js";
+export * from "./reply.js";
 export {
   composeWyrd,
   countCodepoints,

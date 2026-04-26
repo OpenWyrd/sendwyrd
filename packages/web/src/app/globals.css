@@ -98,6 +98,12 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Mobile: long URLs / share strings should never force horizontal scroll. */
+  overflow-wrap: anywhere;
+}
+
+body {
+  margin: 0;
 }
 
 * {
