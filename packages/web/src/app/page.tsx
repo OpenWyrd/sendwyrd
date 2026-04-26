@@ -163,7 +163,7 @@ export default function LandingPage() {
           href="/about"
           style={{ color: "inherit", textDecoration: "underline", textUnderlineOffset: 2 }}
         >
-          why
+          about
         </Link>
       </p>
     </main>
