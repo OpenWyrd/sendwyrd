@@ -149,10 +149,12 @@ function SendwyrdEmbed({
   url: string;
   resolved?: import("@/lib/resolveBody").ResolvedRef;
 }) {
-  const link = url.replace(
-    /^sendwyrd:\/\//,
-    typeof window !== "undefined" ? window.location.origin + "/" : "https://sendwyrd.com/",
-  );
+  // For sendwyrd:// scheme URLs, rewrite to canonical https://sendwyrd.com.
+  // For URLs that are already https://sendwyrd.com/.app, use as-is.
+  const link = url.startsWith("sendwyrd://")
+    ? (typeof window !== "undefined" ? window.location.origin + "/" : "https://sendwyrd.com/") +
+      url.slice("sendwyrd://".length)
+    : url;
   if (!resolved) {
     // Loading or not resolved yet — show as link.
     return (
