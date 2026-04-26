@@ -2,8 +2,9 @@
 
 /**
  * Anonymous reply submission per spec §14.1.
- * Composer encrypts via ECIES to the wyrd's K_origin_pub, POSTs the blob.
- * No author signature required (recipient is anonymous to host).
+ * ECIES to the wyrd's K_origin_pub, anonymous to the host.
+ * Multiple replies per recipient are allowed (architecture can't enforce
+ * per-recipient throttling without identity, and shouldn't pretend to).
  */
 
 import { useState } from "react";
@@ -23,12 +24,13 @@ interface Props {
 export function ReplyForm({ handle, k_origin_pub_b64u }: Props) {
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
-  const [sent, setSent] = useState(false);
+  const [justSent, setJustSent] = useState(false);
+  const [sentCount, setSentCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   const count = countCodepoints(body);
   const overCap = count > REPLY_CODEPOINT_CAP;
-  const canSend = !sending && !sent && count > 0 && !overCap;
+  const canSend = !sending && count > 0 && !overCap;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -60,121 +62,153 @@ export function ReplyForm({ handle, k_origin_pub_b64u }: Props) {
         setSending(false);
         return;
       }
-      setSent(true);
+      setBody("");
+      setSentCount((n) => n + 1);
+      setJustSent(true);
+      setSending(false);
+      // Brief confirmation flash, then form is ready for another reply.
+      setTimeout(() => setJustSent(false), 2500);
     } catch (e: any) {
       setError(e?.message ?? "Reply failed");
-    } finally {
       setSending(false);
     }
   }
 
-  if (sent) {
-    return (
-      <p
-        style={{
-          margin: 0,
-          marginTop: "var(--spacing-8)",
-          paddingTop: "var(--spacing-4)",
-          borderTop: "1px solid var(--color-hairline)",
-          fontFamily: "var(--font-mono)",
-          fontSize: "var(--text-caption)",
-          color: "var(--color-ink-muted)",
-        }}
-      >
-        Reply sent. The author will see it.
-      </p>
-    );
-  }
-
   return (
-    <form
-      onSubmit={handleSubmit}
+    <section
       style={{
-        marginTop: "var(--spacing-8)",
-        paddingTop: "var(--spacing-4)",
-        borderTop: "1px solid var(--color-hairline)",
+        marginTop: "var(--spacing-12)",
+        paddingTop: "var(--spacing-6)",
+        borderTop: "1px solid var(--color-hairline-strong)",
       }}
     >
-      <p
-        style={{
-          margin: 0,
-          marginBottom: "var(--spacing-3)",
-          fontFamily: "var(--font-mono)",
-          fontSize: "var(--text-caption)",
-          color: "var(--color-ink-muted)",
-        }}
-      >
-        Reply (anonymous, encrypted to the author)
-      </p>
-      <textarea
-        value={body}
-        onChange={(e) => {
-          if (countCodepoints(e.target.value) > REPLY_CODEPOINT_CAP) return;
-          setBody(e.target.value);
-        }}
-        rows={4}
-        placeholder="…"
-        style={{
-          width: "100%",
-          background: "transparent",
-          border: "none",
-          borderBottom: "1px solid var(--color-hairline)",
-          color: "var(--color-ink)",
-          fontFamily: "var(--font-mono)",
-          fontSize: "var(--text-caption)",
-          lineHeight: 1.6,
-          padding: "var(--spacing-2) 0",
-          resize: "vertical",
-          outline: "none",
-        }}
-      />
-      <div
+      <header
         style={{
           display: "flex",
-          alignItems: "center",
+          alignItems: "baseline",
           justifyContent: "space-between",
-          marginTop: "var(--spacing-3)",
+          flexWrap: "wrap",
+          gap: "var(--spacing-3)",
+          marginBottom: "var(--spacing-4)",
         }}
       >
+        <h2
+          style={{
+            margin: 0,
+            fontFamily: "var(--font-mono)",
+            fontSize: "var(--text-h3)",
+            fontWeight: 500,
+            color: "var(--color-ink)",
+            letterSpacing: "-0.01em",
+          }}
+        >
+          Reply
+        </h2>
         <span
           style={{
             fontFamily: "var(--font-mono)",
             fontSize: "var(--text-microcaption)",
-            color: overCap ? "var(--color-danger)" : "var(--color-ink-subtle)",
+            color: "var(--color-ink-subtle)",
           }}
         >
-          {count} / {REPLY_CODEPOINT_CAP}
+          anonymous · encrypted to the author · ECIES (secp256k1)
         </span>
-        <button
-          type="submit"
-          disabled={!canSend}
+      </header>
+
+      <form onSubmit={handleSubmit}>
+        <textarea
+          value={body}
+          onChange={(e) => {
+            if (countCodepoints(e.target.value) > REPLY_CODEPOINT_CAP) return;
+            setBody(e.target.value);
+          }}
+          rows={4}
+          placeholder="Type your reply…"
+          disabled={sending}
           style={{
-            padding: "var(--spacing-2) var(--spacing-4)",
-            border: "1px solid var(--color-hairline-strong)",
-            background: "transparent",
+            width: "100%",
+            background: "var(--color-surface)",
+            border: "1px solid var(--color-hairline)",
+            borderRadius: 4,
             color: "var(--color-ink)",
             fontFamily: "var(--font-mono)",
             fontSize: "var(--text-caption)",
-            cursor: canSend ? "pointer" : "not-allowed",
-            opacity: canSend ? 1 : 0.4,
+            lineHeight: 1.6,
+            padding: "var(--spacing-3) var(--spacing-4)",
+            resize: "vertical",
+            outline: "none",
+            opacity: sending ? 0.6 : 1,
           }}
-        >
-          {sending ? "Sending…" : "Send reply"}
-        </button>
-      </div>
-      {error && (
-        <p
+        />
+        <div
           style={{
-            margin: 0,
-            marginTop: "var(--spacing-2)",
-            color: "var(--color-danger)",
-            fontFamily: "var(--font-mono)",
-            fontSize: "var(--text-microcaption)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: "var(--spacing-3)",
+            marginTop: "var(--spacing-3)",
           }}
         >
-          {error}
-        </p>
-      )}
-    </form>
+          <span
+            style={{
+              fontFamily: "var(--font-mono)",
+              fontSize: "var(--text-microcaption)",
+              color: overCap ? "var(--color-danger)" : "var(--color-ink-subtle)",
+            }}
+          >
+            {count} / {REPLY_CODEPOINT_CAP}
+            {sentCount > 0 && (
+              <>
+                {" · "}
+                {sentCount} sent
+              </>
+            )}
+          </span>
+          <div style={{ display: "flex", alignItems: "center", gap: "var(--spacing-3)" }}>
+            {justSent && (
+              <span
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: "var(--text-microcaption)",
+                  color: "var(--color-mark-sealed)",
+                }}
+              >
+                ✓ sent
+              </span>
+            )}
+            <button
+              type="submit"
+              disabled={!canSend}
+              style={{
+                padding: "var(--spacing-2) var(--spacing-5)",
+                border: "1px solid var(--color-hairline-strong)",
+                background: canSend ? "var(--color-ink)" : "transparent",
+                color: canSend ? "var(--color-ground)" : "var(--color-ink-muted)",
+                fontFamily: "var(--font-mono)",
+                fontSize: "var(--text-caption)",
+                cursor: canSend ? "pointer" : "not-allowed",
+                transition: "background 120ms cubic-bezier(0.4, 0, 0.2, 1), color 120ms cubic-bezier(0.4, 0, 0.2, 1)",
+              }}
+            >
+              {sending ? "Sending…" : "Send reply"}
+            </button>
+          </div>
+        </div>
+        {error && (
+          <p
+            style={{
+              margin: 0,
+              marginTop: "var(--spacing-2)",
+              color: "var(--color-danger)",
+              fontFamily: "var(--font-mono)",
+              fontSize: "var(--text-microcaption)",
+            }}
+          >
+            {error}
+          </p>
+        )}
+      </form>
+    </section>
   );
 }
