@@ -191,6 +191,7 @@ export default function FragmentView() {
               k_origin_pub_b64u={state.data.k_origin_pub}
             />
           )}
+          <ShareAffordance />
           {historyEntry &&
             !historyEntry.gone_at &&
             historyEntry.k_origin_pub_b64u === state.data.k_origin_pub && (
@@ -221,6 +222,56 @@ export default function FragmentView() {
         </article>
       )}
     </main>
+  );
+}
+
+/**
+ * Share the current URL. Visible to all viewers (not author-gated) — anyone
+ * with the URL can forward it; this just makes copying it one click instead
+ * of fishing in the address bar.
+ *
+ * Web Share API on supporting platforms (mobile + some desktops) opens the
+ * native share sheet; otherwise falls back to clipboard with an inline
+ * "copied" flash. The URL copied is exactly what the user is looking at —
+ * fragment included, so K_read travels with the URL and never leaves the
+ * device for the host.
+ */
+function ShareAffordance() {
+  const [copied, setCopied] = useState(false);
+
+  async function handleShare() {
+    if (typeof window === "undefined") return;
+    const url = window.location.href;
+    try {
+      if (typeof navigator !== "undefined" && navigator.share) {
+        await navigator.share({ url });
+        return;
+      }
+    } catch (e: unknown) {
+      const err = e as { name?: string };
+      if (err?.name === "AbortError") return;
+      // share() rejected for some other reason — fall through to clipboard
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      window.prompt("Copy this URL", url);
+    }
+  }
+
+  return (
+    <div style={shareRowStyle}>
+      <button
+        type="button"
+        onClick={() => void handleShare()}
+        style={shareTriggerStyle}
+        aria-label="Share this wyrd's URL"
+      >
+        {copied ? "copied" : "share"}
+      </button>
+    </div>
   );
 }
 
@@ -424,6 +475,24 @@ const goneStyle: React.CSSProperties = {
   margin: 0,
   fontFamily: "var(--font-mono)",
   color: "var(--color-ink-muted)",
+};
+const shareRowStyle: React.CSSProperties = {
+  marginTop: "var(--spacing-8)",
+  paddingTop: "var(--spacing-4)",
+  borderTop: "1px solid var(--color-hairline)",
+  display: "flex",
+  justifyContent: "flex-end",
+};
+const shareTriggerStyle: React.CSSProperties = {
+  background: "transparent",
+  border: "none",
+  padding: 0,
+  color: "var(--color-ink-subtle)",
+  fontFamily: "var(--font-mono)",
+  fontSize: "var(--text-microcaption)",
+  cursor: "pointer",
+  textDecoration: "underline",
+  textUnderlineOffset: 2,
 };
 const burnRowStyle: React.CSSProperties = {
   marginTop: "var(--spacing-8)",
