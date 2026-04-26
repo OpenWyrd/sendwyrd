@@ -26,4 +26,10 @@ export interface Env {
    * Sentry generates a release name automatically (fine for local dev).
    */
   SENTRY_RELEASE?: string;
+  /**
+   * Capability secret for the /ops dashboard. Bearer auth on
+   * `/api/v1/admin/*` endpoints. Set via `wrangler secret put`. When
+   * unset, admin endpoints return 503.
+   */
+  OPS_DASH_SECRET?: string;
 }
