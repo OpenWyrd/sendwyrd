@@ -255,6 +255,7 @@ export default async function OpsPage({
     .slice(0, 15);
 
   const release = process.env.NEXT_PUBLIC_RELEASE || "unknown";
+  const releaseNumber = process.env.NEXT_PUBLIC_RELEASE_NUMBER || "";
   const renderedAt = new Date().toISOString();
 
   return (
@@ -384,10 +385,13 @@ export default async function OpsPage({
                   lineHeight: 1.6,
                 }}
               >
-                distinct IPs ≠ distinct users. mobile IPs change; multiple
-                people behind one NAT count as one; one person across networks
-                counts as many. closest legible &ldquo;traffic&rdquo; signal
-                the protocol can produce without violating P3.
+                distinct IPs ≠ distinct users. includes CI runners
+                (~1 per deploy), crawlers, vulnerability scanners, cert
+                transparency monitors, and probes — most of the count is
+                non-human. cloudflare bot scoring requires a paid plan; not
+                wired. the real human-action signal is &ldquo;wyrds
+                published&rdquo; and &ldquo;replies sent&rdquo; in the usage
+                section above.
               </p>
             </>
           ) : (
@@ -504,8 +508,16 @@ export default async function OpsPage({
 
         <Section title="build">
           <Row
-            label="release"
-            value={release === "unknown" ? "unknown" : release.slice(0, 12)}
+            label="deploy"
+            value={
+              releaseNumber
+                ? release === "unknown"
+                  ? `#${releaseNumber}`
+                  : `#${releaseNumber} · ${release.slice(0, 7)}`
+                : release === "unknown"
+                  ? "unknown"
+                  : release.slice(0, 12)
+            }
             ok
           />
         </Section>
