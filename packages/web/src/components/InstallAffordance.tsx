@@ -64,8 +64,7 @@ export function InstallAffordance() {
             lineHeight: 1.6,
           }}
         >
-          Tap the share icon at the bottom of Safari, then choose
-          {" "}
+          Tap the share icon at the bottom of Safari, then choose{" "}
           <strong style={{ color: "var(--color-ink-muted)" }}>
             Add to Home Screen
           </strong>

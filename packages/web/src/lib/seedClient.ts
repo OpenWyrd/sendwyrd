@@ -96,7 +96,9 @@ export function storeOpenSeed(args: SeedAndCounter): void {
 }
 
 /** Store a seed in protected (passphrase-encrypted) mode. */
-export async function storeProtectedSeed(args: SeedAndCounter & { passphrase: string }): Promise<void> {
+export async function storeProtectedSeed(
+  args: SeedAndCounter & { passphrase: string },
+): Promise<void> {
   const record = await encryptSeedRecord(args);
   localStorage.setItem(STORAGE_KEY_PROTECTED, record);
   localStorage.removeItem(STORAGE_KEY_OPEN);
@@ -231,6 +233,10 @@ export async function regenerateSeed(args: {
       passphrase: args.passphraseIfProtected,
     });
   } else {
-    storeOpenSeed({ seed: args.newSeed, counter: 0, mnemonic: args.newMnemonic });
+    storeOpenSeed({
+      seed: args.newSeed,
+      counter: 0,
+      mnemonic: args.newMnemonic,
+    });
   }
 }

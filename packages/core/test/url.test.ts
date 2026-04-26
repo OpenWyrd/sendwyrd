@@ -123,7 +123,10 @@ describe("url — round-trip", () => {
   it("round-trips many distinct (handle, k_read) pairs", () => {
     for (let i = 0; i < 5; i++) {
       // Construct synthetic 16-char handle + 43-char k_read deterministically.
-      const handle = `abcdefghijklmnop`.split("").map((c, j) => (j === i ? "_" : c)).join("");
+      const handle = `abcdefghijklmnop`
+        .split("")
+        .map((c, j) => (j === i ? "_" : c))
+        .join("");
       const kread = "X".repeat(K_READ_CHARS - 1) + (i % 10).toString();
       expect(handle.length).toBe(HANDLE_CHARS);
       expect(kread.length).toBe(K_READ_CHARS);

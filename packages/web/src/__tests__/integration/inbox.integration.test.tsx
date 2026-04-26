@@ -101,7 +101,9 @@ describe("Inbox — live wyrd", () => {
     // so we look for it via the colored span styling instead.
     const liveLabels = screen.getAllByText("live");
     // One is the filter (a label/input), one is the status pill (a span).
-    const pills = liveLabels.filter((el) => el.tagName.toLowerCase() === "span");
+    const pills = liveLabels.filter(
+      (el) => el.tagName.toLowerCase() === "span",
+    );
     expect(pills.length).toBeGreaterThanOrEqual(1);
   });
 });

@@ -193,7 +193,13 @@ export default function ComposePage() {
       <main style={pageStyle}>
         <Nav />
         <form onSubmit={handleUnlock} style={panelStyle}>
-          <p style={{ margin: 0, marginBottom: "var(--spacing-6)", color: "var(--color-ink-muted)" }}>
+          <p
+            style={{
+              margin: 0,
+              marginBottom: "var(--spacing-6)",
+              color: "var(--color-ink-muted)",
+            }}
+          >
             Enter your passphrase to unlock the seed for this session.
           </p>
           <input
@@ -206,7 +212,10 @@ export default function ComposePage() {
             style={inputStyle}
           />
           {unlockError && <p style={errorStyle}>{unlockError}</p>}
-          <button type="submit" style={{ ...btnStyle, marginTop: "var(--spacing-6)" }}>
+          <button
+            type="submit"
+            style={{ ...btnStyle, marginTop: "var(--spacing-6)" }}
+          >
             Unlock
           </button>
         </form>
@@ -219,7 +228,13 @@ export default function ComposePage() {
       <main style={pageStyle}>
         <Nav />
         <article style={panelStyle}>
-          <p style={{ margin: 0, marginBottom: "var(--spacing-4)", color: "var(--color-ink-muted)" }}>
+          <p
+            style={{
+              margin: 0,
+              marginBottom: "var(--spacing-4)",
+              color: "var(--color-ink-muted)",
+            }}
+          >
             Sent. Share this URL — it&apos;s the only way to read your wyrd.
           </p>
           <div
@@ -253,7 +268,9 @@ export default function ComposePage() {
                 flexShrink: 0,
                 background: "transparent",
                 border: "none",
-                color: copied ? "var(--color-mark-sealed)" : "var(--color-accent)",
+                color: copied
+                  ? "var(--color-mark-sealed)"
+                  : "var(--color-accent)",
                 cursor: "pointer",
                 fontFamily: "var(--font-mono)",
                 fontSize: "var(--text-caption)",
@@ -341,7 +358,14 @@ export default function ComposePage() {
         </div>
 
         <div style={{ marginTop: "var(--spacing-6)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "var(--spacing-4)", flexWrap: "wrap" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "var(--spacing-4)",
+              flexWrap: "wrap",
+            }}
+          >
             <p style={{ ...fieldLabelStyle, margin: 0 }}>Replies</p>
             <Toggle
               name="replies"
@@ -350,7 +374,13 @@ export default function ComposePage() {
               ariaLabel="Allow replies"
             />
           </div>
-          <p style={{ ...hintStyle, marginTop: "var(--spacing-2)", marginBottom: 0 }}>
+          <p
+            style={{
+              ...hintStyle,
+              marginTop: "var(--spacing-2)",
+              marginBottom: 0,
+            }}
+          >
             {repliesEnabled
               ? "Useful when this wyrd is relayed person-to-person. The nth recipient can reach you privately — only you can read replies, not the host or anyone in the chain."
               : "One-way only — recipients cannot reply through this wyrd."}
@@ -366,7 +396,8 @@ export default function ComposePage() {
             ...btnStyle,
             marginTop: "var(--spacing-8)",
             opacity: overCap || count === 0 || sending ? 0.4 : 1,
-            cursor: overCap || count === 0 || sending ? "not-allowed" : "pointer",
+            cursor:
+              overCap || count === 0 || sending ? "not-allowed" : "pointer",
           }}
         >
           {sending ? "Composing…" : "Compose"}

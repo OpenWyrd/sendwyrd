@@ -70,7 +70,10 @@ export function Nav() {
           // the class hides this <li> below 640px.
           const isCompose = item.href === "/compose";
           return (
-            <li key={item.href} className={isCompose ? "nav-item-compose" : undefined}>
+            <li
+              key={item.href}
+              className={isCompose ? "nav-item-compose" : undefined}
+            >
               <Link
                 href={item.href}
                 style={{

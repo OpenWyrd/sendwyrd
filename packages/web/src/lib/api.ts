@@ -56,13 +56,18 @@ export async function publishWyrd(
 }
 
 export async function fetchWyrd(handle: string): Promise<FetchResult> {
-  const res = await fetch(`${BASE}/wyrds/${handle}`, { headers: PROTOCOL_HEADER });
-  if (res.ok) return { kind: "live", data: (await res.json()) as FetchEnvelopeResponse };
+  const res = await fetch(`${BASE}/wyrds/${handle}`, {
+    headers: PROTOCOL_HEADER,
+  });
+  if (res.ok)
+    return { kind: "live", data: (await res.json()) as FetchEnvelopeResponse };
   if (res.status === 410) {
     return { kind: "gone", data: (await res.json()) as TombstoneResponse };
   }
   if (res.status === 404) return { kind: "not_found" };
-  const body = (await res.json().catch(() => ({ error: "unknown" }))) as ApiError;
+  const body = (await res
+    .json()
+    .catch(() => ({ error: "unknown" }))) as ApiError;
   return { kind: "error", status: res.status, body };
 }
 
@@ -99,10 +104,15 @@ export async function burnWyrd(args: {
     return { kind: "burned", data: (await res.json()) as DeleteResponse };
   }
   if (res.status === 410) {
-    return { kind: "already_gone", data: (await res.json()) as TombstoneResponse };
+    return {
+      kind: "already_gone",
+      data: (await res.json()) as TombstoneResponse,
+    };
   }
   if (res.status === 404) return { kind: "not_found" };
-  const body = (await res.json().catch(() => ({ error: "unknown" }))) as ApiError;
+  const body = (await res
+    .json()
+    .catch(() => ({ error: "unknown" }))) as ApiError;
   if (res.status === 422 && body.error === "signature_invalid") {
     return { kind: "signature_invalid" };
   }

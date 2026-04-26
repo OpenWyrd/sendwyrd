@@ -56,7 +56,10 @@ export default function SettingsPage() {
   const [pp, setPp] = useState("");
   const [ppConfirm, setPpConfirm] = useState("");
   const [unlockPp, setUnlockPp] = useState("");
-  const [ppMessage, setPpMessage] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+  const [ppMessage, setPpMessage] = useState<{
+    kind: "ok" | "err";
+    text: string;
+  } | null>(null);
 
   // Mnemonic reveal state
   const [mnemonicShown, setMnemonicShown] = useState(false);
@@ -66,11 +69,19 @@ export default function SettingsPage() {
   const [recoveryOpen, setRecoveryOpen] = useState(false);
   const [recoveryMnemonic, setRecoveryMnemonic] = useState("");
   const [recoveryWordCount, setRecoveryWordCount] = useState<12 | 24>(12);
-  const [recoveryStoragePassphrase, setRecoveryStoragePassphrase] = useState("");
-  const [recoveryStoragePassphraseConfirm, setRecoveryStoragePassphraseConfirm] = useState("");
-  const [recoveryProgress, setRecoveryProgress] = useState<SweepProgress | null>(null);
+  const [recoveryStoragePassphrase, setRecoveryStoragePassphrase] =
+    useState("");
+  const [
+    recoveryStoragePassphraseConfirm,
+    setRecoveryStoragePassphraseConfirm,
+  ] = useState("");
+  const [recoveryProgress, setRecoveryProgress] =
+    useState<SweepProgress | null>(null);
   const [recoveryRunning, setRecoveryRunning] = useState(false);
-  const [recoveryMessage, setRecoveryMessage] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+  const [recoveryMessage, setRecoveryMessage] = useState<{
+    kind: "ok" | "err";
+    text: string;
+  } | null>(null);
 
   // Install prompt state (deferred beforeinstallprompt + iOS detection)
   const install = useInstallState();
@@ -83,7 +94,8 @@ export default function SettingsPage() {
   const [estimate, setEstimate] = useState<StorageEstimate | null>(null);
 
   useEffect(() => {
-    const stored = (localStorage.getItem(THEME_KEY) as Theme | null) ?? "system";
+    const stored =
+      (localStorage.getItem(THEME_KEY) as Theme | null) ?? "system";
     setTheme(stored);
     applyTheme(stored);
     setSeedModeState(getSeedMode());
@@ -114,7 +126,10 @@ export default function SettingsPage() {
     e.preventDefault();
     setPpMessage(null);
     if (pp.length < 8) {
-      setPpMessage({ kind: "err", text: "Passphrase must be at least 8 characters." });
+      setPpMessage({
+        kind: "err",
+        text: "Passphrase must be at least 8 characters.",
+      });
       return;
     }
     if (pp !== ppConfirm) {
@@ -125,10 +140,16 @@ export default function SettingsPage() {
       await protectWithPassphrase(pp);
       setPp("");
       setPpConfirm("");
-      setPpMessage({ kind: "ok", text: "Passphrase added. Seed is now encrypted at rest." });
+      setPpMessage({
+        kind: "ok",
+        text: "Passphrase added. Seed is now encrypted at rest.",
+      });
       refreshState();
     } catch (e: any) {
-      setPpMessage({ kind: "err", text: e?.message ?? "Failed to set passphrase." });
+      setPpMessage({
+        kind: "err",
+        text: e?.message ?? "Failed to set passphrase.",
+      });
     }
   }
 
@@ -139,7 +160,10 @@ export default function SettingsPage() {
       await unlockSeed(unlockPp);
       unprotectSeed();
       setUnlockPp("");
-      setPpMessage({ kind: "ok", text: "Passphrase removed. Seed is now in plain localStorage." });
+      setPpMessage({
+        kind: "ok",
+        text: "Passphrase removed. Seed is now in plain localStorage.",
+      });
       refreshState();
     } catch {
       setPpMessage({ kind: "err", text: "Wrong passphrase." });
@@ -169,16 +193,25 @@ export default function SettingsPage() {
     setRecoveryMessage(null);
     const phrase = recoveryMnemonic.trim().replace(/\s+/g, " ");
     if (!isValidMnemonic(phrase)) {
-      setRecoveryMessage({ kind: "err", text: "Invalid mnemonic — check spelling and word count (12 or 24)." });
+      setRecoveryMessage({
+        kind: "err",
+        text: "Invalid mnemonic — check spelling and word count (12 or 24).",
+      });
       return;
     }
     if (recoveryStoragePassphrase) {
       if (recoveryStoragePassphrase.length < 8) {
-        setRecoveryMessage({ kind: "err", text: "Storage passphrase must be at least 8 characters (or leave blank for open mode)." });
+        setRecoveryMessage({
+          kind: "err",
+          text: "Storage passphrase must be at least 8 characters (or leave blank for open mode).",
+        });
         return;
       }
       if (recoveryStoragePassphrase !== recoveryStoragePassphraseConfirm) {
-        setRecoveryMessage({ kind: "err", text: "Storage passphrases don't match." });
+        setRecoveryMessage({
+          kind: "err",
+          text: "Storage passphrases don't match.",
+        });
         return;
       }
     }
@@ -208,11 +241,15 @@ export default function SettingsPage() {
       setRecoveryStoragePassphraseConfirm("");
       refreshState();
     } catch (e: unknown) {
-      const swe = (e as { sweepError?: { kind: string; detail?: string; n?: number } }).sweepError;
+      const swe = (
+        e as { sweepError?: { kind: string; detail?: string; n?: number } }
+      ).sweepError;
       let msg = "Recovery failed.";
       if (swe?.kind === "invalid_mnemonic") msg = "Invalid mnemonic.";
-      else if (swe?.kind === "network") msg = `Network error during sweep: ${swe.detail ?? "unknown"}.`;
-      else if (swe?.kind === "signature_mismatch") msg = `Signature mismatch at index ${swe.n} — host rejected proof-of-possession (unexpected; please retry).`;
+      else if (swe?.kind === "network")
+        msg = `Network error during sweep: ${swe.detail ?? "unknown"}.`;
+      else if (swe?.kind === "signature_mismatch")
+        msg = `Signature mismatch at index ${swe.n} — host rejected proof-of-possession (unexpected; please retry).`;
       else if (e instanceof Error) msg = `Recovery failed: ${e.message}`;
       setRecoveryMessage({ kind: "err", text: msg });
     } finally {
@@ -222,7 +259,12 @@ export default function SettingsPage() {
   }
 
   function doForgetSeed() {
-    if (!confirm("Forget the seed on this device? You will need your mnemonic to recover.")) return;
+    if (
+      !confirm(
+        "Forget the seed on this device? You will need your mnemonic to recover.",
+      )
+    )
+      return;
     if (!confirm("Are you sure? This is final.")) return;
     forgetSeed();
     setSeedModeState(null);
@@ -308,13 +350,16 @@ export default function SettingsPage() {
 
         <h2 style={sectionStyle}>Passphrase</h2>
         {seedMode === null && (
-          <p style={metaStyle}>No seed on this device yet. Compose a wyrd to generate one.</p>
+          <p style={metaStyle}>
+            No seed on this device yet. Compose a wyrd to generate one.
+          </p>
         )}
         {seedMode === "open" && (
           <>
             <p style={{ ...metaStyle, marginBottom: "var(--spacing-4)" }}>
-              Your seed is currently stored in plain localStorage on this device.
-              Add a passphrase to encrypt it at rest (PBKDF2-AES-256-GCM, 600k iterations).
+              Your seed is currently stored in plain localStorage on this
+              device. Add a passphrase to encrypt it at rest
+              (PBKDF2-AES-256-GCM, 600k iterations).
             </p>
             <form onSubmit={handleAddPassphrase}>
               <input
@@ -333,7 +378,10 @@ export default function SettingsPage() {
                 placeholder="confirm"
                 style={{ ...inputStyle, marginTop: "var(--spacing-3)" }}
               />
-              <button type="submit" style={{ ...btnStyle, marginTop: "var(--spacing-4)" }}>
+              <button
+                type="submit"
+                style={{ ...btnStyle, marginTop: "var(--spacing-4)" }}
+              >
                 Set passphrase
               </button>
             </form>
@@ -342,8 +390,8 @@ export default function SettingsPage() {
         {seedMode === "protected" && (
           <>
             <p style={{ ...metaStyle, marginBottom: "var(--spacing-4)" }}>
-              Your seed is encrypted with a passphrase. To remove it (and store the seed in
-              plain localStorage), enter your current passphrase.
+              Your seed is encrypted with a passphrase. To remove it (and store
+              the seed in plain localStorage), enter your current passphrase.
             </p>
             <form onSubmit={handleRemovePassphrase}>
               <input
@@ -354,7 +402,10 @@ export default function SettingsPage() {
                 placeholder="current passphrase"
                 style={inputStyle}
               />
-              <button type="submit" style={{ ...btnStyle, marginTop: "var(--spacing-4)" }}>
+              <button
+                type="submit"
+                style={{ ...btnStyle, marginTop: "var(--spacing-4)" }}
+              >
                 Remove passphrase
               </button>
             </form>
@@ -367,7 +418,10 @@ export default function SettingsPage() {
               marginTop: "var(--spacing-3)",
               fontFamily: "var(--font-mono)",
               fontSize: "var(--text-microcaption)",
-              color: ppMessage.kind === "ok" ? "var(--color-mark-sealed)" : "var(--color-danger)",
+              color:
+                ppMessage.kind === "ok"
+                  ? "var(--color-mark-sealed)"
+                  : "var(--color-danger)",
             }}
           >
             {ppMessage.text}
@@ -376,16 +430,14 @@ export default function SettingsPage() {
         <div style={{ marginBottom: "var(--spacing-12)" }} />
 
         <h2 style={sectionStyle}>Backup mnemonic</h2>
-        {!seedMode && (
-          <p style={metaStyle}>No seed yet.</p>
-        )}
+        {!seedMode && <p style={metaStyle}>No seed yet.</p>}
         {seedMode && !mnemonicShown && (
           <>
             <p style={{ ...metaStyle, marginBottom: "var(--spacing-4)" }}>
-              Your 12-word recovery phrase. Write it down somewhere offline. SendWyrd
-              stores your seed locally — back up your mnemonic. If local storage clears
-              or this device fails, your sealed wyrds vanish; the mnemonic is the only
-              path back to your authorship.
+              Your 12-word recovery phrase. Write it down somewhere offline.
+              SendWyrd stores your seed locally — back up your mnemonic. If
+              local storage clears or this device fails, your sealed wyrds
+              vanish; the mnemonic is the only path back to your authorship.
             </p>
             <button onClick={handleRevealMnemonic} style={btnStyle}>
               Reveal mnemonic
@@ -407,8 +459,13 @@ export default function SettingsPage() {
               }}
             >
               {mnemonic.split(" ").map((word, i) => (
-                <div key={i} style={{ display: "flex", gap: "var(--spacing-2)" }}>
-                  <span style={{ color: "var(--color-ink-subtle)", minWidth: 20 }}>
+                <div
+                  key={i}
+                  style={{ display: "flex", gap: "var(--spacing-2)" }}
+                >
+                  <span
+                    style={{ color: "var(--color-ink-subtle)", minWidth: 20 }}
+                  >
                     {String(i + 1).padStart(2, "0")}
                   </span>
                   <span>{word}</span>
@@ -423,20 +480,34 @@ export default function SettingsPage() {
         {seedMode && mnemonicShown && !mnemonic && (
           <NoMnemonicHelp
             onRegenerate={async () => {
-              if (!confirm("Generate a new seed? This invalidates the current seed — wyrds you've already published can't be burned or have their replies fetched after this. The new seed will have a mnemonic backup.")) return;
+              if (
+                !confirm(
+                  "Generate a new seed? This invalidates the current seed — wyrds you've already published can't be burned or have their replies fetched after this. The new seed will have a mnemonic backup.",
+                )
+              )
+                return;
               if (!confirm("Last chance — really replace?")) return;
               try {
                 const { seed, mnemonic } = generateSeed(12);
                 let pp: string | undefined;
                 if (seedMode === "protected") {
-                  pp = window.prompt("Enter your current passphrase to re-encrypt the new seed") ?? undefined;
+                  pp =
+                    window.prompt(
+                      "Enter your current passphrase to re-encrypt the new seed",
+                    ) ?? undefined;
                   if (!pp) return;
                   await unlockSeed(pp);
                 }
-                await regenerateSeed({ newSeed: seed, newMnemonic: mnemonic, passphraseIfProtected: pp });
+                await regenerateSeed({
+                  newSeed: seed,
+                  newMnemonic: mnemonic,
+                  passphraseIfProtected: pp,
+                });
                 refreshState();
                 setMnemonicShown(false);
-                alert("New seed generated. Click 'Reveal mnemonic' again to see your fresh 12 words.");
+                alert(
+                  "New seed generated. Click 'Reveal mnemonic' again to see your fresh 12 words.",
+                );
               } catch (e: any) {
                 alert(`Regenerate failed: ${e?.message ?? "unknown"}`);
               }
@@ -444,7 +515,10 @@ export default function SettingsPage() {
             onExportRaw={() => {
               const raw = getSeedBackupString();
               if (!raw) return;
-              window.prompt("Raw seed (base64url) — copy this somewhere safe. Not a standard BIP-39 phrase.", raw);
+              window.prompt(
+                "Raw seed (base64url) — copy this somewhere safe. Not a standard BIP-39 phrase.",
+                raw,
+              );
             }}
           />
         )}
@@ -452,10 +526,10 @@ export default function SettingsPage() {
 
         <h2 style={sectionStyle}>Recover from mnemonic</h2>
         <p style={{ ...metaStyle, marginBottom: "var(--spacing-4)" }}>
-          Have a 12- or 24-word phrase from another device? Sweep the host
-          for wyrds derived from this seed. Burn / fetch-replies will work
-          on recovered wyrds; body decryption requires the original share
-          URLs (read keys aren&apos;t derived from the seed).
+          Have a 12- or 24-word phrase from another device? Sweep the host for
+          wyrds derived from this seed. Burn / fetch-replies will work on
+          recovered wyrds; body decryption requires the original share URLs
+          (read keys aren&apos;t derived from the seed).
         </p>
         {!recoveryOpen && (
           <button
@@ -489,9 +563,15 @@ export default function SettingsPage() {
               wordCount={recoveryWordCount}
               disabled={recoveryRunning}
             />
-            <p style={{ ...metaStyle, marginTop: "var(--spacing-4)", marginBottom: "var(--spacing-3)" }}>
-              Optional — set a passphrase to encrypt the recovered seed at
-              rest. Leave blank for open mode.
+            <p
+              style={{
+                ...metaStyle,
+                marginTop: "var(--spacing-4)",
+                marginBottom: "var(--spacing-3)",
+              }}
+            >
+              Optional — set a passphrase to encrypt the recovered seed at rest.
+              Leave blank for open mode.
             </p>
             <input
               type="password"
@@ -507,13 +587,22 @@ export default function SettingsPage() {
                 type="password"
                 autoComplete="new-password"
                 value={recoveryStoragePassphraseConfirm}
-                onChange={(e) => setRecoveryStoragePassphraseConfirm(e.target.value)}
+                onChange={(e) =>
+                  setRecoveryStoragePassphraseConfirm(e.target.value)
+                }
                 placeholder="confirm"
                 disabled={recoveryRunning}
                 style={{ ...inputStyle, marginTop: "var(--spacing-3)" }}
               />
             )}
-            <div style={{ display: "flex", gap: "var(--spacing-3)", marginTop: "var(--spacing-4)", flexWrap: "wrap" }}>
+            <div
+              style={{
+                display: "flex",
+                gap: "var(--spacing-3)",
+                marginTop: "var(--spacing-4)",
+                flexWrap: "wrap",
+              }}
+            >
               <button type="submit" style={btnStyle} disabled={recoveryRunning}>
                 {recoveryRunning ? "Sweeping…" : "Begin sweep"}
               </button>
@@ -533,12 +622,25 @@ export default function SettingsPage() {
               </button>
             </div>
             {recoveryProgress && recoveryProgress.kind === "deriving" && (
-              <p style={{ ...metaStyle, marginTop: "var(--spacing-3)", color: "var(--color-ink-subtle)" }}>
-                Sweeping index {recoveryProgress.n} (gap {recoveryProgress.gap}/20) — {recoveryProgress.foundHandles} found
+              <p
+                style={{
+                  ...metaStyle,
+                  marginTop: "var(--spacing-3)",
+                  color: "var(--color-ink-subtle)",
+                }}
+              >
+                Sweeping index {recoveryProgress.n} (gap {recoveryProgress.gap}
+                /20) — {recoveryProgress.foundHandles} found
               </p>
             )}
             {recoveryProgress && recoveryProgress.kind === "starting" && (
-              <p style={{ ...metaStyle, marginTop: "var(--spacing-3)", color: "var(--color-ink-subtle)" }}>
+              <p
+                style={{
+                  ...metaStyle,
+                  marginTop: "var(--spacing-3)",
+                  color: "var(--color-ink-subtle)",
+                }}
+              >
                 Deriving keys…
               </p>
             )}
@@ -551,7 +653,10 @@ export default function SettingsPage() {
               marginTop: "var(--spacing-3)",
               fontFamily: "var(--font-mono)",
               fontSize: "var(--text-microcaption)",
-              color: recoveryMessage.kind === "ok" ? "var(--color-mark-sealed)" : "var(--color-danger)",
+              color:
+                recoveryMessage.kind === "ok"
+                  ? "var(--color-mark-sealed)"
+                  : "var(--color-danger)",
               lineHeight: 1.6,
             }}
           >
@@ -559,7 +664,9 @@ export default function SettingsPage() {
             {recoveryMessage.kind === "ok" && (
               <>
                 {" "}
-                <a href="/inbox" style={linkStyle}>View inbox →</a>
+                <a href="/inbox" style={linkStyle}>
+                  View inbox →
+                </a>
               </>
             )}
           </p>
@@ -569,15 +676,14 @@ export default function SettingsPage() {
         <h2 style={sectionStyle}>Storage</h2>
         {!persistSupported && (
           <p style={{ ...metaStyle, marginBottom: "var(--spacing-12)" }}>
-            This browser doesn&apos;t expose persistent-storage APIs. Local
-            data may be evicted under storage pressure. Keep your mnemonic
-            backed up.
+            This browser doesn&apos;t expose persistent-storage APIs. Local data
+            may be evicted under storage pressure. Keep your mnemonic backed up.
           </p>
         )}
         {persistSupported && persistGranted === true && (
           <p style={{ ...metaStyle, marginBottom: "var(--spacing-4)" }}>
-            Persistent storage granted. The browser is committed to keeping
-            your seed across sessions.
+            Persistent storage granted. The browser is committed to keeping your
+            seed across sessions.
           </p>
         )}
         {persistSupported && persistGranted === false && persistAsked && (
@@ -615,12 +721,19 @@ export default function SettingsPage() {
         <p style={{ ...metaStyle, marginBottom: "var(--spacing-12)" }}>
           SendWyrd v0.1 · MOP protocol v1
           <br />
-          <a href="https://github.com/DeltaClimbs/sendwyrd" style={linkStyle} rel="noreferrer">
-            github.com/DeltaClimbs/sendwyrd
+          By{" "}
+          <a
+            href="https://x.com/deltaclimbs"
+            style={linkStyle}
+            rel="noreferrer"
+          >
+            @deltaclimbs
           </a>
         </p>
 
-        <h2 style={{ ...sectionStyle, color: "var(--color-danger)" }}>Danger</h2>
+        <h2 style={{ ...sectionStyle, color: "var(--color-danger)" }}>
+          Danger
+        </h2>
         <button
           onClick={doForgetSeed}
           disabled={!hasSeed()}
@@ -660,7 +773,9 @@ function NoMnemonicHelp({
       <p style={{ ...metaStyleLocal, marginBottom: "var(--spacing-4)" }}>
         Two options:
       </p>
-      <div style={{ display: "flex", gap: "var(--spacing-3)", flexWrap: "wrap" }}>
+      <div
+        style={{ display: "flex", gap: "var(--spacing-3)", flexWrap: "wrap" }}
+      >
         <button onClick={onRegenerate} style={btnStyleLocal}>
           Regenerate seed
         </button>
@@ -668,11 +783,17 @@ function NoMnemonicHelp({
           Export raw seed (non-standard backup)
         </button>
       </div>
-      <p style={{ ...metaStyleLocal, marginTop: "var(--spacing-3)", color: "var(--color-ink-subtle)" }}>
-        Regenerating creates a fresh BIP-39-backed seed. The downside: any
-        wyrds you&apos;ve already published become unsigned-deletable and
-        unfetchable for replies (the author key changes). For most early
-        testing, regenerating is the right move.
+      <p
+        style={{
+          ...metaStyleLocal,
+          marginTop: "var(--spacing-3)",
+          color: "var(--color-ink-subtle)",
+        }}
+      >
+        Regenerating creates a fresh BIP-39-backed seed. The downside: any wyrds
+        you&apos;ve already published become unsigned-deletable and unfetchable
+        for replies (the author key changes). For most early testing,
+        regenerating is the right move.
       </p>
     </div>
   );

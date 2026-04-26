@@ -71,7 +71,11 @@ export async function encryptSeedRecord(
 
   const salt = crypto.getRandomValues(new Uint8Array(SALT_BYTES));
   const iv = crypto.getRandomValues(new Uint8Array(IV_BYTES));
-  const aesKey = await deriveAesKeyFromPassphrase(args.passphrase, salt, iterations);
+  const aesKey = await deriveAesKeyFromPassphrase(
+    args.passphrase,
+    salt,
+    iterations,
+  );
 
   // V2 plaintext: JSON {counter, mnemonic, seed_b64u}
   const payload = JSON.stringify({
@@ -83,14 +87,20 @@ export async function encryptSeedRecord(
 
   const ciphertextWithTag = new Uint8Array(
     await crypto.subtle.encrypt(
-      { name: "AES-GCM", iv: bufferSource(iv), additionalData: bufferSource(SEEDSTORE_AAD) },
+      {
+        name: "AES-GCM",
+        iv: bufferSource(iv),
+        additionalData: bufferSource(SEEDSTORE_AAD),
+      },
       aesKey,
       bufferSource(plaintext),
     ),
   );
 
   // Layout: ver(1) || salt(16) || iv(12) || iters_be(4) || ciphertext || tag(16)
-  const record = new Uint8Array(1 + SALT_BYTES + IV_BYTES + 4 + ciphertextWithTag.length);
+  const record = new Uint8Array(
+    1 + SALT_BYTES + IV_BYTES + 4 + ciphertextWithTag.length,
+  );
   let o = 0;
   record[o++] = SEED_STORE_VERSION;
   record.set(salt, o);
@@ -123,17 +133,22 @@ export async function decryptSeedRecord(
   o += SALT_BYTES;
   const iv = record.slice(o, o + IV_BYTES);
   o += IV_BYTES;
-  const iterations = new DataView(record.buffer, record.byteOffset + o, 4).getUint32(
-    0,
-    false,
-  );
+  const iterations = new DataView(
+    record.buffer,
+    record.byteOffset + o,
+    4,
+  ).getUint32(0, false);
   o += 4;
   const ciphertextWithTag = record.slice(o);
 
   const aesKey = await deriveAesKeyFromPassphrase(passphrase, salt, iterations);
   const plaintext = new Uint8Array(
     await crypto.subtle.decrypt(
-      { name: "AES-GCM", iv: bufferSource(iv), additionalData: bufferSource(SEEDSTORE_AAD) },
+      {
+        name: "AES-GCM",
+        iv: bufferSource(iv),
+        additionalData: bufferSource(SEEDSTORE_AAD),
+      },
       aesKey,
       bufferSource(ciphertextWithTag),
     ),
@@ -154,7 +169,11 @@ export async function decryptSeedRecord(
   if (plaintext.length !== 4 + SEED_BYTES) {
     throw new Error("decrypted seed payload has wrong length");
   }
-  const counter = new DataView(plaintext.buffer, plaintext.byteOffset, 4).getUint32(0, false);
+  const counter = new DataView(
+    plaintext.buffer,
+    plaintext.byteOffset,
+    4,
+  ).getUint32(0, false);
   const seed = plaintext.slice(4);
   return { seed, counter };
 }

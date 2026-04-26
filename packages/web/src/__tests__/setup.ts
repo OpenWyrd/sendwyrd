@@ -23,7 +23,11 @@ afterEach(() => {
 beforeEach(() => {
   // Reset jsdom location.hash; some tests mutate it.
   if (window.location.hash) {
-    window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    window.history.replaceState(
+      null,
+      "",
+      window.location.pathname + window.location.search,
+    );
   }
 });
 

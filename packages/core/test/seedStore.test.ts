@@ -48,7 +48,10 @@ describe("seedStore — encrypt / decrypt round-trip", () => {
     });
     expect(recordB64u).toMatch(/^[A-Za-z0-9_-]+$/);
 
-    const out = await decryptSeedRecord(recordB64u, "correct horse battery staple");
+    const out = await decryptSeedRecord(
+      recordB64u,
+      "correct horse battery staple",
+    );
     expect(out.seed).toEqual(seed);
     expect(out.counter).toBe(counter);
     expect(out.mnemonic).toBe(mnemonic);
@@ -77,7 +80,9 @@ describe("seedStore — encrypt / decrypt round-trip", () => {
     // base64url-encode without padding
     const std = btoa(String.fromCharCode(...buf));
     const b64u = std.replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
-    await expect(decryptSeedRecord(b64u, "x")).rejects.toThrow(/version unsupported/);
+    await expect(decryptSeedRecord(b64u, "x")).rejects.toThrow(
+      /version unsupported/,
+    );
   });
 
   it("rejects seed of wrong length on encrypt", async () => {

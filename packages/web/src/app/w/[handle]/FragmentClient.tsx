@@ -39,7 +39,12 @@ import {
 
 type State =
   | { kind: "loading" }
-  | { kind: "ready"; data: FetchEnvelopeResponse; body: string; transitives: ResolutionMap }
+  | {
+      kind: "ready";
+      data: FetchEnvelopeResponse;
+      body: string;
+      transitives: ResolutionMap;
+    }
   | { kind: "gone"; reason: string; gone_at: string }
   | { kind: "missing_key" }
   | { kind: "decrypt_failed" }
@@ -110,7 +115,8 @@ export default function FragmentClient({
           replies_enabled: initial.data.replies_enabled,
         });
         const transitives = await resolveTransitives(body);
-        if (!cancelled) setState({ kind: "ready", data: initial.data, body, transitives });
+        if (!cancelled)
+          setState({ kind: "ready", data: initial.data, body, transitives });
       } catch {
         if (!cancelled) setState({ kind: "decrypt_failed" });
       }
@@ -134,9 +140,7 @@ export default function FragmentClient({
     >
       <Nav />
 
-      {state.kind === "loading" && (
-        <p style={metaStyle}>…</p>
-      )}
+      {state.kind === "loading" && <p style={metaStyle}>…</p>}
 
       {state.kind === "missing_key" && (
         <p style={metaStyle}>
@@ -175,7 +179,13 @@ export default function FragmentClient({
 
       {state.kind === "ready" && (
         <article style={panelStyle}>
-          <header style={{ display: "flex", justifyContent: "flex-end", marginBottom: "var(--spacing-3)" }}>
+          <header
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              marginBottom: "var(--spacing-3)",
+            }}
+          >
             <PrivacyIndicator />
           </header>
           <div
@@ -196,7 +206,11 @@ export default function FragmentClient({
           >
             Sent {formatDate(new Date(state.data.published_at).toISOString())}
             {!isPermanent(state.data.expires_at) && (
-              <> · expires {formatDate(new Date(state.data.expires_at).toISOString())}</>
+              <>
+                {" "}
+                · expires{" "}
+                {formatDate(new Date(state.data.expires_at).toISOString())}
+              </>
             )}
           </p>
           {state.data.replies_enabled && (
@@ -397,7 +411,9 @@ function BurnAffordance({
       }
       if (result.kind === "signature_invalid") {
         setStage("confirm");
-        setError("Signature rejected. The seed on this device may not match this wyrd.");
+        setError(
+          "Signature rejected. The seed on this device may not match this wyrd.",
+        );
         return;
       }
       setStage("confirm");
@@ -465,7 +481,9 @@ function BurnAffordance({
           </button>
         </form>
       ) : (
-        <div style={{ display: "flex", gap: "var(--spacing-3)", flexWrap: "wrap" }}>
+        <div
+          style={{ display: "flex", gap: "var(--spacing-3)", flexWrap: "wrap" }}
+        >
           <button
             type="button"
             onClick={() => void doBurn()}

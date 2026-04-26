@@ -1,0 +1,28 @@
+# Vault content uses adna conventions, not prettier defaults
+what/
+how/
+who/
+
+# adna template root files (ship as-is)
+adna.md
+AGENTS.md
+CHANGELOG.md
+CLAUDE.md
+CONTRIBUTING.md
+MANIFEST.md
+STATE.md
+
+# Editor / OS / vendor
+.obsidian/
+.next/
+.wrangler/
+.turbo/
+node_modules/
+pnpm-lock.yaml
+
+# Other workspaces / vendor
+claude-desktop-fedora/
+infra/
+
+# Generated migrations
+packages/api/drizzle/

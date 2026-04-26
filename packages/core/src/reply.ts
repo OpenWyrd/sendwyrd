@@ -18,7 +18,11 @@
 import { secp256k1 } from "@noble/curves/secp256k1";
 import { hkdf } from "@noble/hashes/hkdf";
 import { sha256 } from "@noble/hashes/sha2";
-import { HANDLE_BYTES, K_ORIGIN_PUB_BYTES, REPLY_CODEPOINT_CAP } from "./types.js";
+import {
+  HANDLE_BYTES,
+  K_ORIGIN_PUB_BYTES,
+  REPLY_CODEPOINT_CAP,
+} from "./types.js";
 
 export const REPLY_VERSION = 0x01;
 const E_PUB_BYTES = 33; // SEC1 compressed
@@ -46,7 +50,9 @@ export interface DecryptReplyArgs {
   k_origin_priv: Uint8Array;
 }
 
-export async function encryptReply(args: EncryptReplyArgs): Promise<Uint8Array> {
+export async function encryptReply(
+  args: EncryptReplyArgs,
+): Promise<Uint8Array> {
   if (args.handle.length !== HANDLE_BYTES) {
     throw new Error(`handle must be ${HANDLE_BYTES} bytes`);
   }
@@ -77,7 +83,12 @@ export async function encryptReply(args: EncryptReplyArgs): Promise<Uint8Array> 
   );
   const ciphertextWithTag = new Uint8Array(
     await crypto.subtle.encrypt(
-      { name: "AES-GCM", iv: bs(iv), additionalData: bs(aad), tagLength: TAG_BYTES * 8 },
+      {
+        name: "AES-GCM",
+        iv: bs(iv),
+        additionalData: bs(aad),
+        tagLength: TAG_BYTES * 8,
+      },
       key,
       bs(enc.encode(args.plaintext)),
     ),
@@ -96,7 +107,9 @@ export async function decryptReply(args: DecryptReplyArgs): Promise<string> {
     throw new Error("reply blob too short");
   }
   if (args.blob[0] !== REPLY_VERSION) {
-    throw new Error(`reply version unsupported: 0x${args.blob[0]?.toString(16)}`);
+    throw new Error(
+      `reply version unsupported: 0x${args.blob[0]?.toString(16)}`,
+    );
   }
   const e_pub = args.blob.slice(1, 1 + E_PUB_BYTES);
   const ciphertextWithTag = args.blob.slice(1 + E_PUB_BYTES);
@@ -114,12 +127,19 @@ export async function decryptReply(args: DecryptReplyArgs): Promise<string> {
   );
   const plaintext = new Uint8Array(
     await crypto.subtle.decrypt(
-      { name: "AES-GCM", iv: bs(iv), additionalData: bs(aad), tagLength: TAG_BYTES * 8 },
+      {
+        name: "AES-GCM",
+        iv: bs(iv),
+        additionalData: bs(aad),
+        tagLength: TAG_BYTES * 8,
+      },
       key,
       bs(ciphertextWithTag),
     ),
   );
-  return new TextDecoder("utf-8", { fatal: true, ignoreBOM: false }).decode(plaintext);
+  return new TextDecoder("utf-8", { fatal: true, ignoreBOM: false }).decode(
+    plaintext,
+  );
 }
 
 export { REPLY_CODEPOINT_CAP };
@@ -137,7 +157,13 @@ async function deriveAesAndIv(
 ): Promise<{ aesKey: Uint8Array; iv: Uint8Array }> {
   const aesInfo = concat(enc.encode("mop:v1:reply:aes_key:"), handle, e_pub);
   const ivInfo = concat(enc.encode("mop:v1:reply:iv:"), handle, e_pub);
-  const aesKey = hkdf(sha256, shared, new Uint8Array(0), aesInfo, AES_KEY_BYTES);
+  const aesKey = hkdf(
+    sha256,
+    shared,
+    new Uint8Array(0),
+    aesInfo,
+    AES_KEY_BYTES,
+  );
   const iv = hkdf(sha256, shared, new Uint8Array(0), ivInfo, IV_BYTES);
   return { aesKey, iv };
 }

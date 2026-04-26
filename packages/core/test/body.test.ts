@@ -9,7 +9,9 @@ import { BODY_CODEPOINT_CAP } from "../src/types.js";
 describe("body — parseBody segmentation", () => {
   it("returns a single text segment for plain prose with no URLs", () => {
     const segs = parseBody("hello world, no URLs here");
-    expect(segs).toEqual([{ kind: "text", value: "hello world, no URLs here" }]);
+    expect(segs).toEqual([
+      { kind: "text", value: "hello world, no URLs here" },
+    ]);
   });
 
   it("returns no segments for an empty body", () => {
@@ -86,7 +88,10 @@ describe("body — parseBody segmentation", () => {
     const segs = parseBody("see this: https://example.com/page.");
     const urlSegs = segs.filter((s) => s.kind === "url");
     expect(urlSegs).toHaveLength(1);
-    expect(urlSegs[0]).toMatchObject({ kind: "url", url: "https://example.com/page" });
+    expect(urlSegs[0]).toMatchObject({
+      kind: "url",
+      url: "https://example.com/page",
+    });
     // Trailing '.' is preserved as text after the URL.
     const lastSeg = segs[segs.length - 1]!;
     expect(lastSeg.kind).toBe("text");
@@ -98,7 +103,9 @@ describe("body — parseBody segmentation", () => {
   it("emits multiple URLs in order", () => {
     const body = "first https://a.example.com second https://b.example.com end";
     const segs = parseBody(body);
-    const urls = segs.filter((s) => s.kind === "url").map((s) => (s as { url: string }).url);
+    const urls = segs
+      .filter((s) => s.kind === "url")
+      .map((s) => (s as { url: string }).url);
     expect(urls).toEqual(["https://a.example.com", "https://b.example.com"]);
   });
 });

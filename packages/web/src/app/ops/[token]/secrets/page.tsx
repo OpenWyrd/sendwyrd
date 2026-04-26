@@ -100,7 +100,9 @@ export default async function SecretsPage({
           style={{
             padding: "var(--spacing-3) var(--spacing-4)",
             border: `1px solid ${banner.ok ? "var(--color-mark-sealed)" : "var(--color-danger)"}`,
-            color: banner.ok ? "var(--color-mark-sealed)" : "var(--color-danger)",
+            color: banner.ok
+              ? "var(--color-mark-sealed)"
+              : "var(--color-danger)",
             fontSize: "var(--text-caption)",
             marginBottom: "var(--spacing-6)",
             overflowWrap: "anywhere",
@@ -211,18 +213,18 @@ export default async function SecretsPage({
           }}
         >
           <li>
-            Sets a runtime worker secret via the Cloudflare API (equivalent
-            to <code>wrangler secret put</code>).
+            Sets a runtime worker secret via the Cloudflare API (equivalent to{" "}
+            <code>wrangler secret put</code>).
           </li>
           <li>
             Build-time env vars (<code>NEXT_PUBLIC_*</code>) are NOT settable
             here — those live as GitHub Actions secrets and need a workflow
-            re-run to take effect. Set those via{" "}
-            <code>gh secret set</code> from a shell.
+            re-run to take effect. Set those via <code>gh secret set</code> from
+            a shell.
           </li>
           <li>
-            Setting a secret takes effect on the next request the worker
-            handles (no redeploy needed).
+            Setting a secret takes effect on the next request the worker handles
+            (no redeploy needed).
           </li>
         </ul>
       </section>

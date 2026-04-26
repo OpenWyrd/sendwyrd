@@ -114,9 +114,7 @@ describe("WyrdBody — sendwyrd:// transitive references", () => {
       },
     };
     render(<WyrdBody body={`see ${SENDWYRD_URL}`} transitives={transitives} />);
-    expect(
-      screen.getByText(/withdrawn by its author/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/withdrawn by its author/i)).toBeInTheDocument();
   });
 
   it("renders expired-style 'gone' fallback for non-burned reason", () => {

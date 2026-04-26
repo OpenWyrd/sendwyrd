@@ -161,7 +161,11 @@ export default function LandingPage() {
         no account · no signup · just compose ·{" "}
         <Link
           href="/about"
-          style={{ color: "inherit", textDecoration: "underline", textUnderlineOffset: 2 }}
+          style={{
+            color: "inherit",
+            textDecoration: "underline",
+            textUnderlineOffset: 2,
+          }}
         >
           about
         </Link>

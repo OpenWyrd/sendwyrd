@@ -64,7 +64,11 @@ describe("seedClient — open mode", () => {
   });
 
   it("getMnemonic returns the persisted mnemonic", () => {
-    storeOpenSeed({ seed: makeSeed(), counter: 0, mnemonic: "twelve words here" });
+    storeOpenSeed({
+      seed: makeSeed(),
+      counter: 0,
+      mnemonic: "twelve words here",
+    });
     expect(getMnemonic()).toBe("twelve words here");
   });
 });
@@ -127,7 +131,9 @@ describe("seedClient — protectWithPassphrase (open → protected)", () => {
 
   it("rejects passphrases shorter than 8 chars", async () => {
     storeOpenSeed({ seed: makeSeed(), counter: 0 });
-    await expect(protectWithPassphrase("tiny")).rejects.toThrow(/passphrase_too_short/);
+    await expect(protectWithPassphrase("tiny")).rejects.toThrow(
+      /passphrase_too_short/,
+    );
   });
 
   it("throws when no seed exists", async () => {

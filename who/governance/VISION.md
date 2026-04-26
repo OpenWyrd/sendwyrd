@@ -50,9 +50,11 @@ These principles are immutable within the v1 phase. Every implementation decisio
 
 **Example**: A "user dashboard showing all your authored objects" implemented server-side fails the test (requires cross-object identity). A device-local list of K_origin URLs the user has held passes.
 
-### 4. Brittleness as Feature
+### 4. Mosaic Quality
 
-**Statement**: The architecture refuses durable identity and durable archive *on purpose*. K_origin lives device-local and dies with the device unless the user deliberately backs up their seed phrase. Default wyrd TTL is 90 days. The system architecturally penalizes its own use as a permanent archive.
+**Statement**: The architecture refuses durable identity and durable archive *on purpose*. K_origin lives device-local and dies with the device unless the user deliberately backs up their seed phrase. Default wyrd TTL is 90 days. The system architecturally penalizes its own use as a permanent archive. SendWyrd is a *mosaic mesh network*: each wyrd is a tile, independently meaningful, hopping across whatever platforms people already use; lost tiles leave gaps but don't break the wyrds that remain. The assembly lives in the social graph itself — there is no canonical archive to lose.
+
+**Renamed from "Brittleness as Feature" (2026-04-26)**. The principle is unchanged. The new framing emphasizes the architecture's positive shape (composed of independent tiles spanning a mesh) rather than its negative property (fragility). ADRs 003, 005, 006, 008, 014 reference the prior name; they remain frozen as historical record.
 
 **Alignment test**: Does this feature make SendWyrd function as a personal archive, identity record, or pundit ledger?
 
@@ -108,7 +110,7 @@ Per ADR-015, SendWyrd is deliberately unopinionated about which of these to opti
 | 1 | **Cross-post canonical URL** | Publish once on SendWyrd, share the URL across Twitter / iMessage / Slack as the canonical artifact for a thought. The URL is the artifact; the rails are distribution. **Note (per ADR-021):** the URL deliberately does NOT unfurl into a link-card preview on social platforms. Recipients see a bare URL and must visit to read. The protocol refuses the algorithmic-preview surface to keep SendWyrd out of feed-rendering UIs — readers who click are higher-signal than readers who scroll-by. |
 | 2 | **Intro / ask routing** | "X is looking for someone who can help with Y." Recipients forward via trust networks; terminal recipient reaches origin via the reply primitive without anyone in the chain having to coordinate. Strips real overhead from a thing humans do constantly but inefficiently. |
 | 3 | **Whisper-network dissemination** | Off-algo circulation of edgy/early ideas — often pointer-cards to externally-hosted long-form (whitepapers, GDocs, etc.). The fact of dissemination, plus who-shared-with-whom, is itself meaningful. |
-| 4 | **Tweet-replacement** | Author posts the canonical wyrd URL on Twitter (or wherever) instead of native posts. Recursive references enable thread-via-quoting. Self-archive incentive deliberately weakened by brittleness rule (P4). |
+| 4 | **Tweet-replacement** | Author posts the canonical wyrd URL on Twitter (or wherever) instead of native posts. Recursive references enable thread-via-quoting. Self-archive incentive deliberately weakened by Mosaic Quality rule (P4). |
 
 ---
 

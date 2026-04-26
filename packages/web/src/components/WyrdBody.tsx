@@ -67,13 +67,22 @@ function Segment({
   // Auto-embed media uses href (always has a scheme). LinkEmbed renders
   // the OG card via the unfurl proxy; it also uses href to fetch and as
   // the navigation target.
-  if (seg.type === "image") return <ImageEmbed url={seg.href} hostname={seg.hostname} />;
-  if (seg.type === "video") return <VideoEmbed url={seg.href} hostname={seg.hostname} />;
-  if (seg.type === "audio") return <AudioEmbed url={seg.href} hostname={seg.hostname} />;
+  if (seg.type === "image")
+    return <ImageEmbed url={seg.href} hostname={seg.hostname} />;
+  if (seg.type === "video")
+    return <VideoEmbed url={seg.href} hostname={seg.hostname} />;
+  if (seg.type === "audio")
+    return <AudioEmbed url={seg.href} hostname={seg.hostname} />;
   return <LinkEmbed url={seg.href} hostname={seg.hostname} />;
 }
 
-function EmbedFrame({ children, hostname }: { children: React.ReactNode; hostname: string }) {
+function EmbedFrame({
+  children,
+  hostname,
+}: {
+  children: React.ReactNode;
+  hostname: string;
+}) {
   return (
     <span
       style={{
@@ -143,7 +152,11 @@ function VideoEmbed({ url, hostname }: { url: string; hostname: string }) {
 function AudioEmbed({ url, hostname }: { url: string; hostname: string }) {
   return (
     <EmbedFrame hostname={hostname}>
-      <audio controls preload="none" style={{ display: "block", width: "100%" }}>
+      <audio
+        controls
+        preload="none"
+        style={{ display: "block", width: "100%" }}
+      >
         <source src={url} />
       </audio>
     </EmbedFrame>
@@ -160,8 +173,9 @@ function SendwyrdEmbed({
   // For sendwyrd:// scheme URLs, rewrite to canonical https://sendwyrd.com.
   // For URLs that are already https://sendwyrd.com/.app, use as-is.
   const link = url.startsWith("sendwyrd://")
-    ? (typeof window !== "undefined" ? window.location.origin + "/" : "https://sendwyrd.com/") +
-      url.slice("sendwyrd://".length)
+    ? (typeof window !== "undefined"
+        ? window.location.origin + "/"
+        : "https://sendwyrd.com/") + url.slice("sendwyrd://".length)
     : url;
   if (!resolved) {
     // Loading or not resolved yet — show as link.

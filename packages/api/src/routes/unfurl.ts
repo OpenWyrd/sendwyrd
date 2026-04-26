@@ -252,7 +252,7 @@ function findMeta(html: string, prop: string): string | null {
     "i",
   );
   const m2 = html.match(b);
-  return m2 ? m2[1] ?? null : null;
+  return m2 ? (m2[1] ?? null) : null;
 }
 
 function findMetaName(html: string, name: string): string | null {
@@ -267,7 +267,7 @@ function findMetaName(html: string, name: string): string | null {
     "i",
   );
   const m2 = html.match(b);
-  return m2 ? m2[1] ?? null : null;
+  return m2 ? (m2[1] ?? null) : null;
 }
 
 function findTitle(html: string): string | null {

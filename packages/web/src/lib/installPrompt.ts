@@ -78,7 +78,9 @@ export function canPromptInstall(): boolean {
   return deferredPrompt !== null;
 }
 
-export async function triggerInstall(): Promise<"accepted" | "dismissed" | "unavailable"> {
+export async function triggerInstall(): Promise<
+  "accepted" | "dismissed" | "unavailable"
+> {
   if (!deferredPrompt) return "unavailable";
   try {
     await deferredPrompt.prompt();

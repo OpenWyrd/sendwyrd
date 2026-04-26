@@ -113,8 +113,7 @@ export default function AboutPage() {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        padding:
-          "var(--spacing-12) var(--spacing-6) var(--spacing-24)",
+        padding: "var(--spacing-12) var(--spacing-6) var(--spacing-24)",
         gap: "var(--spacing-12)",
       }}
     >
@@ -147,8 +146,8 @@ export default function AboutPage() {
           }}
         >
           Social message objects you can pass anywhere, across any app or
-          website by sharing a link. The conversation that emerges around
-          them is up to the people passing them along.
+          website by sharing a link. The conversation that emerges around them
+          is up to the people passing them along.
         </p>
       </header>
 
@@ -163,9 +162,9 @@ export default function AboutPage() {
       >
         <CollapsibleSection title="Example Wyrds" defaultOpen>
           <p style={pStyle}>
-            A wyrd is a tweet-length introduction for whatever the sender
-            wants to pass forward — a question, an artifact, a signal, a
-            connection. The same shape carries many kinds of weight.
+            A wyrd is a tweet-length introduction for whatever the sender wants
+            to pass forward — a question, an artifact, a signal, a connection.
+            The same shape carries many kinds of weight.
           </p>
           <SpecimenWyrd
             body={
@@ -181,7 +180,7 @@ export default function AboutPage() {
           />
           <SpecimenWyrd
             body={
-              "Have 20 cows to sell near Nairobi. Contact Alex at +54 660-540-7701 over WhatsApp if interested."
+              "Have 20 cows to sell near Nairobi. Contact Alex at +254 660-540-7701 over WhatsApp if interested."
             }
             count={96}
           />
@@ -192,11 +191,11 @@ export default function AboutPage() {
             count={108}
           />
           <p style={pStyle}>
-            None of these need a paragraph of explanation when shared.
-            The wyrd is the introduction. As that pattern normalizes, a
-            wyrd URL appearing in an iMessage or a DM becomes recognizable
-            on sight as a high-signal object — passed by someone who
-            thought it was worth your time.
+            None of these need a paragraph of explanation when shared. The wyrd
+            is the introduction. As that pattern normalizes, a wyrd URL
+            appearing in an iMessage or a DM becomes recognizable on sight as a
+            high-signal object — passed by someone who thought it was worth your
+            time.
           </p>
         </CollapsibleSection>
 
@@ -221,32 +220,30 @@ export default function AboutPage() {
             https://sendwyrd.com/w/{"{object_handle}"}#{"{K_read}"}
           </p>
           <p style={pStyle}>
-            The object handle (a per-wyrd random identifier — not a user
-            handle) is in the path; the read key is in the URL fragment.
-            Browsers don&apos;t transmit fragments to servers — so the host
-            stays body-blind. Anyone holding the URL can read the wyrd;
-            whoever you share it with can forward it to whoever they think
-            is relevant.
+            The object handle (a per-wyrd random identifier — not a user handle)
+            is in the path; the read key is in the URL fragment. Browsers
+            don&apos;t transmit fragments to servers — so the host stays
+            body-blind. Anyone holding the URL can read the wyrd; whoever you
+            share it with can forward it to whoever they think is relevant.
           </p>
           <p style={pStyle}>
-            No accounts. No feed. No archive. Default 90-day TTL — pick
-            shorter, or none. Mosaic quality is the architecture, not an
-            oversight.
+            No accounts. No feed. No archive. Default 90-day TTL — pick shorter,
+            or none. Mosaic quality is the architecture, not an oversight.
           </p>
           <p style={pStyle}>
             The protocol carries text only. Identity, signing, trust, and
             provenance are either inlined into the body (a name, a Nostr
-            signature) or inherited from the share channel — &ldquo;Mike
-            sent me this.&rdquo; Trust rides the rail.
+            signature) or inherited from the share channel — &ldquo;Mike sent me
+            this.&rdquo; Trust rides the rail.
           </p>
           <p style={pStyle}>
-            One pragmatic recipient-side note: when a wyrd body contains
-            an external URL, the renderer asks the host to fetch
-            OpenGraph metadata so the link surfaces as a preview card.
-            The host sees the URL but not the wyrd it came from. The
-            wyrd&apos;s body is still encrypted end-to-end and never
-            leaves the recipient&apos;s browser. This is the cypherpunk-
-            on-content, pragmatic-on-rendering trade we accept in v1.
+            One pragmatic recipient-side note: when a wyrd body contains an
+            external URL, the renderer asks the host to fetch OpenGraph metadata
+            so the link surfaces as a preview card. The host sees the URL but
+            not the wyrd it came from. The wyrd&apos;s body is still encrypted
+            end-to-end and never leaves the recipient&apos;s browser. This is
+            the cypherpunk- on-content, pragmatic-on-rendering trade we accept
+            in v1.
           </p>
         </CollapsibleSection>
 
@@ -292,8 +289,8 @@ export default function AboutPage() {
         <CollapsibleSection title="Architecture">
           <p style={pStyle}>
             The architecture refuses identity. The protocol carries text and
-            capability keys; nothing else. No accounts, no usernames, no
-            logins, no PKI.
+            capability keys; nothing else. No accounts, no usernames, no logins,
+            no PKI.
           </p>
           <p style={pStyle}>
             Each wyrd has its own random <Code>K_origin</Code> keypair, derived
@@ -314,8 +311,8 @@ export default function AboutPage() {
           <ul style={ulStyle}>
             <li>
               <strong>Body envelope</strong>: AES-256-GCM via the Web Crypto
-              API. <Code>K_read</Code> is 32 bytes of CSPRNG, generated
-              per-wyrd at compose time.
+              API. <Code>K_read</Code> is 32 bytes of CSPRNG, generated per-wyrd
+              at compose time.
             </li>
             <li>
               <strong>Author keys</strong>: secp256k1; signatures via BIP-340
@@ -333,8 +330,8 @@ export default function AboutPage() {
             </li>
             <li>
               <strong>Distribution</strong>: <Code>K_read</Code> lives in the
-              URL fragment. Browsers do not transmit fragments to servers
-              (RFC 3986). The host is body-blind on every request.
+              URL fragment. Browsers do not transmit fragments to servers (RFC
+              3986). The host is body-blind on every request.
             </li>
             <li>
               <strong>AAD binding</strong>: every envelope binds version,
@@ -346,51 +343,51 @@ export default function AboutPage() {
 
         <CollapsibleSection title="Mosaic Quality">
           <p style={pStyle}>
-            SendWyrd is a <strong>mosaic mesh network</strong>. Mesh:
-            each wyrd hops across whatever platforms people already use
-            — iMessage to Twitter DM to Slack to email — routed by human
-            judgement, not algorithms. Mosaic: each wyrd is a tile,
-            independently meaningful; lost tiles leave gaps but
-            don&apos;t break the wyrds that remain. SendWyrd doesn&apos;t
-            own a network and refuses an archive that would hold the
-            whole picture; the assembly lives in the social graph
+            SendWyrd is a <strong>mosaic mesh network</strong>. Mesh: each wyrd
+            hops across whatever platforms people already use — iMessage to
+            Twitter DM to Slack to email — routed by human judgement, not
+            algorithms. Mosaic: each wyrd is a tile, independently meaningful;
+            lost tiles leave gaps but don&apos;t break the wyrds that remain.
+            SendWyrd doesn&apos;t own a network and refuses an archive that
+            would hold the whole picture; the assembly lives in the social graph
             itself.
           </p>
           <p style={pStyle}>
             <Code>K_read</Code> is per-wyrd random, not derived from your seed.
-            If you lose the URL, the body becomes unreadable — even if you
-            still hold your mnemonic.
+            If you lose the URL, the body becomes unreadable — even if you still
+            hold your mnemonic.
           </p>
           <p style={pStyle}>
             Mnemonic recovery rebuilds your wyrd-handle list and your author
-            keys (you can decrypt replies, burn old wyrds, prove authorship)
-            but cannot reconstruct <Code>K_read</Code> for sealed wyrds whose
-            URLs you&apos;ve lost. The protocol refuses durable archive on
-            purpose.
+            keys (you can decrypt replies, burn old wyrds, prove authorship) but
+            cannot reconstruct <Code>K_read</Code> for sealed wyrds whose URLs
+            you&apos;ve lost. The protocol refuses durable archive on purpose.
           </p>
           <p style={pStyle}>
             Default TTL is 90 days. Local storage may evict. Mnemonic backup is
-            the only recovery path the protocol offers — and even that
-            recovers identity, not content. Nietzschean: content fits a moment,
-            then is gone.
+            the only recovery path the protocol offers — and even that recovers
+            identity, not content. Nietzschean: content fits a moment, then is
+            gone.
           </p>
         </CollapsibleSection>
 
         <CollapsibleSection title="Authorship attestations">
           <p style={pStyle}>
-            Each wyrd has its own random <Code>K_origin</Code> keypair, so
-            two wyrds by the same person sign with different keys. That is
-            what keeps the host blind to authorship — and it also means
-            authorship can&apos;t be proven by reusing one signing key.
+            Each wyrd has its own random <Code>K_origin</Code> keypair, so two
+            wyrds by the same person sign with different keys. That is what
+            keeps the host blind to authorship — and it also means authorship
+            can&apos;t be proven by reusing one signing key.
           </p>
           <p style={pStyle}>
             To prove authorship after the fact, open{" "}
-            <a href="/inbox" style={linkStyle}>/inbox</a>, find the wyrd,
-            and tap <strong>attest authorship</strong>. SendWyrd
-            re-derives that wyrd&apos;s <Code>K_origin_priv</Code> from
-            your seed at the original index, signs a canonical message
-            bound to the target handle, and publishes a new permanent
-            wyrd whose body is the three-line attestation:
+            <a href="/inbox" style={linkStyle}>
+              /inbox
+            </a>
+            , find the wyrd, and tap <strong>attest authorship</strong>.
+            SendWyrd re-derives that wyrd&apos;s <Code>K_origin_priv</Code> from
+            your seed at the original index, signs a canonical message bound to
+            the target handle, and publishes a new permanent wyrd whose body is
+            the three-line attestation:
           </p>
           <p
             style={{
@@ -407,27 +404,26 @@ target=<object_handle>
 sig=<base64url-signature>`}
           </p>
           <p style={pStyle}>
-            Share the attestation URL alongside the original. A renderer
-            opening the attestation fetches the original&apos;s{" "}
-            <Code>K_origin_pub</Code> from the host and verifies the
-            signature, surfacing a verification banner. No persistent
-            identity is stored on either side — the seed is the only
-            thing that has to survive.
+            Share the attestation URL alongside the original. A renderer opening
+            the attestation fetches the original&apos;s{" "}
+            <Code>K_origin_pub</Code> from the host and verifies the signature,
+            surfacing a verification banner. No persistent identity is stored on
+            either side — the seed is the only thing that has to survive.
           </p>
           <p style={pStyle}>
-            Most wyrds never need an attestation; forwarding-by-default
-            is the norm and stable provenance is a heavy thing to bind to
-            a forwardable artifact. The mechanism exists for the case
-            where it&apos;s the right tool, not for routine composition.
+            Most wyrds never need an attestation; forwarding-by-default is the
+            norm and stable provenance is a heavy thing to bind to a forwardable
+            artifact. The mechanism exists for the case where it&apos;s the
+            right tool, not for routine composition.
           </p>
         </CollapsibleSection>
 
         <CollapsibleSection title="Why not Nostr">
           <p style={pStyle}>
-            Nostr is identity-first. Each user has a stable{" "}
-            <Code>npub</Code>/<Code>nsec</Code> keypair. Events are signed by
-            that stable key, posted to relays, aggregated by clients into
-            feeds. Most events are public broadcasts.
+            Nostr is identity-first. Each user has a stable <Code>npub</Code>/
+            <Code>nsec</Code> keypair. Events are signed by that stable key,
+            posted to relays, aggregated by clients into feeds. Most events are
+            public broadcasts.
           </p>
           <p style={pStyle}>
             SendWyrd makes the opposite call. No stable per-user key — per-wyrd
@@ -445,15 +441,14 @@ sig=<base64url-signature>`}
             signature against an <Code>npub</Code>, and SendWyrd is just
             transport for an attestation that already stands on its own.
             Alternatively, the wyrd URL is forwarded by a trusted identity
-            source — a Nostr key, a domain, a known account — that signs the
-            act of sending. Either way, the attestation lives outside the
-            protocol. SendWyrd doesn&apos;t model identity; it composes with
-            whatever attestation layer the participants choose to bring.
+            source — a Nostr key, a domain, a known account — that signs the act
+            of sending. Either way, the attestation lives outside the protocol.
+            SendWyrd doesn&apos;t model identity; it composes with whatever
+            attestation layer the participants choose to bring.
           </p>
           <p style={pStyle}>
-            The deepest difference is the archive. Nostr accumulates a
-            signed event log per identity. SendWyrd refuses the archive
-            on purpose.
+            The deepest difference is the archive. Nostr accumulates a signed
+            event log per identity. SendWyrd refuses the archive on purpose.
           </p>
         </CollapsibleSection>
 

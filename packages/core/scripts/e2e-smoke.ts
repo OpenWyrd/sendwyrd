@@ -37,7 +37,9 @@ async function main() {
   });
   console.log(`   handle: ${result.handle}`);
   console.log(`   k_read: ${result.k_read_b64u.slice(0, 12)}...`);
-  console.log(`   envelope: ${result.publish_payload.envelope.length} chars b64u\n`);
+  console.log(
+    `   envelope: ${result.publish_payload.envelope.length} chars b64u\n`,
+  );
 
   console.log("3) POST /api/v1/wyrds");
   const pubRes = await fetch(`${ORIGIN}/api/v1/wyrds`, {
@@ -67,7 +69,9 @@ async function main() {
     expires_at: number;
     replies_enabled: boolean;
   };
-  console.log(`   ${fetchRes.status} envelope ${fetched.envelope.length} chars\n`);
+  console.log(
+    `   ${fetchRes.status} envelope ${fetched.envelope.length} chars\n`,
+  );
   if (!fetchRes.ok) {
     console.error("FAIL: fetch");
     process.exit(1);
@@ -94,7 +98,9 @@ async function main() {
   const url = buildFragmentUrl(ORIGIN, result.handle, result.k_read_b64u);
   console.log(`   ${url}\n`);
 
-  console.log("✓ ALL CHECKS PASSED — full publish/fetch/decrypt roundtrip works on production.");
+  console.log(
+    "✓ ALL CHECKS PASSED — full publish/fetch/decrypt roundtrip works on production.",
+  );
 }
 
 main().catch((e) => {
