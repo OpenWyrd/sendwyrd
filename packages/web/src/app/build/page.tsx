@@ -167,7 +167,7 @@ export default function BuildPage() {
             What&apos;s deliberately NOT supported: long-lived agent
             identities, account/key rotation tracking, or any host-side
             primitive that lets one agent enumerate another agent&apos;s
-            wyrds. The protocol&apos;s brittleness applies to agents the
+            wyrds. The protocol&apos;s mosaic quality applies to agents the
             same as humans.
           </p>
         </Section>

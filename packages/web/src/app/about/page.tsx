@@ -34,7 +34,7 @@ const linkStyle: React.CSSProperties = {
 function CollapsibleSection({
   title,
   children,
-  defaultOpen = true,
+  defaultOpen = false,
 }: {
   title: string;
   children: React.ReactNode;
@@ -123,7 +123,57 @@ export default function AboutPage() {
           lineHeight: 1.7,
         }}
       >
-        <CollapsibleSection title="The questions">
+        <CollapsibleSection title="How it works">
+          <p style={pStyle}>
+            A wyrd is a 300-codepoint, end-to-end-encrypted text block that
+            becomes a shareable URL — a portable, composable, forward-worthy
+            conversational artifact that travels through existing messaging
+            rails (iMessage, Signal, WhatsApp, Slack, email) rather than a
+            native feed or discovery layer.
+          </p>
+          <p style={pStyle}>The URL takes one canonical form:</p>
+          <p
+            style={{
+              ...pStyle,
+              padding: "var(--spacing-3) var(--spacing-4)",
+              border: "1px solid var(--color-hairline)",
+              color: "var(--color-ink-muted)",
+              overflowWrap: "anywhere",
+            }}
+          >
+            https://sendwyrd.com/w/{"{object_handle}"}#{"{K_read}"}
+          </p>
+          <p style={pStyle}>
+            The object handle (a per-wyrd random identifier — not a user
+            handle) is in the path; the read key is in the URL fragment.
+            Browsers don&apos;t transmit fragments to servers — so the host
+            stays body-blind. Anyone holding the URL can read the wyrd;
+            whoever you share it with can forward it to whoever they think
+            is relevant.
+          </p>
+          <p style={pStyle}>
+            No accounts. No feed. No archive. Default 90-day TTL — pick
+            shorter, or none. Mosaic quality is the architecture, not an
+            oversight.
+          </p>
+          <p style={pStyle}>
+            The protocol carries text only. Identity, signing, trust, and
+            provenance are either inlined into the body (a name, a Nostr
+            signature) or inherited from the share channel — &ldquo;Mike
+            sent me this.&rdquo; Trust rides the rail.
+          </p>
+          <p style={pStyle}>
+            One pragmatic recipient-side note: when a wyrd body contains
+            an external URL, the renderer asks the host to fetch
+            OpenGraph metadata so the link surfaces as a preview card.
+            The host sees the URL but not the wyrd it came from. The
+            wyrd&apos;s body is still encrypted end-to-end and never
+            leaves the recipient&apos;s browser. This is the cypherpunk-
+            on-content, pragmatic-on-rendering trade we accept in v1.
+          </p>
+        </CollapsibleSection>
+
+        <CollapsibleSection title="Motivation">
           <ol
             style={{
               padding: 0,
@@ -160,56 +210,6 @@ export default function AboutPage() {
               </li>
             ))}
           </ol>
-        </CollapsibleSection>
-
-        <CollapsibleSection title="How it works">
-          <p style={pStyle}>
-            A wyrd is a 300-codepoint, end-to-end-encrypted text block that
-            becomes a shareable URL — a portable, composable, forward-worthy
-            conversational artifact that travels through existing messaging
-            rails (iMessage, Signal, WhatsApp, Slack, email) rather than a
-            native feed or discovery layer.
-          </p>
-          <p style={pStyle}>The URL takes one canonical form:</p>
-          <p
-            style={{
-              ...pStyle,
-              padding: "var(--spacing-3) var(--spacing-4)",
-              border: "1px solid var(--color-hairline)",
-              color: "var(--color-ink-muted)",
-              overflowWrap: "anywhere",
-            }}
-          >
-            https://sendwyrd.com/w/{"{object_handle}"}#{"{K_read}"}
-          </p>
-          <p style={pStyle}>
-            The object handle (a per-wyrd random identifier — not a user
-            handle) is in the path; the read key is in the URL fragment.
-            Browsers don&apos;t transmit fragments to servers — so the host
-            stays body-blind. Anyone holding the URL can read the wyrd;
-            whoever you share it with can forward it to whoever they think
-            is relevant.
-          </p>
-          <p style={pStyle}>
-            No accounts. No feed. No archive. Default 90-day TTL — pick
-            shorter, or none. Brittleness is the architecture, not an
-            oversight.
-          </p>
-          <p style={pStyle}>
-            The protocol carries text only. Identity, signing, trust, and
-            provenance are either inlined into the body (a name, a Nostr
-            signature) or inherited from the share channel — &ldquo;Mike
-            sent me this.&rdquo; Trust rides the rail.
-          </p>
-          <p style={pStyle}>
-            One pragmatic recipient-side note: when a wyrd body contains
-            an external URL, the renderer asks the host to fetch
-            OpenGraph metadata so the link surfaces as a preview card.
-            The host sees the URL but not the wyrd it came from. The
-            wyrd&apos;s body is still encrypted end-to-end and never
-            leaves the recipient&apos;s browser. This is the cypherpunk-
-            on-content, pragmatic-on-rendering trade we accept in v1.
-          </p>
         </CollapsibleSection>
 
         <CollapsibleSection title="Architecture">
@@ -267,7 +267,13 @@ export default function AboutPage() {
           </ul>
         </CollapsibleSection>
 
-        <CollapsibleSection title="Brittleness">
+        <CollapsibleSection title="Mosaic Quality">
+          <p style={pStyle}>
+            Each wyrd is a tile in a mosaic. Tiles are individually
+            meaningful; lost tiles leave gaps but don&apos;t break the
+            wyrds that remain. The architecture refuses a single archive
+            that would hold the whole picture.
+          </p>
           <p style={pStyle}>
             <Code>K_read</Code> is per-wyrd random, not derived from your seed.
             If you lose the URL, the body becomes unreadable — even if you
