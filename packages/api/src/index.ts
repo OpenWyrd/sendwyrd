@@ -15,6 +15,7 @@ import { wyrdsRoutes } from "./routes/wyrds.js";
 import { repliesRoutes } from "./routes/replies.js";
 import { authorsRoutes } from "./routes/authors.js";
 import { adminRoutes } from "./routes/admin.js";
+import { unfurlRoutes } from "./routes/unfurl.js";
 import { redactBeforeSend } from "./sentryRedact.js";
 
 type App = Hono<{ Bindings: Env }>;
@@ -65,6 +66,7 @@ app.route("/api/v1/wyrds", wyrdsRoutes);
 app.route("/api/v1/wyrds", repliesRoutes); // mounts /:handle/replies inside wyrds tree
 app.route("/api/v1/authors", authorsRoutes);
 app.route("/api/v1/admin", adminRoutes);
+app.route("/api/v1/unfurl", unfurlRoutes);
 
 // 404 fallback.
 app.notFound((c) => c.json({ error: "not_found" }, 404));
