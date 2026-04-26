@@ -1,17 +1,28 @@
 /**
- * Fragment-form view: server component that SSR-fetches the encrypted
- * envelope from the api worker and embeds it in the initial HTML, so the
- * client can decrypt the moment hydration runs — no second round trip.
+ * Fragment-form view: server-streamed envelope, client-side decrypt.
+ *
+ * The page renders an immediate shell (`<Suspense fallback>`) so TTFB is
+ * dominated by Next's render time, not by the api worker → Postgres
+ * round trip. The shell streams to the browser immediately; the browser
+ * starts loading JS chunks. The async `<EnvelopeResolver>` fetches the
+ * envelope from the api worker (in-CF-network) and streams the resolved
+ * `<FragmentClient>` (with the envelope embedded) once it's ready.
+ *
+ * Effect: TTFB stays low, JS load happens in parallel with the envelope
+ * fetch, and there's no client-side round trip — the envelope is in the
+ * stream by the time JS hydrates.
  *
  * K_read still lives in the URL fragment and never reaches the server
  * (per RFC 3986). The envelope is encrypted; SSR-embedding it leaks
  * nothing the api worker doesn't already expose at /api/v1/wyrds/{handle}.
  */
 
+import { Suspense } from "react";
 import FragmentClient, { type InitialFetch } from "./FragmentClient";
 
-// We never want this page cached on the edge — burns and tombstones must
-// be reflected immediately, and each render does a fresh envelope fetch.
+// Force a fresh render per request — burns and tombstones must reflect
+// immediately. Streamed responses still respect this; we just don't cache
+// at the edge.
 export const dynamic = "force-dynamic";
 
 interface Params {
@@ -39,12 +50,45 @@ async function fetchEnvelope(handle: string): Promise<InitialFetch> {
   }
 }
 
+async function EnvelopeResolver({ handle }: { handle: string }) {
+  const initial = await fetchEnvelope(handle);
+  return <FragmentClient handle={handle} initial={initial} />;
+}
+
+function LoadingShell() {
+  return (
+    <main
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        padding: "var(--spacing-12) var(--spacing-6)",
+        gap: "var(--spacing-8)",
+      }}
+    >
+      <p
+        style={{
+          margin: 0,
+          fontFamily: "var(--font-mono)",
+          color: "var(--color-ink-muted)",
+        }}
+      >
+        …
+      </p>
+    </main>
+  );
+}
+
 export default async function FragmentView({
   params,
 }: {
   params: Promise<Params>;
 }) {
   const { handle } = await params;
-  const initial = await fetchEnvelope(handle);
-  return <FragmentClient handle={handle} initial={initial} />;
+  return (
+    <Suspense fallback={<LoadingShell />}>
+      <EnvelopeResolver handle={handle} />
+    </Suspense>
+  );
 }
