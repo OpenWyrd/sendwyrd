@@ -8,11 +8,15 @@ last_session: session_operator_20260425_mop_open_questions_resume_2
 tags: [state, governance, mop]
 ---
 
-# Operational State — MOP
+# Operational State — SendWyrd
 
 ## Current Phase
 
-**Architecture resolution complete; entering v1 build-readiness prep.** MOP was forked from the aDNA template on 2026-04-24. The founding session banked ADRs 003–008. Open-questions sessions on 2026-04-24 and 2026-04-25 closed all 13 remaining backlog items, banking ADRs 009–020. Working agreement reframed mid-session: technical/aesthetic calls delegated to agent (CTO mode); user reserves CEO calls (scope, branding, trust posture). All architecture decisions are now banked. Next phase is **one-shot build readiness**: wire spec, renderer contract, visual/UX direction, repo scaffolding, and landing copy — completed before implementation begins.
+**v1 is LIVE.** Deployed at `https://sendwyrd.com`. End-to-end publish / share / view / reply works on production. Architecture phase closed (ADRs 003–020). Build phases B–G complete with many fast-follow UX iterations from real-use feedback.
+
+Repo: `https://github.com/openwyrd/sendwyrd` (`main` clean, all pushed).
+
+Now in **post-MVP Tier-1 punch list** — three operational gaps to close before pre-launch hardening (Tier-2: Sentry, OG cards, CI auto-deploy).
 
 ## What's Banked
 
@@ -60,34 +64,34 @@ tags: [state, governance, mop]
 - `inspiration_tweetjoin.md` — relational-first protocol; explicit conjecture about object-vs-relational architectures
 - `AGENTS.md` — usage rules: adjacent context only, NOT canonical design constraints
 
-## What's Pending
+## What's Shipped
 
-Architecture phase is closed. All ADR-level decisions are banked (003–020). Remaining v1 prep work moves to spec/build phases:
+All Phases B–G plus a long fast-follow UX iteration cycle from live testing.
 
-| Phase | Deliverable | Status |
-|-------|-------------|--------|
-| B | Wire spec doc (`what/docs/spec/spec_mop_v1.md`) — URL forms, endpoints, envelope, HD derivation, error codes, rate-limits, reply-blob format | **Done (2026-04-25)** |
-| C | Renderer behavioral contract (`what/docs/spec/renderer_contract_v1.md`) — cross-impl spec for web/iOS/Android per ADR-014 | **Done (2026-04-25)** |
-| D | Visual/UX direction (`what/docs/spec/visual_direction_v1.md`) — color tokens, type, spacing, motion budget, glyph specs, IA, screen-by-screen flows | **Done (2026-04-25)** |
-| E | Repo scaffolding + deploy: monorepo (core/api/web), Drizzle schema migrated, web + API live at https://sendwyrd.com via Cloudflare Workers (api at sendwyrd.com/api/*, web via @opennextjs/cloudflare at sendwyrd.com/*) | **Done (2026-04-25)** |
-| F | Landing copy + demo wyrd content + wyrd sigil SVG + privacy indicator glyphs (Sealed knot / Open parallel) — live | **Done (2026-04-25)** |
-| G | Implementation: real worker handlers (publish/fetch/burn), client compose pipeline, fragment-form view, public-form SSR view, onboarding, settings (theme + forget seed). Verified live e2e roundtrip on sendwyrd.com. | **Done MVP (2026-04-25)** — replies, inbox HD-sweep, mnemonic backup deferred to G2 |
+| Phase | Status |
+|-------|--------|
+| B Wire spec | ✅ `what/docs/spec/spec_mop_v1.md` (with three known drift points; see Tier-1) |
+| C Renderer contract | ✅ `what/docs/spec/renderer_contract_v1.md` |
+| D Visual direction | ✅ `what/docs/spec/visual_direction_v1.md` |
+| E Scaffolding + deploy | ✅ Monorepo + live at `sendwyrd.com` |
+| F Landing copy + sigil | ✅ Plus theme-aware favicon |
+| G Implementation | ✅ Full publish / fetch / burn handlers, ECIES replies, fragment + public views, inbox with auto-load + nicknames, account-less default, mnemonic persistence |
 
-When B–F are complete, v1 implementation becomes a single execution pass — every decision is pre-locked, no interrupts during coding.
+## Tier-1 Punch List (next session)
+
+| # | Item | Status |
+|---|------|--------|
+| 1 | **Burn affordance UI** — `DELETE /api/v1/wyrds/{handle}` exists; need view-page + inbox burn buttons | Pending |
+| 2 | **HD recovery sweep** — implement `GET /api/v1/authors/{k_origin_pub}/handles` + client-side mnemonic-import flow | Pending |
+| 3 | **Spec doc sync** — `spec_mop_v1.md` is behind shipped reality (client-generated handles, ttl=0 permanent, reply cap=300) | Pending |
 
 ## Active Blockers
 
-None. **Product is live and shipping** at https://sendwyrd.com. End-to-end publish / share / view roundtrip works. Token stash for CF / Neon ops at `~/.config/cloudflare/sendwyrd_api_token` (mode 600, never committed).
+None. Product live at `https://sendwyrd.com`, verified end-to-end. Token stash at `~/.config/cloudflare/sendwyrd_api_token` (mode 600, owner-only, never committed). Neon CLI authed under `the Neon org (***)`. Wrangler authed under email `***` (account ID `***`).
 
-Next-up **Phase G2** (deferred-from-MVP):
+**Tier-2 (post-Tier-1)**: Sentry with redaction; OG card auto-embed for non-sendwyrd HTTPS URLs; CI auto-deploy on push to `main`; test suite beyond e2e smoke scripts.
 
-- Reply submit/fetch (POST/GET `/api/v1/wyrds/:handle/replies`) — wire spec §14, currently 501-stubbed
-- Inbox aggregation via HD sweep (`/inbox`, presence-check endpoint)
-- Mnemonic backup UI in settings (re-show 12 words after passphrase reauth)
-- Burn affordance from `/w/:handle` view (signed delete UI)
-- Sentry redaction-aware integration (per `feedback_decision_delegation` plan)
-
-The next session picks these up.
+**Tier-3 (deferred)**: Native iOS / Android (ADR-014 post-v1); Söhne typography swap; federation; defensive domain registrations.
 
 ## Recent Decisions Timeline
 
@@ -113,13 +117,12 @@ The next session picks these up.
 | Date | Upgrade | Source |
 |------|---------|--------|
 | 2026-04-24 | Forked from aDNA template; MOP project identity established | Initial commit |
-| 2026-04-25 | Brand banked as SendWyrd; placeholder names swept from MANIFEST/VISION; backlog architecture phase closed | Open-questions resume 2 |
-| 2026-04-25 | `sendwyrd.com` and `sendwyrd.app` domains registered (user) | Open-questions resume 2 |
-| 2026-04-25 | Phase B (wire spec) banked at `what/docs/spec/spec_mop_v1.md`; ADR-020 amended with Drizzle ORM | Open-questions resume 2 |
-| 2026-04-25 | Phase C (renderer behavioral contract) banked at `what/docs/spec/renderer_contract_v1.md` | Open-questions resume 2 |
-| 2026-04-25 | GitHub repo + local dir + memory dir renamed `MOP` → `sendwyrd`; ADR-016 amendment recorded | Open-questions resume 2 |
-| 2026-04-25 | bin-21 archived as inspiration reference (stack-validation: Next.js + Drizzle + R2 confirmed); backlog F1/F2 added (burn-after-read v2 consideration, bot-defense operational refinement) | Open-questions resume 2 |
-| 2026-04-25 | Phase D (visual direction spec) banked at `what/docs/spec/visual_direction_v1.md` — dark-first canonical, mono-as-voice, four-item motion budget, knotted/unknotted thread privacy glyphs | Open-questions resume 2 |
+| 2026-04-25 | Brand banked as SendWyrd; domains registered; ADR-016 amendment for repo + dir rename `MOP` → `sendwyrd` | Open-questions resume 2 |
+| 2026-04-25 | Phases B/C/D specs banked; bin-21 archived as inspiration reference | Open-questions resume 2 |
+| 2026-04-25 | Phase E shipped — monorepo scaffolding + live deploy on Cloudflare Workers (api + web) | Open-questions resume 2 |
+| 2026-04-25 | Phase F shipped — landing + wyrd sigil + privacy glyphs | Open-questions resume 2 |
+| 2026-04-25 | Phase G shipped — full implementation incl. ECIES replies; e2e verified live | Open-questions resume 2 |
+| 2026-04-25 | UX iteration cycle: lock-only privacy indicator, modernized Segmented form controls, top nav, account-less default flow, mnemonic persistence (format v2), inbox auto-load replies + nicknames, burn-on-public-form bug fix, reply 300-cap (anti-scope-creep), TTL never option, public-sharing copy, swung-open lock glyph | Open-questions resume 2 |
 | 2026-04-25 | Phase E (scaffolding) — monorepo + Drizzle migration applied to live Neon DB; pnpm typecheck 4/4 green; next build green | Open-questions resume 2 |
 | 2026-04-25 | Provisioned: Neon project `***`, R2 bucket `sendwyrd-blobs`, Cloudflare Workers `sendwyrd-api` and `sendwyrd-web`, custom AAAA record on apex | Open-questions resume 2 |
 | 2026-04-25 | Phase E deploy verified live: `GET https://sendwyrd.com/api/v1/health` → 200 with `mop-protocol-version: 1`; `GET https://sendwyrd.com/` → 200 Next.js HTML | Open-questions resume 2 |
@@ -132,21 +135,38 @@ Session history at `how/sessions/history/2026-04/` contains the completed foundi
 
 ## Next Session Prompt
 
-A self-contained paragraph for the next agent. Read in this order:
+SendWyrd v1 is **live and shipping**. Read order:
 
-1. `CLAUDE.md` (auto-loaded — Identity & Personality is still default *Berthier*; user has not customized)
-2. `MANIFEST.md` — project identity (consumer brand SendWyrd, protocol codename MOP, unit noun *wyrd*)
-3. `who/governance/VISION.md` — five immutable design principles + scope walls
-4. `what/decisions/adr_003*.md` through `adr_020*.md` — **all 18 banked architectural commitments**, in number order. Architecture phase is closed.
-5. This STATE.md
-6. `how/sessions/history/2026-04/session_operator_20260425_mop_open_questions_resume_2.md` — most recent session log; its SITREP and Next Session Prompt drive the active phase
+1. `CLAUDE.md` (auto-loaded — default Berthier identity uncustomized).
+2. `MANIFEST.md` — project identity.
+3. This `STATE.md` — Tier-1 punch list (you are here).
+4. Memory pointers (auto-loaded via `MEMORY.md`):
+   - `project_sendwyrd_v1_live.md` — current shipped state, infra pointers, e2e smoke scripts
+   - `feedback_anti_scope_creep_relay_layer.md` — guard against XKCD-927; SendWyrd is a relay primitive, never a chat app
+   - `feedback_zero_friction_default.md` — account-less default; security opt-in
+   - `feedback_decision_delegation.md` — CTO/CEO call boundaries
+   - `feedback_pragmatic_privacy_posture.md`
+   - `user_profile.md`
+5. `how/sessions/history/2026-04/session_operator_20260425_mop_open_questions_resume_2.md` — full record of how we got here
+6. ADRs 003–020 only on demand. Banked is banked; do NOT re-debate.
 
-**Phase ahead is one-shot build readiness.** When B–F (wire spec, renderer contract, visual direction, scaffolding, content) are all complete, v1 implementation becomes a single execution pass with zero open architecture questions. Start the next session at **Phase B (wire spec)**: write the consolidated v1 MOP protocol spec under `what/docs/` capturing every ADR-level decision in implementation-grade detail (URL canonical forms, endpoint inventory with HTTP methods/payloads/error codes, encryption envelope layout, HD derivation reference, reply-blob format, rate-limit numbers).
+**Tier-1 work, in priority order**:
 
-**Working agreement (CTO/CEO mode)**: technical and aesthetic decisions are delegated to agent. User reserves CEO calls (scope, branding, trust posture). Memory: `~/.claude/projects/-home-operator-lattice-MOP/memory/feedback_decision_delegation.md`.
+1. **Burn affordance UI**. The API supports `DELETE /api/v1/wyrds/{handle}` (Schnorr-signed by `K_origin_priv`). No UI yet. Add a small "burn" button on `/w/{handle}` view (visible to author when their `K_origin_pub` matches a wyrd in their local history) and a per-row burn in `/inbox`. Confirm dialog. After burn, route to `/inbox` or render tombstone state inline.
 
-**Apply the pragmatic privacy posture heuristic** (memory: `feedback_pragmatic_privacy_posture.md`) for any future fork pitting recipient-side privacy against UX.
+2. **HD recovery sweep**. Currently if a user clears localStorage they cannot recover even with their mnemonic. Implement:
+   - API: replace 501 stub at `packages/api/src/routes/authors.ts` with real `GET /api/v1/authors/{k_origin_pub_b64u}/handles` per spec §15. Schnorr-signed query (presence-check signature). Returns list of handles + metadata for that K_origin_pub.
+   - Web: a `/recover` route or a settings action that takes a BIP-39 mnemonic input, derives `K_origin_pub` across `m/300'/n'` for `n=0..gap+20`, queries the presence-check endpoint, reconstructs `wyrdHistory`. Per spec §5.3 sweep convention.
 
-The user is **the operator (X: @deltaclimbs)** (***), working in `~/lattice/MOP/` on a Fedora workspace. Cypherpunk-Nostr-adjacent, Nietzschean, anti-feed/anti-algorithm; terse declarative docs; rule-light protocols. Match the register; do not corporate-neutralize.
+3. **Spec doc sync**. `what/docs/spec/spec_mop_v1.md` drift:
+   - §6, §9, §15: handle is **client-generated** (12 random bytes b64u), not server-generated. Server rejects collisions. `publish_message` SHA-256 includes the handle. Currently the spec says server-generated.
+   - §9.2: `ttl_seconds = 0` is **accepted** as permanent (sentinel `expires_at = 253_370_764_800_000` = year 9999). Currently the spec says rejected.
+   - §14.4: `REPLY_CODEPOINT_CAP = 300` (was 1000) and `REPLY_BLOB_BYTE_CEILING = 2500` (was 5000).
 
-**Crucially**: do NOT re-debate banked decisions (ADRs 003–020) unless the user explicitly reopens them. Banked is banked.
+**Operational notes**:
+- Token stash: `~/.config/cloudflare/sendwyrd_api_token` (chmod 600). Use as `$(cat ...)` in commands; never echo.
+- Wrangler authed; Neon CLI authed; everything provisioned.
+- Deploy commands: `cd packages/api && wrangler deploy`; `cd packages/web && pnpm exec opennextjs-cloudflare build && pnpm exec opennextjs-cloudflare deploy`.
+- Smoke tests: `pnpm exec tsx packages/core/scripts/<name>.ts` from repo root or core dir.
+
+User is in **CTO-delegated mode**. Don't interrogate on technical or aesthetic forks. Match the voice: cypherpunk-Nostr-adjacent, Nietzschean, terse declarative, no corporate-neutralization.
