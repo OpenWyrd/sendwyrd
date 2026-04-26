@@ -58,6 +58,9 @@ out/
 # Build outputs (TS / bundlers)
 *.tsbuildinfo
 
+# Test coverage
+coverage/
+
 # Environment / secrets (never commit)
 .dev.vars
 .env.production
