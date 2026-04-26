@@ -47,6 +47,32 @@ interface HealthResult {
   detail?: string;
 }
 
+interface UsageStats {
+  generated_at: string;
+  wyrds: { total: number; last_24h: number; last_7d: number; active: number; burned: number; expired: number };
+  replies: { total: number; last_24h: number; last_7d: number };
+}
+
+async function fetchStats(token: string): Promise<{ stats?: UsageStats; error?: string }> {
+  try {
+    const r = await fetch(`${SITE_ORIGIN}/api/v1/admin/stats`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!r.ok) return { error: `HTTP ${r.status}` };
+    return { stats: (await r.json()) as UsageStats };
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
+}
+
+function formatNum(n: number): string {
+  if (n < 1000) return String(n);
+  if (n < 1_000_000) return `${(n / 1000).toFixed(n < 10000 ? 1 : 0)}k`;
+  return `${(n / 1_000_000).toFixed(1)}M`;
+}
+
 async function checkHealth(url: string): Promise<HealthResult> {
   const t0 = Date.now();
   try {
@@ -124,10 +150,11 @@ export default async function OpsPage({
     notFound();
   }
 
-  // Parallel fetch: health + per-project issues.
-  const [apiHealth, webHealth, ...projectResults] = await Promise.all([
+  // Parallel fetch: health + per-project issues + usage stats.
+  const [apiHealth, webHealth, statsResult, ...projectResults] = await Promise.all([
     checkHealth(`${SITE_ORIGIN}/api/v1/health`),
     checkHealth(`${SITE_ORIGIN}/`),
+    fetchStats(token),
     ...PROJECTS.map((p) =>
       sentryToken
         ? fetchIssues(p, sentryToken)
@@ -203,6 +230,50 @@ export default async function OpsPage({
             value={`${webHealth.detail} · ${webHealth.ms}ms`}
             ok={webHealth.ok}
           />
+        </Section>
+
+        {/* Usage */}
+        <Section title="usage">
+          {statsResult.error ? (
+            <Row label="stats" value={`error: ${statsResult.error}`} ok={false} />
+          ) : statsResult.stats ? (
+            <>
+              <UsageRow
+                label="wyrds published"
+                total={statsResult.stats.wyrds.total}
+                d24={statsResult.stats.wyrds.last_24h}
+                d7={statsResult.stats.wyrds.last_7d}
+              />
+              <UsageRow
+                label="replies sent"
+                total={statsResult.stats.replies.total}
+                d24={statsResult.stats.replies.last_24h}
+                d7={statsResult.stats.replies.last_7d}
+              />
+              <Row
+                label="active wyrds"
+                value={`${formatNum(statsResult.stats.wyrds.active)} live · ${formatNum(statsResult.stats.wyrds.burned)} burned · ${formatNum(statsResult.stats.wyrds.expired)} expired`}
+                ok
+                muted
+              />
+              <p
+                style={{
+                  margin: 0,
+                  marginTop: "var(--spacing-3)",
+                  fontSize: "var(--text-microcaption)",
+                  color: "var(--color-ink-subtle)",
+                  lineHeight: 1.6,
+                }}
+              >
+                no per-user identity primitive — these are aggregate counts.
+                distinct-IP estimates from cloudflare are a deferred follow-up
+                (needs a scoped read-only cf analytics token; deploy token must
+                not live in a runtime worker).
+              </p>
+            </>
+          ) : (
+            <Row label="stats" value="loading" ok muted />
+          )}
         </Section>
 
         {/* Sentry summary */}
@@ -391,6 +462,46 @@ function Section({
       </h2>
       {children}
     </section>
+  );
+}
+
+function UsageRow({
+  label,
+  total,
+  d24,
+  d7,
+}: {
+  label: string;
+  total: number;
+  d24: number;
+  d7: number;
+}) {
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "1fr auto auto auto",
+        gap: "var(--spacing-4)",
+        alignItems: "baseline",
+        padding: "var(--spacing-2) 0",
+        borderBottom: "1px solid var(--color-hairline)",
+        fontSize: "var(--text-caption)",
+      }}
+    >
+      <span>{label}</span>
+      <span style={{ color: "var(--color-ink-muted)", fontVariantNumeric: "tabular-nums", minWidth: "5ch", textAlign: "right" }}>
+        <span style={{ color: "var(--color-ink)" }}>{formatNum(d24)}</span>
+        <span style={{ color: "var(--color-ink-subtle)", fontSize: "var(--text-microcaption)", marginLeft: "var(--spacing-2)" }}>24h</span>
+      </span>
+      <span style={{ color: "var(--color-ink-muted)", fontVariantNumeric: "tabular-nums", minWidth: "5ch", textAlign: "right" }}>
+        <span style={{ color: "var(--color-ink)" }}>{formatNum(d7)}</span>
+        <span style={{ color: "var(--color-ink-subtle)", fontSize: "var(--text-microcaption)", marginLeft: "var(--spacing-2)" }}>7d</span>
+      </span>
+      <span style={{ color: "var(--color-ink-muted)", fontVariantNumeric: "tabular-nums", minWidth: "6ch", textAlign: "right" }}>
+        <span style={{ color: "var(--color-ink)" }}>{formatNum(total)}</span>
+        <span style={{ color: "var(--color-ink-subtle)", fontSize: "var(--text-microcaption)", marginLeft: "var(--spacing-2)" }}>all</span>
+      </span>
+    </div>
   );
 }
 
