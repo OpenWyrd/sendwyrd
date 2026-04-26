@@ -29,6 +29,7 @@ function SpecimenWyrd({ body, count }: { body: string; count: number }) {
           color: "var(--color-ink)",
           whiteSpace: "pre-wrap",
           lineHeight: 1.6,
+          fontStyle: "italic",
         }}
       >
         {body}
