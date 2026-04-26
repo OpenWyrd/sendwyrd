@@ -49,7 +49,7 @@ export default function ComposePage() {
   const [body, setBody] = useState("");
   const [ttl, setTtl] = useState(TTL_SECONDS_DEFAULT);
   const [form, setForm] = useState<"sealed" | "open">("sealed");
-  const [repliesEnabled, setRepliesEnabled] = useState(false);
+  const [repliesEnabled, setRepliesEnabled] = useState(true);
   const [sending, setSending] = useState(false);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -247,7 +247,7 @@ export default function ComposePage() {
             onClick={() => {
               setShareUrl(null);
               setBody("");
-              setRepliesEnabled(false);
+              setRepliesEnabled(true);
               setForm("sealed");
               setTtl(TTL_SECONDS_DEFAULT);
             }}

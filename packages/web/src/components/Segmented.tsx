@@ -110,15 +110,15 @@ interface ToggleProps {
   ariaLabel?: string;
 }
 
-/** Boolean toggle styled like a 2-segment Segmented. */
+/** Boolean toggle styled like a 2-segment Segmented. "on" is default-left. */
 export function Toggle({ name, value, onChange, ariaLabel }: ToggleProps) {
   return (
     <Segmented
       name={name}
       value={value ? "on" : "off"}
       options={[
-        { value: "off", label: "off" },
         { value: "on", label: "on" },
+        { value: "off", label: "off" },
       ]}
       onChange={(v) => onChange(v === "on")}
       size="sm"

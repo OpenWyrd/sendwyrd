@@ -15,6 +15,7 @@ import {
 import { PrivacyIndicator } from "@/components/PrivacyIndicator";
 import { WyrdBody } from "@/components/WyrdBody";
 import { Nav } from "@/components/Nav";
+import { ReplyForm } from "@/components/ReplyForm";
 import { resolveTransitives, type ResolutionMap } from "@/lib/resolveBody";
 import type { Metadata } from "next";
 
@@ -24,12 +25,15 @@ interface PageProps {
 
 interface FetchResult {
   kind: "ready" | "gone";
+  handle?: string;
   body?: string;
   transitives?: ResolutionMap;
   reason?: string;
   gone_at?: string;
   published_at?: number;
   expires_at?: number;
+  replies_enabled?: boolean;
+  k_origin_pub_b64u?: string;
 }
 
 async function fetchAndDecrypt(handle: string, k_read: string): Promise<FetchResult | null> {
@@ -61,10 +65,13 @@ async function fetchAndDecrypt(handle: string, k_read: string): Promise<FetchRes
     const transitives = await resolveTransitives(body);
     return {
       kind: "ready",
+      handle: data.handle,
       body,
       transitives,
       published_at: data.published_at,
       expires_at: data.expires_at,
+      replies_enabled: data.replies_enabled,
+      k_origin_pub_b64u: data.k_origin_pub,
     };
   } catch {
     return null;
@@ -151,6 +158,12 @@ export default async function PublicFormView({ params }: PageProps) {
             <> · expires {formatDate(new Date(result.expires_at!).toISOString())}</>
           )}
         </p>
+        {result.replies_enabled && result.k_origin_pub_b64u && result.handle && (
+          <ReplyForm
+            handle={result.handle}
+            k_origin_pub_b64u={result.k_origin_pub_b64u}
+          />
+        )}
       </article>
     </main>
   );
