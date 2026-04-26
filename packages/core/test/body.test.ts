@@ -103,6 +103,90 @@ describe("body — parseBody segmentation", () => {
   });
 });
 
+describe("body — bare-domain detection (no scheme)", () => {
+  it("recognizes a lowercase bare domain as a link", () => {
+    const segs = parseBody("visit example.com soon");
+    expect(segs).toHaveLength(3);
+    expect(segs[1]).toMatchObject({
+      kind: "url",
+      url: "example.com",
+      href: "https://example.com",
+      type: "link",
+      hostname: "example.com",
+    });
+  });
+
+  it("recognizes a bare subdomain with path", () => {
+    const segs = parseBody("at www.example.com/path/here right now");
+    const urlSegs = segs.filter((s) => s.kind === "url");
+    expect(urlSegs).toHaveLength(1);
+    expect(urlSegs[0]).toMatchObject({
+      url: "www.example.com/path/here",
+      href: "https://www.example.com/path/here",
+      hostname: "www.example.com",
+    });
+  });
+
+  it("recognizes a bare multi-label TLD (e.g. .co.uk)", () => {
+    const segs = parseBody("see example.co.uk for info");
+    const urlSegs = segs.filter((s) => s.kind === "url");
+    expect(urlSegs).toHaveLength(1);
+    expect(urlSegs[0]).toMatchObject({
+      url: "example.co.uk",
+      href: "https://example.co.uk",
+    });
+  });
+
+  it("does NOT match Mr.Smith (uppercase rules out bare-domain interpretation)", () => {
+    const segs = parseBody("Mr.Smith said hello");
+    const urlSegs = segs.filter((s) => s.kind === "url");
+    expect(urlSegs).toHaveLength(0);
+  });
+
+  it("does NOT match an email-like local@host", () => {
+    const segs = parseBody("contact alice@example.com about it");
+    const urlSegs = segs.filter((s) => s.kind === "url");
+    expect(urlSegs).toHaveLength(0);
+  });
+
+  it("does NOT match a sentence-end period followed by a word", () => {
+    // "etc.com" would be valid bare-domain; we accept that as a corner case.
+    // But "etc. Other" must NOT match because the period is a sentence break.
+    const segs = parseBody("End of sentence. Other thing");
+    const urlSegs = segs.filter((s) => s.kind === "url");
+    expect(urlSegs).toHaveLength(0);
+  });
+
+  it("classifies a bare image URL by extension", () => {
+    const segs = parseBody("see cdn.example.com/photo.jpg");
+    const urlSegs = segs.filter((s) => s.kind === "url");
+    expect(urlSegs[0]).toMatchObject({
+      kind: "url",
+      type: "image",
+      hostname: "cdn.example.com",
+    });
+  });
+
+  it("strips trailing punctuation from a bare domain", () => {
+    const segs = parseBody("visit example.com.");
+    const urlSegs = segs.filter((s) => s.kind === "url");
+    expect(urlSegs).toHaveLength(1);
+    expect(urlSegs[0]).toMatchObject({ url: "example.com" });
+    const lastSeg = segs[segs.length - 1]!;
+    expect(lastSeg.kind).toBe("text");
+  });
+
+  it("scheme-prefixed URL takes precedence over bare-domain match", () => {
+    const segs = parseBody("https://example.com/path");
+    const urlSegs = segs.filter((s) => s.kind === "url");
+    expect(urlSegs).toHaveLength(1);
+    expect(urlSegs[0]).toMatchObject({
+      url: "https://example.com/path",
+      href: "https://example.com/path",
+    });
+  });
+});
+
 describe("body — countCountableCodepoints", () => {
   it("returns 0 for empty string", () => {
     expect(countCountableCodepoints("")).toBe(0);

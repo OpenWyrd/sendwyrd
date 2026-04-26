@@ -25,7 +25,21 @@ const TRAILING_PUNCT = /[.,;:!?)\]}'">]+$/;
 const SENDWYRD_HOSTS = new Set(["sendwyrd.com", "sendwyrd.app"]);
 const WYRD_PATH_PATTERN = /^\/w\/[A-Za-z0-9_-]{16}(?:\/k\/[A-Za-z0-9_-]{43})?$/;
 
-const URL_REGEX = /(https?|sendwyrd):\/\/[^\s]+/g;
+// URL detection has two arms:
+//   1. Explicit-scheme: https://, http://, sendwyrd:// — anything starting
+//      with a known scheme up to the next whitespace.
+//   2. Bare-domain: lowercase-only hostnames with a 2-24 letter TLD, e.g.
+//      `example.com` or `www.example.co.uk/path`. Lowercase-only is a
+//      pragmatic constraint: real URLs are conventionally lowercase, and
+//      it eliminates false positives like "Mr.Smith" (mixed case).
+//      Negative lookbehind on `@` rules out email local-host parts. The
+//      \b boundary keeps periods at sentence ends out of the match.
+const SCHEME_URL_PATTERN = String.raw`(?:https?|sendwyrd):\/\/[^\s]+`;
+const BARE_DOMAIN_PATTERN = String.raw`(?<![@\w-])[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)*\.[a-z]{2,24}(?:\/[^\s]*)?\b`;
+const URL_REGEX = new RegExp(
+  `(${SCHEME_URL_PATTERN})|(${BARE_DOMAIN_PATTERN})`,
+  "g",
+);
 
 export type UrlSegmentType = "sendwyrd" | "image" | "video" | "audio" | "link";
 
@@ -33,10 +47,21 @@ export type BodySegment =
   | { kind: "text"; value: string }
   | {
       kind: "url";
+      /** As-typed by the author. Bare-domain URLs lack a scheme. */
       url: string;
+      /** Always has a scheme; safe to use as an `<a href>` value. */
+      href: string;
       type: UrlSegmentType;
       hostname: string;
     };
+
+/**
+ * If `url` lacks a scheme (bare domain), return `https://` + url. Otherwise
+ * return as-is. Used to construct an href that always works in `<a>`.
+ */
+export function urlToHref(url: string): string {
+  return /^[a-z]+:\/\//i.test(url) ? url : `https://${url}`;
+}
 
 /**
  * Parse a body into segments. Stable: input → output mapping is total.
@@ -63,11 +88,13 @@ export function parseBody(body: string): BodySegment[] {
       segments.push({ kind: "text", value: body.slice(cursor, start) });
     }
 
+    const href = urlToHref(url);
     segments.push({
       kind: "url",
       url,
-      type: classifyUrl(url),
-      hostname: extractHostname(url),
+      href,
+      type: classifyUrl(href),
+      hostname: extractHostname(href),
     });
 
     cursor = end;

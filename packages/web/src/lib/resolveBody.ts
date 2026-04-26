@@ -21,6 +21,7 @@ import {
 interface SendwyrdSeg {
   kind: "url";
   url: string;
+  href: string;
   type: "sendwyrd";
   hostname: string;
 }
@@ -56,7 +57,9 @@ export async function resolveTransitives(body: string): Promise<ResolutionMap> {
   const map: ResolutionMap = {};
   await Promise.all(
     toResolve.map(async (seg) => {
-      map[seg.url] = await resolveOne(seg.url);
+      // Key by href (scheme-prefixed) so the WyrdBody renderer can look up
+      // bare-domain sendwyrd URLs the same way.
+      map[seg.href] = await resolveOne(seg.href);
     }),
   );
   return map;
