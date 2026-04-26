@@ -52,8 +52,15 @@ jobs:
       # Web requires the OpenNext-Cloudflare build step (separate from the
       # plain `next build` that pnpm build runs via turbo). Mirror what the
       # user runs locally: build → deploy.
+      #
+      # NEXT_PUBLIC_SENTRY_DSN is inlined into the client bundle by Next at
+      # build time (NEXT_PUBLIC_* convention). Public-by-design — DSNs are
+      # public per Sentry contract; storing as a secret only keeps it out
+      # of git history. See packages/web/src/components/SentryInit.tsx.
       - name: Build web for Cloudflare
         run: pnpm --filter @sendwyrd/web exec opennextjs-cloudflare build
+        env:
+          NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
 
       - name: Deploy web worker
         run: pnpm --filter @sendwyrd/web exec opennextjs-cloudflare deploy
