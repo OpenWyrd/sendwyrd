@@ -209,8 +209,12 @@ export function MnemonicInput({
                   marginTop: "var(--spacing-1)",
                   padding: 0,
                   listStyle: "none",
-                  background: "var(--color-bg)",
+                  // Use --color-ground (the page bg) for full opacity over
+                  // anything underneath; var(--color-bg) wasn't a real
+                  // token and resolved to transparent.
+                  background: "var(--color-ground)",
                   border: "1px solid var(--color-hairline-strong)",
+                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)",
                   maxHeight: 220,
                   overflowY: "auto",
                   fontFamily: "var(--font-mono)",
