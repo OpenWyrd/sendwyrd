@@ -122,26 +122,27 @@ body {
    Inline styles on page.tsx win by default; !important is required. */
 @media (max-width: 640px) {
   .landing {
-    padding: var(--spacing-6) var(--spacing-4) var(--spacing-8) !important;
-    gap: var(--spacing-5) !important;
-    justify-content: center;
+    min-height: auto !important;
+    padding: var(--spacing-4) var(--spacing-4) var(--spacing-6) !important;
+    gap: var(--spacing-4) !important;
   }
   .landing h1 {
-    font-size: 1.875rem !important;
+    font-size: 1.625rem !important;
   }
   .landing-sigil svg {
-    width: 56px !important;
-    height: 56px !important;
+    width: 48px !important;
+    height: 48px !important;
   }
   .landing-specimen p {
     font-size: var(--text-caption) !important;
     line-height: 1.5 !important;
     padding-top: var(--spacing-3) !important;
+    padding-bottom: var(--spacing-2) !important;
   }
   .landing-prose p {
     font-size: var(--text-caption) !important;
     line-height: 1.5 !important;
-    margin-bottom: var(--spacing-3) !important;
+    margin-bottom: var(--spacing-2) !important;
   }
   .landing-prose p:last-child {
     margin-bottom: 0 !important;
