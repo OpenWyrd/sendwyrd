@@ -12,6 +12,7 @@
 import Link from "next/link";
 import { WyrdSigil } from "@/components/WyrdSigil";
 import { PrivacyIndicator } from "@/components/PrivacyIndicator";
+import { InstallAffordance } from "@/components/InstallAffordance";
 
 export default function LandingPage() {
   return (
@@ -70,7 +71,7 @@ export default function LandingPage() {
           }}
         >
           {
-            "Looking for someone who's negotiated a SAFE conversion in a post-bridge round at YC. Specifically the cap-table mechanics when there are two outstanding notes. Pass this along if it lands — happy to compare notes."
+            "Looking for someone who's worked through a SAFE conversion when there are bridge notes outstanding. The cap-table math gets tangled fast. Pass this along if it lands — happy to compare notes."
           }
         </p>
 
@@ -82,7 +83,7 @@ export default function LandingPage() {
             textAlign: "right",
           }}
         >
-          213 / 300
+          192 / 300
         </p>
       </article>
 
@@ -125,6 +126,8 @@ export default function LandingPage() {
       >
         Compose a wyrd
       </Link>
+
+      <InstallAffordance />
       <p
         style={{
           margin: 0,
