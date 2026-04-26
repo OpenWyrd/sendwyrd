@@ -3,20 +3,22 @@ type: decision
 adr_id: adr_004
 adr_number: 4
 title: "Two-key model with two-form addressing (private fragment vs. public path)"
-status: accepted
+status: superseded
 created: 2026-04-24
-updated: 2026-04-24
+updated: 2026-04-26
 last_edited_by: agent_operator
 supersedes:
-superseded_by:
+superseded_by: adr_021
 tags: [adr, decision, mop, crypto, addressing, capability]
 ---
 
 # ADR-004: Two-Key Model with Two-Form Addressing
 
+> **Superseded in part by ADR-021 (2026-04-26).** The two-key model (K_read / K_origin) remains in effect. The two-form addressing (private fragment vs. public path) is **superseded** — v1 ships a single canonical form (fragment only). The public path-form was removed; cross-post link previews no longer unfurl on social platforms by design. See ADR-021 for rationale and ADR-019 (also amended) for indicator implications.
+
 ## Status
 
-Accepted (v1 architecture decision).
+Superseded in part by ADR-021. Original status: accepted (2026-04-24).
 
 ## Context
 

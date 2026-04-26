@@ -57,7 +57,7 @@ export default function LandingPage() {
           fontFamily: "var(--font-mono)",
         }}
       >
-        <PrivacyIndicator state="sealed" />
+        <PrivacyIndicator />
 
         <p
           style={{

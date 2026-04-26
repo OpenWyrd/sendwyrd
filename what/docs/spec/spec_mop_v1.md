@@ -1,11 +1,11 @@
 ---
 type: spec
 created: 2026-04-25
-updated: 2026-04-25
-last_edited_by: agent_spec_sync
+updated: 2026-04-26
+last_edited_by: agent_operator
 status: draft
 tags: [spec, mop, protocol, wire, v1]
-spec_version: "1.0.1-draft"
+spec_version: "1.0.2-draft"
 ---
 
 # MOP Protocol Specification — v1
@@ -48,10 +48,10 @@ This is **MOP v1**. The protocol-version marker is `1` (integer). Clients and se
 |------|---------|
 | **wyrd** | One published unit. Tweet-sized (≤300 codepoints), end-to-end encrypted, capability-addressed, immutable post-publish, default-90-day-TTL. Plural: *wyrds*. |
 | **handle** | A 12-byte client-generated random identifier for a wyrd, base64url-encoded (16 chars no padding) for transport. Globally unique within the host (uniqueness validated server-side; collision-on-insert returns 409). Client-generated because the AAD per §7.2 binds the ciphertext to the handle, and `publish_message` (§9.2) signs the handle — both require the handle to exist before the envelope is encrypted and signed. |
-| **K_read** | A 32-byte symmetric key, AES-256 used for the body envelope. Generated client-side at compose time. Distributed via the URL (in the fragment for private form, in the path for public form). |
+| **K_read** | A 32-byte symmetric key, AES-256 used for the body envelope. Generated client-side at compose time. Distributed via the URL fragment — browsers do not transmit fragments to the host, so the host stays body-blind. |
 | **K_origin** | A secp256k1 keypair (`K_origin_priv` / `K_origin_pub`) bound to one wyrd. Authorizes destructive (delete) and reply-fetch operations on that wyrd. Derived from the user's HD seed at path `m/300'/n'`. |
 | **seed** | The user's BIP-39 mnemonic (encoded as 32 bytes via PBKDF2 per BIP-39). The root of all `K_origin` derivations on this user's device. |
-| **handle URL** | The shareable URL that identifies and (in fragment form) carries the read capability for a wyrd. |
+| **handle URL** | The shareable URL that identifies a wyrd and carries the read capability in the fragment. |
 | **origin URL** | The author-held private URL encoding the master seed (or an HD branch). Used for client-side inbox aggregation per ADR-009. Never sent to any server. |
 | **reply blob** | An ECIES-encrypted envelope containing one reply text. Submitted by a recipient when reply mode is enabled on a wyrd. |
 | **tombstone** | The `410 Gone` response served for a wyrd that has expired or been burned. |
@@ -78,13 +78,13 @@ All binary values in JSON payloads and URLs MUST be base64url-encoded **without 
 
 ---
 
-## 4. URL canonical forms
+## 4. URL canonical form
 
-Per ADR-004.
+Per ADR-021 (supersedes the two-form addressing originally specified in ADR-004).
 
-A wyrd is reachable via two forms of URL. Both forms refer to the same underlying ciphertext on the host. The form determines whether the host can decrypt the body or not.
+A wyrd is reachable via a single URL form. The host is body-blind on every request: the read capability lives in the URL fragment, which browsers do not transmit to the server.
 
-### 4.1 Private fragment form (default)
+### 4.1 Form
 
 ```
 https://sendwyrd.com/w/{handle}#{K_read_b64u}
@@ -93,36 +93,21 @@ https://sendwyrd.com/w/{handle}#{K_read_b64u}
 - The handle (16 chars b64u) appears in the path.
 - The 32-byte `K_read` (43 chars b64u) appears in the URL fragment.
 - Browsers MUST NOT transmit the fragment to the server. The server therefore observes only the handle and serves the encrypted envelope; the renderer decrypts client-side.
-- This is the default form a composer produces. Clients SHOULD make this form trivial to copy and share.
+- This is the only form a composer produces. Clients SHOULD make this form trivial to copy and share.
 
 Example:
 ```
 https://sendwyrd.com/w/aB3cD9eFgHiJkLmN#XQ8aR2vN5mP7tQ1kY4jH6sL9wR3pK0xV8nC2bM5gT3eU
 ```
 
-### 4.2 Public path form (opt-in)
+Anyone holding the URL can read the wyrd. "Public sharing" is therefore a property of who possesses the URL, not of an addressing form. The protocol does not bless a host-readable form for OG previews or search indexing — link previews on social platforms do not unfurl, and recipients must actually visit the URL to engage. This is intentional per VISION.
 
-```
-https://sendwyrd.com/w/{handle}/k/{K_read_b64u}
-```
+### 4.2 URL parsing rules
 
-- `K_read` is in the URL path under the literal segment `/k/`.
-- The server observes both the handle and `K_read`. The host MAY decrypt and serve a server-rendered preview (HTML with the body inlined, OG metadata, search-engine-indexable).
-- The author opts in to this form at compose time when publish-form is set to `public`. The server stores no flag distinguishing private vs public — the form is purely a property of the URL. However, the composer MAY refuse to construct a public-form URL if the author has not explicitly opted in.
-
-The literal `/k/` segment is mandatory. Without it, the server treats trailing path segments as 404 rather than as a key. This prevents accidental public-form leakage from URL truncation.
-
-Example:
-```
-https://sendwyrd.com/w/aB3cD9eFgHiJkLmN/k/XQ8aR2vN5mP7tQ1kY4jH6sL9wR3pK0xV8nC2bM5gT3eU
-```
-
-### 4.3 URL parsing rules
-
-A client receiving a URL MUST classify it by inspecting the path:
+A client receiving a URL classifies it by inspecting the path:
 
 - Path matches `^/w/([A-Za-z0-9_-]{16})$` → fragment form. Read `K_read` from the URL fragment. If the fragment is empty, the URL is malformed.
-- Path matches `^/w/([A-Za-z0-9_-]{16})/k/([A-Za-z0-9_-]{43})$` → public path form. Read `K_read` from the second capture group. The fragment, if present, is ignored.
+- Path matches `^/w/([A-Za-z0-9_-]{16})/k/([A-Za-z0-9_-]{43})$` → **legacy path form**. Recognized at parse time only, to permit transitional resolution of URLs shared in the wild prior to ADR-021. Composers MUST NOT emit this form. Renderers SHOULD redirect path-form URLs to the fragment form (see §11).
 - Anything else → not a wyrd URL.
 
 The handle character class `[A-Za-z0-9_-]` is base64url. The handle length is exactly 16 chars (12 bytes encoded). The `K_read` length is exactly 43 chars (32 bytes encoded).
@@ -362,7 +347,7 @@ See §17 for error codes. Common failure responses:
 
 ---
 
-## 10. Wyrd fetch (private fragment form)
+## 10. Wyrd fetch
 
 ### 10.1 Endpoint
 
@@ -414,48 +399,19 @@ MOP-Protocol-Version: 1
 
 ---
 
-## 11. Wyrd fetch (public path form)
+## 11. Legacy public-path-form redirect
 
-### 11.1 Endpoint
+Per ADR-021, the public-path addressing form was removed in spec v1.0.2. URLs of the form `/w/{handle}/k/{K_read_b64u}` shared in the wild prior to that change continue to resolve via a transitional client-side redirect:
 
 ```
 GET /w/{handle}/k/{K_read_b64u}
-MOP-Protocol-Version: 1
+→ HTML shell that immediately runs:
+  window.location.replace(`/w/${handle}#${K_read_b64u}`)
 ```
 
-The server observes both the handle and `K_read`, decrypts the envelope server-side, and serves either:
-- A renderer HTML shell with the body inlined for SSR (default for browser navigation), OR
-- JSON containing the plaintext (for `Accept: application/json`).
+The host briefly observes `K_read` in the redirect request path (since it was always in the path for this URL form). After redirect the K_read lives in the fragment and is never sent to the server again. No new privacy regression vs. the legacy contract.
 
-### 11.2 Server behavior
-
-1. Look up wyrd by handle.
-2. If gone → §13 tombstone response.
-3. Validate `K_read` length (43 chars b64u = 32 bytes).
-4. Reconstruct AAD per §7.2.
-5. AES-256-GCM decrypt envelope. If tag verification fails → 410 Gone with reason `key_mismatch` (the URL is malformed or the wyrd was published with different metadata).
-6. Return body.
-
-### 11.3 Response (JSON variant)
-
-```
-HTTP/1.1 200 OK
-Content-Type: application/json
-MOP-Protocol-Version: 1
-
-{
-  "handle": "<base64url 16-char>",
-  "body": "<UTF-8 plaintext>",
-  "k_origin_pub": "<base64url 33-byte>",
-  "published_at": 1745625600123,
-  "expires_at": 1753401600123,
-  "replies_enabled": false
-}
-```
-
-### 11.4 OG / SEO metadata
-
-Public-form server-rendered HTML SHOULD include OpenGraph and standard SEO metadata derived from the body. The first 200 codepoints of the body, truncated cleanly at a word boundary, become the `og:description`. The host MAY emit a static OG image with the SendWyrd mark and the wyrd's `published_at` date; per-wyrd custom OG images are out of scope for v1.
+The server does not decrypt server-side. There is no JSON variant. There are no OG / SEO metadata. Recipients land on the fragment-form view (§10) and decrypt client-side.
 
 ---
 
@@ -538,7 +494,7 @@ MOP-Protocol-Version: 1
 
 - `reason: "expired"` — natural TTL fire.
 - `reason: "burned"` — `K_origin`-signed delete request honored.
-- `reason: "key_mismatch"` — public-form fetch with wrong `K_read` (envelope tag verification failed). This is operationally a 410 because the URL form claims a key that doesn't match the stored ciphertext; the URL is dead even if the wyrd is still live for the correct key.
+- `reason: "key_mismatch"` — legacy public-form redirect (§11) hit with a `K_read` whose tag verification failed against the stored envelope. Operationally a 410 because the URL claims a key that doesn't match. Removed for fragment-form fetches, which never decrypt server-side.
 
 ### 13.2 Retention
 
@@ -819,7 +775,7 @@ Items that the wire spec deliberately leaves to implementation phase (Phase E) o
 5. **HSTS, CSP, COEP, COOP headers** — security-headers stack on canonical host. Phase E.
 6. **Health-check / liveness endpoints** — implementation detail.
 7. **Backup and disaster recovery** — operational, not protocol.
-8. **OG image generator** for public-form wyrds — Phase D / Phase E.
+8. **OG image generator** — removed per ADR-021. There is no host-readable form; link previews on social platforms do not unfurl by design.
 9. **Analytics / observability** — anything that doesn't break ADR-003 host-blindness. Phase E.
 
 ---
@@ -842,12 +798,14 @@ Items that the wire spec deliberately leaves to implementation phase (Phase E) o
 - ADR-016 — Brand SendWyrd / domain sendwyrd.com.
 - ADR-017 — HD path `m/300'/n'`.
 - ADR-018 — Tombstone with structured metadata.
-- ADR-019 — Symmetric privacy-posture indicator.
+- ADR-019 — Privacy-posture indicator (amended by ADR-021 — now monomorphic Sealed-only).
 - ADR-020 — v1 stack.
+- ADR-021 — Single-form addressing (supersedes the two-form addressing in ADR-004 and the symmetric indicator in ADR-019).
 
 ---
 
 ## 21. Changelog
 
+- **v1.0.2-draft (2026-04-26)** — single-form addressing per ADR-021. Public path-form (`/w/{handle}/k/{K_read}`) removed. Composers emit only the fragment form. §4 collapsed to a single canonical form. §11 retained as a legacy-redirect stub (transitional client-side redirect from path → fragment). Privacy-posture indicator (§ADR-019) is now monomorphic Sealed. OG / SEO metadata generation removed — link previews on social platforms do not unfurl by design.
 - **v1.0.1-draft (2026-04-25)** — sync to shipped: client-generated handle (now signed in `publish_message`), `ttl_seconds = 0` accepted as permanent-storage sentinel (year-9999 `expires_at`), `REPLY_CODEPOINT_CAP = 300` and `REPLY_BLOB_BYTE_CEILING = 2500` (replies match wyrd-body terseness; anti-scope-creep). Cross-ref fixes: error-code section renumbered §15→§17 and rate-limits §14→§16 in §9.5.
 - **v1.0.0-draft (2026-04-25)** — initial wire spec consolidating ADRs 003–020.
