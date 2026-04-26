@@ -216,6 +216,15 @@ export default function AboutPage() {
             signature) or inherited from the share channel — &ldquo;Mike
             sent me this.&rdquo; Trust rides the rail.
           </p>
+          <p style={pStyle}>
+            One pragmatic recipient-side note: when a wyrd body contains
+            an external URL, the renderer asks the host to fetch
+            OpenGraph metadata so the link surfaces as a preview card.
+            The host sees the URL but not the wyrd it came from. The
+            wyrd&apos;s body is still encrypted end-to-end and never
+            leaves the recipient&apos;s browser. This is the cypherpunk-
+            on-content, pragmatic-on-rendering trade we accept in v1.
+          </p>
         </Section>
 
         <Subhead>Architecture</Subhead>
