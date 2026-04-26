@@ -33,6 +33,7 @@ import { addHistoryEntry } from "@/lib/wyrdHistory";
 import { b64uEncode } from "@sendwyrd/core";
 import { Segmented, Toggle } from "@/components/Segmented";
 import { Nav } from "@/components/Nav";
+import { requestPersistence } from "@/lib/persistentStorage";
 
 const TTL_PRESETS: Array<{ label: string; seconds: number }> = [
   { label: "1 day", seconds: 86_400 },
@@ -56,6 +57,8 @@ export default function ComposePage() {
   const [copied, setCopied] = useState(false);
 
   // First-mount: ensure a seed exists. If not, auto-generate in open mode.
+  // Also accept Web Share Target prefill (?text=, ?title=, ?url=) — when the
+  // PWA is registered as a share target, the OS routes shared content here.
   useEffect(() => {
     (async () => {
       if (!hasSeed()) {
@@ -63,6 +66,31 @@ export default function ComposePage() {
         storeOpenSeed({ seed, counter: 0, mnemonic });
       }
       setUnlocked(isUnlocked());
+
+      // Prefill from Web Share Target query params, if any. Order: title,
+      // text, url joined by newlines (e.g., shared link + comment).
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const t = params.get("text") ?? "";
+        const u = params.get("url") ?? "";
+        const ti = params.get("title") ?? "";
+        const parts = [ti, t, u].filter(Boolean);
+        if (parts.length > 0) {
+          const joined = parts.join("\n");
+          // Codepoint-aware truncation: keep up to BODY_CODEPOINT_CAP. If
+          // the share is over-cap, the user trims it themselves; we don't
+          // silently drop the tail.
+          const codepoints = Array.from(joined);
+          const trimmed =
+            codepoints.length > BODY_CODEPOINT_CAP
+              ? codepoints.slice(0, BODY_CODEPOINT_CAP).join("")
+              : joined;
+          setBody(trimmed);
+        }
+      } catch {
+        // Reading window.location.search shouldn't throw, but be defensive.
+      }
+
       setReady(true);
     })();
   }, []);
@@ -138,6 +166,10 @@ export default function ComposePage() {
         expires_at: resp.expires_at,
         replies_enabled: repliesEnabled,
       });
+
+      // First explicit save — request persistent storage. Idempotent across
+      // calls; the browser decides silently. We do not block on it.
+      void requestPersistence();
 
       const origin = window.location.origin;
       const url =
