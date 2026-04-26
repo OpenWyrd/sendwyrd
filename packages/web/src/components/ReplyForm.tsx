@@ -85,10 +85,8 @@ export function ReplyForm({ handle, k_origin_pub_b64u }: Props) {
       <header
         style={{
           display: "flex",
-          alignItems: "baseline",
-          justifyContent: "space-between",
-          flexWrap: "wrap",
-          gap: "var(--spacing-3)",
+          flexDirection: "column",
+          gap: "var(--spacing-2)",
           marginBottom: "var(--spacing-4)",
         }}
       >
@@ -104,15 +102,30 @@ export function ReplyForm({ handle, k_origin_pub_b64u }: Props) {
         >
           Reply
         </h2>
-        <span
+        <p
           style={{
+            margin: 0,
+            fontFamily: "var(--font-mono)",
+            fontSize: "var(--text-caption)",
+            color: "var(--color-ink-muted)",
+            lineHeight: 1.5,
+          }}
+        >
+          Only the author can read this. Useful when you got this wyrd
+          forwarded through other people — your reply reaches the author
+          directly, without going back through the chain.
+        </p>
+        <p
+          style={{
+            margin: 0,
             fontFamily: "var(--font-mono)",
             fontSize: "var(--text-microcaption)",
             color: "var(--color-ink-subtle)",
           }}
         >
-          anonymous · encrypted to the author · ECIES (secp256k1)
-        </span>
+          anonymous · encrypted on your device · ECIES (secp256k1) ·
+          AES-256-GCM
+        </p>
       </header>
 
       <form onSubmit={handleSubmit}>

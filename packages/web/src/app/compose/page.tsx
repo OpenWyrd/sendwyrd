@@ -355,8 +355,8 @@ export default function ComposePage() {
           </div>
           <p style={{ ...hintStyle, marginTop: "var(--spacing-2)", marginBottom: 0 }}>
             {repliesEnabled
-              ? "Anyone with the URL can send anonymous, encrypted replies."
-              : "Recipients cannot reply."}
+              ? "Useful when this wyrd is relayed person-to-person. The nth recipient can reach you privately — only you can read replies, not the host or anyone in the chain."
+              : "One-way only — recipients cannot reply through this wyrd."}
           </p>
         </div>
 
