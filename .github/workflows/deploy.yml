@@ -67,17 +67,21 @@ jobs:
       # Source maps + Sentry upload + strip happen AFTER this step, against
       # the `.open-next/assets` tree (the ground truth for what ships).
       #
-      # Two env vars inline into the client bundle at this step:
+      # Three env vars inline into the client bundle at this step:
       #   NEXT_PUBLIC_SENTRY_DSN — Sentry DSN for client-side error reporting
       #     (see packages/web/src/components/SentryInit.tsx). Public-by-design
       #     per Sentry contract; storing as a secret only keeps it out of git.
-      #   NEXT_PUBLIC_RELEASE  — git SHA, for source-map ↔ release matching.
-      # Both are inlined by Next at build time per NEXT_PUBLIC_* convention.
+      #   NEXT_PUBLIC_RELEASE — git SHA, for source-map ↔ release matching.
+      #   NEXT_PUBLIC_RELEASE_NUMBER — auto-incrementing deploy count (the
+      #     GitHub Actions workflow run number). Display-friendly identifier
+      #     for the dashboard "build" section.
+      # All are inlined by Next at build time per NEXT_PUBLIC_* convention.
       - name: Build web for Cloudflare
         run: pnpm --filter @sendwyrd/web exec opennextjs-cloudflare build
         env:
           NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
           NEXT_PUBLIC_RELEASE: ${{ github.sha }}
+          NEXT_PUBLIC_RELEASE_NUMBER: ${{ github.run_number }}
 
       # Inject debug IDs into the shipped web bundles + upload source maps
       # to Sentry. `productionBrowserSourceMaps: true` in next.config.ts
