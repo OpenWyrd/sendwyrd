@@ -68,15 +68,12 @@ async function presenceCheckAt(
   const auth = `${b64uEncode(signature)}:${ts}`;
   const k_origin_pub_b64u = b64uEncode(k.k_origin_pub);
 
-  const res = await fetch(
-    `/api/v1/authors/${k_origin_pub_b64u}/handles`,
-    {
-      headers: {
-        "MOP-Protocol-Version": "1",
-        "X-Mop-Auth": auth,
-      },
+  const res = await fetch(`/api/v1/authors/${k_origin_pub_b64u}/handles`, {
+    headers: {
+      "MOP-Protocol-Version": "1",
+      "X-Mop-Auth": auth,
     },
-  );
+  });
 
   if (res.status === 422) {
     const body = await res.json().catch(() => ({}));
@@ -131,12 +128,19 @@ export async function sweepFromMnemonic(args: {
     const results = await Promise.all(
       indices.map(async (idx) => {
         try {
-          return { idx, ok: true as const, ...(await presenceCheckAt(seed, idx)) };
+          return {
+            idx,
+            ok: true as const,
+            ...(await presenceCheckAt(seed, idx)),
+          };
         } catch (e: unknown) {
           const msg = e instanceof Error ? e.message : String(e);
           if (msg === "signature_mismatch") {
             throw Object.assign(new Error("signature_mismatch"), {
-              sweepError: { kind: "signature_mismatch", n: idx } satisfies SweepError,
+              sweepError: {
+                kind: "signature_mismatch",
+                n: idx,
+              } satisfies SweepError,
             });
           }
           return { idx, ok: false as const, error: msg };

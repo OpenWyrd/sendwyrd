@@ -105,7 +105,10 @@ describe("wyrdHistory.markHistoryEntryGone", () => {
 describe("wyrdHistory.mergeHistoryEntries", () => {
   it("dedupes by handle, keeping the existing entry", () => {
     addHistoryEntry(
-      makeEntry({ handle: "dup00000000dup00", k_read_b64u: "original_read_key" }),
+      makeEntry({
+        handle: "dup00000000dup00",
+        k_read_b64u: "original_read_key",
+      }),
     );
     const added = mergeHistoryEntries([
       makeEntry({ handle: "dup00000000dup00", k_read_b64u: undefined }),
@@ -158,7 +161,9 @@ describe("wyrdHistory.mergeHistoryEntries", () => {
 
   it("returns 0 when all entries already exist", () => {
     addHistoryEntry(makeEntry({ handle: "exist00000000000" }));
-    const added = mergeHistoryEntries([makeEntry({ handle: "exist00000000000" })]);
+    const added = mergeHistoryEntries([
+      makeEntry({ handle: "exist00000000000" }),
+    ]);
     expect(added).toBe(0);
   });
 });

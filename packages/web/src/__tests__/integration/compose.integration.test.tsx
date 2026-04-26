@@ -23,8 +23,7 @@ vi.mock("next/navigation", () => ({
 // Stub publishWyrd to avoid network calls and capture the payload shape.
 const publishMock = vi.fn();
 vi.mock("@/lib/api", async () => {
-  const actual =
-    await vi.importActual<typeof import("@/lib/api")>("@/lib/api");
+  const actual = await vi.importActual<typeof import("@/lib/api")>("@/lib/api");
   return {
     ...actual,
     publishWyrd: (...args: unknown[]) => publishMock(...args),
@@ -136,7 +135,9 @@ describe("Compose — successful publish", () => {
     const send = await screen.findByRole("button", { name: /^Compose$/ });
     await user.click(send);
     await waitFor(() => {
-      expect(screen.getByText(/Publish failed: rate_limited/)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Publish failed: rate_limited/),
+      ).toBeInTheDocument();
     });
   });
 });

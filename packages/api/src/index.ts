@@ -46,11 +46,9 @@ app.use(
 app.use("/api/*", async (c, next) => {
   const incoming = c.req.header("MOP-Protocol-Version");
   if (incoming && incoming !== String(PROTOCOL_VERSION)) {
-    return c.json(
-      { error: "protocol_version_unsupported" },
-      426,
-      { "MOP-Protocol-Version": String(PROTOCOL_VERSION) },
-    );
+    return c.json({ error: "protocol_version_unsupported" }, 426, {
+      "MOP-Protocol-Version": String(PROTOCOL_VERSION),
+    });
   }
   await next();
   c.header("MOP-Protocol-Version", String(PROTOCOL_VERSION));

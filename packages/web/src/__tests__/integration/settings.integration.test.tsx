@@ -175,9 +175,7 @@ describe("Settings — persistent-storage tri-state copy", () => {
     persistenceState.asked = false;
     render(<SettingsPage />);
     await waitFor(() => {
-      expect(
-        screen.getByText(/not yet requested/i),
-      ).toBeInTheDocument();
+      expect(screen.getByText(/not yet requested/i)).toBeInTheDocument();
     });
   });
 

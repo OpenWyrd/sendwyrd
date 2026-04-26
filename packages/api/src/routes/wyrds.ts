@@ -35,18 +35,28 @@ export const wyrdsRoutes = new Hono<{ Bindings: Env }>()
       return c.json({ error: "malformed_request" }, 400);
     }
 
-    const fields = ["handle", "envelope", "k_origin_pub", "ttl_seconds",
-      "replies_enabled", "publish_signature", "publish_timestamp_ms"];
+    const fields = [
+      "handle",
+      "envelope",
+      "k_origin_pub",
+      "ttl_seconds",
+      "replies_enabled",
+      "publish_signature",
+      "publish_timestamp_ms",
+    ];
     for (const f of fields) {
-      if (!(f in body)) return c.json({ error: "malformed_request", missing: f }, 400);
+      if (!(f in body))
+        return c.json({ error: "malformed_request", missing: f }, 400);
     }
 
     if (typeof body.handle !== "string" || !HANDLE_PATTERN.test(body.handle)) {
       return c.json({ error: "malformed_request", field: "handle" }, 400);
     }
 
-    let envelope: Uint8Array, k_origin_pub: Uint8Array,
-      handleBytes: Uint8Array, signature: Uint8Array;
+    let envelope: Uint8Array,
+      k_origin_pub: Uint8Array,
+      handleBytes: Uint8Array,
+      signature: Uint8Array;
     try {
       handleBytes = b64uDecode(body.handle);
       envelope = b64uDecode(body.envelope);
@@ -62,16 +72,24 @@ export const wyrdsRoutes = new Hono<{ Bindings: Env }>()
     if (k_origin_pub.length !== K_ORIGIN_PUB_BYTES) {
       return c.json({ error: "pubkey_invalid" }, 422);
     }
-    if (typeof body.ttl_seconds !== "number" ||
-        body.ttl_seconds < TTL_SECONDS_MIN ||
-        body.ttl_seconds > TTL_SECONDS_MAX) {
+    if (
+      typeof body.ttl_seconds !== "number" ||
+      body.ttl_seconds < TTL_SECONDS_MIN ||
+      body.ttl_seconds > TTL_SECONDS_MAX
+    ) {
       return c.json({ error: "ttl_out_of_range" }, 422);
     }
     if (typeof body.replies_enabled !== "boolean") {
-      return c.json({ error: "malformed_request", field: "replies_enabled" }, 400);
+      return c.json(
+        { error: "malformed_request", field: "replies_enabled" },
+        400,
+      );
     }
     if (typeof body.publish_timestamp_ms !== "number") {
-      return c.json({ error: "malformed_request", field: "publish_timestamp_ms" }, 400);
+      return c.json(
+        { error: "malformed_request", field: "publish_timestamp_ms" },
+        400,
+      );
     }
 
     const now = Date.now();
@@ -135,8 +153,11 @@ export const wyrdsRoutes = new Hono<{ Bindings: Env }>()
       return c.json({ error: "not_found" }, 404);
     }
     const db = makeDb(c.env.DATABASE_URL);
-    const rows = await db.select().from(schema.wyrds)
-      .where(eq(schema.wyrds.handle, handle)).limit(1);
+    const rows = await db
+      .select()
+      .from(schema.wyrds)
+      .where(eq(schema.wyrds.handle, handle))
+      .limit(1);
     const row = rows[0];
     if (!row) return c.json({ error: "not_found" }, 404);
 
@@ -146,24 +167,31 @@ export const wyrdsRoutes = new Hono<{ Bindings: Env }>()
       if (Date.now() - row.gone_at.getTime() > retentionMs) {
         return c.json({ error: "not_found" }, 404);
       }
-      return c.json({
-        status: "gone",
-        reason: row.gone_reason ?? "expired",
-        gone_at: row.gone_at.toISOString(),
-      }, 410);
+      return c.json(
+        {
+          status: "gone",
+          reason: row.gone_reason ?? "expired",
+          gone_at: row.gone_at.toISOString(),
+        },
+        410,
+      );
     }
 
     // Lazy TTL expiry — flip to gone if expired.
     if (row.expires_at.getTime() <= Date.now()) {
       const goneAt = new Date();
-      await db.update(schema.wyrds)
+      await db
+        .update(schema.wyrds)
         .set({ gone_at: goneAt, gone_reason: "expired" })
         .where(eq(schema.wyrds.handle, handle));
-      return c.json({
-        status: "gone",
-        reason: "expired",
-        gone_at: goneAt.toISOString(),
-      }, 410);
+      return c.json(
+        {
+          status: "gone",
+          reason: "expired",
+          gone_at: goneAt.toISOString(),
+        },
+        410,
+      );
     }
 
     return c.json({
@@ -184,11 +212,15 @@ export const wyrdsRoutes = new Hono<{ Bindings: Env }>()
     }
 
     let body: any;
-    try { body = await c.req.json(); } catch {
+    try {
+      body = await c.req.json();
+    } catch {
       return c.json({ error: "malformed_request" }, 400);
     }
-    if (typeof body.delete_signature !== "string" ||
-        typeof body.delete_timestamp_ms !== "number") {
+    if (
+      typeof body.delete_signature !== "string" ||
+      typeof body.delete_timestamp_ms !== "number"
+    ) {
       return c.json({ error: "malformed_request" }, 400);
     }
 
@@ -198,18 +230,24 @@ export const wyrdsRoutes = new Hono<{ Bindings: Env }>()
     }
 
     const db = makeDb(c.env.DATABASE_URL);
-    const rows = await db.select().from(schema.wyrds)
-      .where(eq(schema.wyrds.handle, handle)).limit(1);
+    const rows = await db
+      .select()
+      .from(schema.wyrds)
+      .where(eq(schema.wyrds.handle, handle))
+      .limit(1);
     const row = rows[0];
     if (!row) return c.json({ error: "not_found" }, 404);
 
     if (row.gone_at) {
       // Already gone — idempotent 410.
-      return c.json({
-        status: "gone",
-        reason: row.gone_reason ?? "burned",
-        gone_at: row.gone_at.toISOString(),
-      }, 410);
+      return c.json(
+        {
+          status: "gone",
+          reason: row.gone_reason ?? "burned",
+          gone_at: row.gone_at.toISOString(),
+        },
+        410,
+      );
     }
 
     // Verify signature.
@@ -230,8 +268,13 @@ export const wyrdsRoutes = new Hono<{ Bindings: Env }>()
 
     const goneAt = new Date();
     // Burn: clear envelope ciphertext + cascade-delete replies via schema FK.
-    await db.update(schema.wyrds)
-      .set({ gone_at: goneAt, gone_reason: "burned", envelope: new Uint8Array(0) })
+    await db
+      .update(schema.wyrds)
+      .set({
+        gone_at: goneAt,
+        gone_reason: "burned",
+        envelope: new Uint8Array(0),
+      })
       .where(eq(schema.wyrds.handle, handle));
 
     return c.json({

@@ -49,11 +49,20 @@ interface HealthResult {
 
 interface UsageStats {
   generated_at: string;
-  wyrds: { total: number; last_24h: number; last_7d: number; active: number; burned: number; expired: number };
+  wyrds: {
+    total: number;
+    last_24h: number;
+    last_7d: number;
+    active: number;
+    burned: number;
+    expired: number;
+  };
   replies: { total: number; last_24h: number; last_7d: number };
 }
 
-async function fetchStats(token: string): Promise<{ stats?: UsageStats; error?: string }> {
+async function fetchStats(
+  token: string,
+): Promise<{ stats?: UsageStats; error?: string }> {
   try {
     const r = await fetch(`${SITE_ORIGIN}/api/v1/admin/stats`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -118,9 +127,9 @@ async function fetchEdgeAnalytics(
         };
       };
     };
-    if (data.errors?.length) return { error: data.errors[0]?.message ?? "unknown" };
-    const groups =
-      data.data?.viewer?.zones?.[0]?.httpRequests1hGroups ?? [];
+    if (data.errors?.length)
+      return { error: data.errors[0]?.message ?? "unknown" };
+    const groups = data.data?.viewer?.zones?.[0]?.httpRequests1hGroups ?? [];
     let requests = 0;
     let uniques = 0;
     let page_views = 0;
@@ -221,36 +230,35 @@ export default async function OpsPage({
   const sentryToken = process.env.SENTRY_AUTH_TOKEN || "";
 
   // Capability gate. Constant-time-ish comparison via length pre-check.
-  if (
-    !expected ||
-    token.length !== expected.length ||
-    token !== expected
-  ) {
+  if (!expected || token.length !== expected.length || token !== expected) {
     notFound();
   }
 
   const cfAnalyticsToken = process.env.CF_ANALYTICS_TOKEN || "";
 
   // Parallel fetch: health + per-project issues + usage stats + edge analytics.
-  const [apiHealth, webHealth, statsResult, edgeResult, ...projectResults] = await Promise.all([
-    checkHealth(`${SITE_ORIGIN}/api/v1/health`),
-    checkHealth(`${SITE_ORIGIN}/`),
-    fetchStats(token),
-    cfAnalyticsToken
-      ? fetchEdgeAnalytics(cfAnalyticsToken)
-      : Promise.resolve({ error: "no cf analytics token" } as { stats?: EdgeStats; error?: string }),
-    ...PROJECTS.map((p) =>
-      sentryToken
-        ? fetchIssues(p, sentryToken)
-        : Promise.resolve({ issues: [], error: "no token" }),
-    ),
-  ]);
+  const [apiHealth, webHealth, statsResult, edgeResult, ...projectResults] =
+    await Promise.all([
+      checkHealth(`${SITE_ORIGIN}/api/v1/health`),
+      checkHealth(`${SITE_ORIGIN}/`),
+      fetchStats(token),
+      cfAnalyticsToken
+        ? fetchEdgeAnalytics(cfAnalyticsToken)
+        : Promise.resolve({ error: "no cf analytics token" } as {
+            stats?: EdgeStats;
+            error?: string;
+          }),
+      ...PROJECTS.map((p) =>
+        sentryToken
+          ? fetchIssues(p, sentryToken)
+          : Promise.resolve({ issues: [], error: "no token" }),
+      ),
+    ]);
 
   const allIssues = projectResults
     .flatMap((r) => r.issues)
     .sort(
-      (a, b) =>
-        new Date(b.lastSeen).getTime() - new Date(a.lastSeen).getTime(),
+      (a, b) => new Date(b.lastSeen).getTime() - new Date(a.lastSeen).getTime(),
     )
     .slice(0, 15);
 
@@ -264,8 +272,7 @@ export default async function OpsPage({
       <main
         style={{
           minHeight: "100vh",
-          padding:
-            "var(--spacing-12) var(--spacing-6) var(--spacing-24)",
+          padding: "var(--spacing-12) var(--spacing-6) var(--spacing-24)",
           fontFamily: "var(--font-mono)",
           color: "var(--color-ink)",
           maxWidth: "var(--max-list)",
@@ -320,7 +327,11 @@ export default async function OpsPage({
         {/* Usage */}
         <Section title="usage">
           {statsResult.error ? (
-            <Row label="stats" value={`error: ${statsResult.error}`} ok={false} />
+            <Row
+              label="stats"
+              value={`error: ${statsResult.error}`}
+              ok={false}
+            />
           ) : statsResult.stats ? (
             <>
               <UsageRow
@@ -350,7 +361,11 @@ export default async function OpsPage({
         {/* Edge analytics (Cloudflare) */}
         <Section title="edge · last 24h">
           {edgeResult.error ? (
-            <Row label="cloudflare" value={`error: ${edgeResult.error}`} ok={false} />
+            <Row
+              label="cloudflare"
+              value={`error: ${edgeResult.error}`}
+              ok={false}
+            />
           ) : edgeResult.stats ? (
             <>
               <Row
@@ -385,13 +400,12 @@ export default async function OpsPage({
                   lineHeight: 1.6,
                 }}
               >
-                distinct IPs ≠ distinct users. includes CI runners
-                (~1 per deploy), crawlers, vulnerability scanners, cert
-                transparency monitors, and probes — most of the count is
-                non-human. cloudflare bot scoring requires a paid plan; not
-                wired. the real human-action signal is &ldquo;wyrds
-                published&rdquo; and &ldquo;replies sent&rdquo; in the usage
-                section above.
+                distinct IPs ≠ distinct users. includes CI runners (~1 per
+                deploy), crawlers, vulnerability scanners, cert transparency
+                monitors, and probes — most of the count is non-human.
+                cloudflare bot scoring requires a paid plan; not wired. the real
+                human-action signal is &ldquo;wyrds published&rdquo; and
+                &ldquo;replies sent&rdquo; in the usage section above.
               </p>
             </>
           ) : (
@@ -410,7 +424,15 @@ export default async function OpsPage({
               : count === 0
                 ? "no issues"
                 : `${count} issue${count === 1 ? "" : "s"}`;
-            return <Row key={p} label={p} value={value} ok={isOk} muted={count === 0} />;
+            return (
+              <Row
+                key={p}
+                label={p}
+                value={value}
+                ok={isOk}
+                muted={count === 0}
+              />
+            );
           })}
         </Section>
 
@@ -425,7 +447,9 @@ export default async function OpsPage({
                 fontSize: "var(--text-caption)",
               }}
             >
-              {sentryToken ? "(no unresolved issues in the last 24h)" : "(sentry token not configured)"}
+              {sentryToken
+                ? "(no unresolved issues in the last 24h)"
+                : "(sentry token not configured)"}
             </p>
           ) : (
             <ul
@@ -440,8 +464,7 @@ export default async function OpsPage({
                   key={issue.id}
                   style={{
                     padding: "var(--spacing-3) 0",
-                    borderBottom:
-                      "1px solid var(--color-hairline)",
+                    borderBottom: "1px solid var(--color-hairline)",
                     display: "grid",
                     gridTemplateColumns: "auto 1fr auto",
                     gap: "var(--spacing-4)",
@@ -532,7 +555,11 @@ export default async function OpsPage({
         >
           <a
             href={`/ops/${token}/secrets`}
-            style={{ color: "inherit", textDecoration: "underline", textUnderlineOffset: 2 }}
+            style={{
+              color: "inherit",
+              textDecoration: "underline",
+              textUnderlineOffset: 2,
+            }}
           >
             set a worker secret →
           </a>
@@ -556,7 +583,11 @@ export default async function OpsPage({
               href="https://sendwyrd.sentry.io/issues/"
               target="_blank"
               rel="noreferrer"
-              style={{ color: "inherit", textDecoration: "underline", textUnderlineOffset: 2 }}
+              style={{
+                color: "inherit",
+                textDecoration: "underline",
+                textUnderlineOffset: 2,
+              }}
             >
               full sentry
             </a>
@@ -565,7 +596,11 @@ export default async function OpsPage({
               href="https://dash.cloudflare.com/"
               target="_blank"
               rel="noreferrer"
-              style={{ color: "inherit", textDecoration: "underline", textUnderlineOffset: 2 }}
+              style={{
+                color: "inherit",
+                textDecoration: "underline",
+                textUnderlineOffset: 2,
+              }}
             >
               cloudflare
             </a>
@@ -574,7 +609,11 @@ export default async function OpsPage({
               href="https://github.com/openwyrd/sendwyrd/actions"
               target="_blank"
               rel="noreferrer"
-              style={{ color: "inherit", textDecoration: "underline", textUnderlineOffset: 2 }}
+              style={{
+                color: "inherit",
+                textDecoration: "underline",
+                textUnderlineOffset: 2,
+              }}
             >
               actions
             </a>
@@ -636,17 +675,62 @@ function UsageRow({
       }}
     >
       <span>{label}</span>
-      <span style={{ color: "var(--color-ink-muted)", fontVariantNumeric: "tabular-nums", minWidth: "5ch", textAlign: "right" }}>
+      <span
+        style={{
+          color: "var(--color-ink-muted)",
+          fontVariantNumeric: "tabular-nums",
+          minWidth: "5ch",
+          textAlign: "right",
+        }}
+      >
         <span style={{ color: "var(--color-ink)" }}>{formatNum(d24)}</span>
-        <span style={{ color: "var(--color-ink-subtle)", fontSize: "var(--text-microcaption)", marginLeft: "var(--spacing-2)" }}>24h</span>
+        <span
+          style={{
+            color: "var(--color-ink-subtle)",
+            fontSize: "var(--text-microcaption)",
+            marginLeft: "var(--spacing-2)",
+          }}
+        >
+          24h
+        </span>
       </span>
-      <span style={{ color: "var(--color-ink-muted)", fontVariantNumeric: "tabular-nums", minWidth: "5ch", textAlign: "right" }}>
+      <span
+        style={{
+          color: "var(--color-ink-muted)",
+          fontVariantNumeric: "tabular-nums",
+          minWidth: "5ch",
+          textAlign: "right",
+        }}
+      >
         <span style={{ color: "var(--color-ink)" }}>{formatNum(d7)}</span>
-        <span style={{ color: "var(--color-ink-subtle)", fontSize: "var(--text-microcaption)", marginLeft: "var(--spacing-2)" }}>7d</span>
+        <span
+          style={{
+            color: "var(--color-ink-subtle)",
+            fontSize: "var(--text-microcaption)",
+            marginLeft: "var(--spacing-2)",
+          }}
+        >
+          7d
+        </span>
       </span>
-      <span style={{ color: "var(--color-ink-muted)", fontVariantNumeric: "tabular-nums", minWidth: "6ch", textAlign: "right" }}>
+      <span
+        style={{
+          color: "var(--color-ink-muted)",
+          fontVariantNumeric: "tabular-nums",
+          minWidth: "6ch",
+          textAlign: "right",
+        }}
+      >
         <span style={{ color: "var(--color-ink)" }}>{formatNum(total)}</span>
-        <span style={{ color: "var(--color-ink-subtle)", fontSize: "var(--text-microcaption)", marginLeft: "var(--spacing-2)" }}>all</span>
+        <span
+          style={{
+            color: "var(--color-ink-subtle)",
+            fontSize: "var(--text-microcaption)",
+            marginLeft: "var(--spacing-2)",
+          }}
+        >
+          all
+        </span>
       </span>
     </div>
   );
@@ -678,9 +762,7 @@ function Row({
       <span>
         <span
           style={{
-            color: ok
-              ? "var(--color-mark-sealed)"
-              : "var(--color-danger)",
+            color: ok ? "var(--color-mark-sealed)" : "var(--color-danger)",
             marginRight: "var(--spacing-3)",
           }}
         >

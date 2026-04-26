@@ -42,7 +42,9 @@ describe("envelope — encrypt/decrypt round-trip", () => {
       replies_enabled: false,
     });
     expect(env[0]).toBe(ENVELOPE_VERSION);
-    expect(env.length).toBeGreaterThan(1 + ENVELOPE_IV_BYTES + ENVELOPE_TAG_BYTES);
+    expect(env.length).toBeGreaterThan(
+      1 + ENVELOPE_IV_BYTES + ENVELOPE_TAG_BYTES,
+    );
 
     const out = await decryptEnvelope({
       envelope: env,

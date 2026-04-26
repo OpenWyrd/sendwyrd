@@ -15,7 +15,10 @@ import { act, renderHook } from "@testing-library/react";
 const ORIGINAL_UA = navigator.userAgent;
 
 function setUserAgent(ua: string) {
-  Object.defineProperty(navigator, "userAgent", { value: ua, configurable: true });
+  Object.defineProperty(navigator, "userAgent", {
+    value: ua,
+    configurable: true,
+  });
 }
 
 function restoreUserAgent() {

@@ -67,13 +67,7 @@ export function WyrdSigil({
         strokeLinecap="round"
       />
       {/* Knot: small circle at the convergence point. */}
-      <circle
-        cx="16"
-        cy="18"
-        r="1.25"
-        fill="currentColor"
-        stroke="none"
-      />
+      <circle cx="16" cy="18" r="1.25" fill="currentColor" stroke="none" />
     </svg>
   );
 }

@@ -106,7 +106,11 @@ describe("sign — message-byte layout matches spec", () => {
     const handle = makeHandle(4);
     const fetch_timestamp_ms = 1_700_000_000_000;
     const expected = sha256(
-      concat(enc.encode("mop:v1:fetch_replies"), handle, be8(fetch_timestamp_ms)),
+      concat(
+        enc.encode("mop:v1:fetch_replies"),
+        handle,
+        be8(fetch_timestamp_ms),
+      ),
     );
     const actual = fetchRepliesMessage({ handle, fetch_timestamp_ms });
     expect(actual).toEqual(expected);
@@ -124,7 +128,10 @@ describe("sign — message-byte layout matches spec", () => {
         be8(presence_timestamp_ms),
       ),
     );
-    const actual = presenceCheckMessage({ k_origin_pub, presence_timestamp_ms });
+    const actual = presenceCheckMessage({
+      k_origin_pub,
+      presence_timestamp_ms,
+    });
     expect(actual).toEqual(expected);
   });
 });

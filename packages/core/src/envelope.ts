@@ -45,7 +45,9 @@ export interface DecryptParams {
 /**
  * Encrypt a UTF-8 plaintext body and produce the envelope bytes.
  */
-export async function encryptEnvelope(params: EncryptParams): Promise<Uint8Array> {
+export async function encryptEnvelope(
+  params: EncryptParams,
+): Promise<Uint8Array> {
   if (params.k_read.length !== K_READ_BYTES) {
     throw new Error(`k_read must be ${K_READ_BYTES} bytes`);
   }
@@ -54,7 +56,11 @@ export async function encryptEnvelope(params: EncryptParams): Promise<Uint8Array
   }
 
   const iv = crypto.getRandomValues(new Uint8Array(ENVELOPE_IV_BYTES));
-  const aad = buildAad(params.handle, params.expires_at_ms, params.replies_enabled);
+  const aad = buildAad(
+    params.handle,
+    params.expires_at_ms,
+    params.replies_enabled,
+  );
   const plaintextBytes = new TextEncoder().encode(params.plaintext);
 
   const key = await crypto.subtle.importKey(
@@ -79,7 +85,9 @@ export async function encryptEnvelope(params: EncryptParams): Promise<Uint8Array
   );
 
   // Layout: ver(1) || iv(12) || ciphertext || tag(16) — Web Crypto returns ciphertext with tag appended.
-  const envelope = new Uint8Array(1 + ENVELOPE_IV_BYTES + ciphertextWithTag.length);
+  const envelope = new Uint8Array(
+    1 + ENVELOPE_IV_BYTES + ciphertextWithTag.length,
+  );
   envelope[0] = ENVELOPE_VERSION;
   envelope.set(iv, 1);
   envelope.set(ciphertextWithTag, 1 + ENVELOPE_IV_BYTES);
@@ -106,7 +114,11 @@ export async function decryptEnvelope(params: DecryptParams): Promise<string> {
 
   const iv = env.slice(1, 1 + ENVELOPE_IV_BYTES);
   const ciphertextWithTag = env.slice(1 + ENVELOPE_IV_BYTES);
-  const aad = buildAad(params.handle, params.expires_at_ms, params.replies_enabled);
+  const aad = buildAad(
+    params.handle,
+    params.expires_at_ms,
+    params.replies_enabled,
+  );
 
   const key = await crypto.subtle.importKey(
     "raw",
@@ -155,7 +167,9 @@ function buildAad(
 /**
  * Convenience: encrypt + base64url-encode for transport.
  */
-export async function encryptToBase64Url(params: EncryptParams): Promise<Base64Url> {
+export async function encryptToBase64Url(
+  params: EncryptParams,
+): Promise<Base64Url> {
   const envelope = await encryptEnvelope(params);
   return b64uEncode(envelope);
 }

@@ -8,9 +8,9 @@ Protocol codename: **MOP** (Message Object Protocol). Consumer brand: **SendWyrd
 
 ## Why
 
-1. **Every social media platform has lock-in, and every messaging app limits social shareability.** What if instead you had messages which you share with people you think are relevant, and they can pass them forward? *Depth over breadth.*
+1. **Every social media platform has lock-in, and every messaging app limits social shareability.** What if instead you had messages which you share with people you think are relevant, and they can pass them forward? _Depth over breadth._
 
-2. **6 degrees of separation rule-of-thumb.** If you embed a request — *"I am such-and-such person, and I want to find people who might be interested in such-and-such project"* — and your friends pass that to a person who is more likely than them to know someone like that, and it iterates, can the global social graph become faster to traverse?
+2. **6 degrees of separation rule-of-thumb.** If you embed a request — _"I am such-and-such person, and I want to find people who might be interested in such-and-such project"_ — and your friends pass that to a person who is more likely than them to know someone like that, and it iterates, can the global social graph become faster to traverse?
 
 3. **If you broker introductions for people, can you have a single object** — a digital envelope of sorts — that you hand off to the most relevant person, rather than having to orchestrate the connection chain?
 
@@ -76,7 +76,7 @@ Nostr is identity-first. Each user has a stable `npub`/`nsec` keypair. Events ar
 
 SendWyrd makes the opposite call. No stable per-user key — per-wyrd random `K_origin`. No public broadcast — the URL is the only path. The host stays blind. The protocol refuses durable archive.
 
-The two solve different problems. Nostr optimizes for *censorship-resistant public broadcasting* — important. SendWyrd optimizes for *host-blind ephemeral handoff through trust networks* — a different problem in the same neighborhood. They compose: a wyrd body can embed an `npub` as plain text if you want attribution. SendWyrd doesn't model identity; it inherits whatever the body declares.
+The two solve different problems. Nostr optimizes for _censorship-resistant public broadcasting_ — important. SendWyrd optimizes for _host-blind ephemeral handoff through trust networks_ — a different problem in the same neighborhood. They compose: a wyrd body can embed an `npub` as plain text if you want attribution. SendWyrd doesn't model identity; it inherits whatever the body declares.
 
 The deepest difference is the archive. Nostr accumulates a signed event log per identity. SendWyrd refuses the archive on purpose.
 
@@ -100,15 +100,15 @@ sendwyrd/
 
 ## Key documents
 
-| Document | What it is |
-|---|---|
-| `MANIFEST.md` | Project identity overview |
-| `STATE.md` | Current operational state |
-| `who/governance/VISION.md` | Five immutable design principles + scope walls |
-| `what/decisions/` | All architectural decision records (ADRs 003–021) |
-| `what/docs/spec/spec_mop_v1.md` | Wire-protocol specification |
+| Document                                 | What it is                                        |
+| ---------------------------------------- | ------------------------------------------------- |
+| `MANIFEST.md`                            | Project identity overview                         |
+| `STATE.md`                               | Current operational state                         |
+| `who/governance/VISION.md`               | Five immutable design principles + scope walls    |
+| `what/decisions/`                        | All architectural decision records (ADRs 003–021) |
+| `what/docs/spec/spec_mop_v1.md`          | Wire-protocol specification                       |
 | `what/docs/spec/renderer_contract_v1.md` | Cross-implementation renderer behavioral contract |
-| `what/docs/spec/visual_direction_v1.md` | Color, type, motion, IA, screen flows |
+| `what/docs/spec/visual_direction_v1.md`  | Color, type, motion, IA, screen flows             |
 
 ## Stack
 

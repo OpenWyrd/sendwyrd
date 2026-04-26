@@ -135,8 +135,7 @@ describe("getPersistenceState", () => {
 describe("getStorageEstimate", () => {
   it("returns a parseable estimate object when available", async () => {
     patchStorage({
-      estimate: () =>
-        Promise.resolve({ usage: 1_000_000, quota: 10_000_000 }),
+      estimate: () => Promise.resolve({ usage: 1_000_000, quota: 10_000_000 }),
     });
     const e = await getStorageEstimate();
     expect(e).not.toBeNull();

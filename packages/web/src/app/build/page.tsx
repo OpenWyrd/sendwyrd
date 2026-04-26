@@ -12,8 +12,7 @@ export default function BuildPage() {
     <main
       style={{
         minHeight: "100vh",
-        padding:
-          "var(--spacing-20) var(--spacing-6) var(--spacing-24)",
+        padding: "var(--spacing-20) var(--spacing-6) var(--spacing-24)",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -67,15 +66,15 @@ export default function BuildPage() {
         <Section title="What ships today">
           <ul style={ulStyle}>
             <li>
-              <strong>REST API</strong> at <Code>sendwyrd.com/api/v1/*</Code>
-              {" "}— publish, fetch, burn, replies, presence-check. No auth
-              tokens; per-wyrd Schnorr signatures gate destructive ops.
+              <strong>REST API</strong> at <Code>sendwyrd.com/api/v1/*</Code> —
+              publish, fetch, burn, replies, presence-check. No auth tokens;
+              per-wyrd Schnorr signatures gate destructive ops.
             </li>
             <li>
-              <strong>Wire spec</strong> — byte-for-byte description of
-              every endpoint, envelope layout, signed payload, and error
-              code. Currently at v1.0.4-draft. Available on request while
-              the implementation repo stays private; reach out to{" "}
+              <strong>Wire spec</strong> — byte-for-byte description of every
+              endpoint, envelope layout, signed payload, and error code.
+              Currently at v1.0.4-draft. Available on request while the
+              implementation repo stays private; reach out to{" "}
               <a
                 href="https://x.com/deltaclimbs"
                 style={linkStyle}
@@ -86,10 +85,10 @@ export default function BuildPage() {
               .
             </li>
             <li>
-              <strong>Reference TS implementation</strong> —
-              compose/decrypt envelope, HD derivation, URL parsing, ECIES
-              replies, Schnorr sign/verify. ~1.6k LOC, 96% unit-test
-              coverage. Available on request alongside the spec.
+              <strong>Reference TS implementation</strong> — compose/decrypt
+              envelope, HD derivation, URL parsing, ECIES replies, Schnorr
+              sign/verify. ~1.6k LOC, 96% unit-test coverage. Available on
+              request alongside the spec.
             </li>
           </ul>
         </Section>
@@ -97,9 +96,9 @@ export default function BuildPage() {
         <Section title="For builders">
           <p style={pStyle}>
             The wire is plain HTTP + JSON. No accounts, no API keys. Every
-            destructive operation is gated by a per-wyrd Schnorr signature
-            from <Code>K_origin_priv</Code>; every read is open to anyone
-            holding the URL fragment containing <Code>K_read</Code>.
+            destructive operation is gated by a per-wyrd Schnorr signature from{" "}
+            <Code>K_origin_priv</Code>; every read is open to anyone holding the
+            URL fragment containing <Code>K_read</Code>.
           </p>
           <p style={pStyle}>
             To publish: derive a <Code>K_origin</Code> keypair, generate a
@@ -110,11 +109,10 @@ export default function BuildPage() {
           </p>
           <p style={pStyle}>
             <strong>If you&apos;re in JS/TS</strong>: the reference
-            <Code>@sendwyrd/core</Code> module exports{" "}
-            <Code>composeWyrd</Code>, <Code>decryptFromBase64Url</Code>,{" "}
-            <Code>deriveOriginKey</Code>, <Code>buildFragmentUrl</Code>,{" "}
-            and <Code>parseWyrdUrl</Code>. The npm publish is on the
-            roadmap; until then, request access through{" "}
+            <Code>@sendwyrd/core</Code> module exports <Code>composeWyrd</Code>,{" "}
+            <Code>decryptFromBase64Url</Code>, <Code>deriveOriginKey</Code>,{" "}
+            <Code>buildFragmentUrl</Code>, and <Code>parseWyrdUrl</Code>. The
+            npm publish is on the roadmap; until then, request access through{" "}
             <a
               href="https://x.com/deltaclimbs"
               style={linkStyle}
@@ -135,15 +133,13 @@ export default function BuildPage() {
 
         <Section title="For agents">
           <p style={pStyle}>
-            An agent is just a client. There is no &ldquo;agent&rdquo;
-            primitive in the protocol — agents publish wyrds with their own
-            seeds, derive their own per-wyrd <Code>K_origin</Code> keys, and
-            are indistinguishable from any other composer at the wire. This
-            is by design: identity is not the protocol&apos;s concern.
+            An agent is just a client. There is no &ldquo;agent&rdquo; primitive
+            in the protocol — agents publish wyrds with their own seeds, derive
+            their own per-wyrd <Code>K_origin</Code> keys, and are
+            indistinguishable from any other composer at the wire. This is by
+            design: identity is not the protocol&apos;s concern.
           </p>
-          <p style={pStyle}>
-            What&apos;s natively well-suited to agents:
-          </p>
+          <p style={pStyle}>What&apos;s natively well-suited to agents:</p>
           <ul style={ulStyle}>
             <li>
               Composing intro requests and routing them through trust networks
@@ -155,20 +151,19 @@ export default function BuildPage() {
             </li>
             <li>
               Serving as the back-channel for replies: an agent can hold its
-              <Code>K_origin_priv</Code> and accept ECIES replies routed
-              through the wyrd&apos;s URL.
+              <Code>K_origin_priv</Code> and accept ECIES replies routed through
+              the wyrd&apos;s URL.
             </li>
             <li>
-              Inter-agent capability handoff: pass a wyrd URL between agents
-              the same way you&apos;d pass it between humans.
+              Inter-agent capability handoff: pass a wyrd URL between agents the
+              same way you&apos;d pass it between humans.
             </li>
           </ul>
           <p style={pStyle}>
-            What&apos;s deliberately NOT supported: long-lived agent
-            identities, account/key rotation tracking, or any host-side
-            primitive that lets one agent enumerate another agent&apos;s
-            wyrds. The protocol&apos;s mosaic quality applies to agents the
-            same as humans.
+            What&apos;s deliberately NOT supported: long-lived agent identities,
+            account/key rotation tracking, or any host-side primitive that lets
+            one agent enumerate another agent&apos;s wyrds. The protocol&apos;s
+            mosaic quality applies to agents the same as humans.
           </p>
         </Section>
 
@@ -178,28 +173,32 @@ export default function BuildPage() {
               <Code>POST /api/v1/wyrds</Code> — publish a wyrd
             </li>
             <li>
-              <Code>GET /api/v1/wyrds/{"{object_handle}"}</Code> — fetch the encrypted
-              envelope (decrypt client-side with <Code>K_read</Code>)
+              <Code>GET /api/v1/wyrds/{"{object_handle}"}</Code> — fetch the
+              encrypted envelope (decrypt client-side with <Code>K_read</Code>)
             </li>
             <li>
-              <Code>DELETE /api/v1/wyrds/{"{object_handle}"}</Code> — burn (Schnorr-signed)
+              <Code>DELETE /api/v1/wyrds/{"{object_handle}"}</Code> — burn
+              (Schnorr-signed)
             </li>
             <li>
-              <Code>POST /api/v1/wyrds/{"{object_handle}"}/replies</Code> — submit a reply (ECIES-encrypted to <Code>K_origin_pub</Code>)
+              <Code>POST /api/v1/wyrds/{"{object_handle}"}/replies</Code> —
+              submit a reply (ECIES-encrypted to <Code>K_origin_pub</Code>)
             </li>
             <li>
-              <Code>GET /api/v1/wyrds/{"{object_handle}"}/replies</Code> — fetch replies (Schnorr-signed query)
+              <Code>GET /api/v1/wyrds/{"{object_handle}"}/replies</Code> — fetch
+              replies (Schnorr-signed query)
             </li>
             <li>
-              <Code>GET /api/v1/authors/{"{K_origin_pub_b64u}"}/handles</Code> — presence-check for HD recovery sweep
+              <Code>GET /api/v1/authors/{"{K_origin_pub_b64u}"}/handles</Code> —
+              presence-check for HD recovery sweep
             </li>
             <li>
               <Code>GET /api/v1/health</Code> — liveness probe
             </li>
           </ul>
           <p style={pStyle}>
-            Every endpoint returns JSON. Every binary value is base64url
-            without padding. Every error has a structured code (see spec §17).
+            Every endpoint returns JSON. Every binary value is base64url without
+            padding. Every error has a structured code (see spec §17).
           </p>
         </Section>
 
@@ -209,20 +208,22 @@ export default function BuildPage() {
           </p>
           <ul style={ulStyle}>
             <li>
-              <strong>npm publish of <Code>@sendwyrd/core</Code></strong>{" "}
-              — currently a workspace-private package. Path: vendor from
-              repo, or wait for the publish.
+              <strong>
+                npm publish of <Code>@sendwyrd/core</Code>
+              </strong>{" "}
+              — currently a workspace-private package. Path: vendor from repo,
+              or wait for the publish.
             </li>
             <li>
-              <strong>OpenAPI / JSON Schema</strong> generated from the
-              wire spec for cross-language client codegen.
+              <strong>OpenAPI / JSON Schema</strong> generated from the wire
+              spec for cross-language client codegen.
             </li>
             <li>
               <strong>Python client SDK</strong> for the AI/agent ecosystem.
             </li>
             <li>
-              <strong>MCP server</strong> exposing SendWyrd compose/share/burn as
-              first-class agent tools (via the Model Context Protocol).
+              <strong>MCP server</strong> exposing SendWyrd compose/share/burn
+              as first-class agent tools (via the Model Context Protocol).
             </li>
           </ul>
           <p style={pStyle}>
@@ -230,13 +231,16 @@ export default function BuildPage() {
           </p>
           <ul style={ulStyle}>
             <li>
-              Server-side compose endpoint that takes plaintext (host-blindness violation).
+              Server-side compose endpoint that takes plaintext (host-blindness
+              violation).
             </li>
             <li>
-              API keys, accounts, agent identities (capability-over-identity violation).
+              API keys, accounts, agent identities (capability-over-identity
+              violation).
             </li>
             <li>
-              Webhooks / push notifications (ADR-010: zero notification primitive at the protocol layer).
+              Webhooks / push notifications (ADR-010: zero notification
+              primitive at the protocol layer).
             </li>
           </ul>
         </Section>

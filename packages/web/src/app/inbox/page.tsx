@@ -79,11 +79,17 @@ export default function InboxPage() {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [filter, setFilter] = useState<Filter>("all");
   const [now, setNow] = useState(Date.now());
-  const [repliesByHandle, setRepliesByHandle] = useState<Record<string, RepliesView>>({});
+  const [repliesByHandle, setRepliesByHandle] = useState<
+    Record<string, RepliesView>
+  >({});
   const [renamingHandle, setRenamingHandle] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
-  const [burnByHandle, setBurnByHandle] = useState<Record<string, BurnUiState>>({});
-  const [attestByHandle, setAttestByHandle] = useState<Record<string, AttestUiState>>({});
+  const [burnByHandle, setBurnByHandle] = useState<Record<string, BurnUiState>>(
+    {},
+  );
+  const [attestByHandle, setAttestByHandle] = useState<
+    Record<string, AttestUiState>
+  >({});
 
   function startRename(entry: HistoryEntry) {
     setRenamingHandle(entry.handle);
@@ -128,11 +134,17 @@ export default function InboxPage() {
       setUnlocked(false);
       setAttestByHandle((m) => ({
         ...m,
-        [entry.handle]: { stage: "error", error: "Session expired — passphrase needed again." },
+        [entry.handle]: {
+          stage: "error",
+          error: "Session expired — passphrase needed again.",
+        },
       }));
       return;
     }
-    setAttestByHandle((m) => ({ ...m, [entry.handle]: { stage: "publishing" } }));
+    setAttestByHandle((m) => ({
+      ...m,
+      [entry.handle]: { stage: "publishing" },
+    }));
     try {
       const sig_b64u = signAuthorshipAttestation({
         seed: seedRec.seed,
@@ -151,7 +163,10 @@ export default function InboxPage() {
         setUnlocked(false);
         setAttestByHandle((m) => ({
           ...m,
-          [entry.handle]: { stage: "error", error: "Session expired — passphrase needed again." },
+          [entry.handle]: {
+            stage: "error",
+            error: "Session expired — passphrase needed again.",
+          },
         }));
         return;
       }
@@ -168,7 +183,10 @@ export default function InboxPage() {
       if ("error" in resp) {
         setAttestByHandle((m) => ({
           ...m,
-          [entry.handle]: { stage: "error", error: `Publish failed: ${resp.error}` },
+          [entry.handle]: {
+            stage: "error",
+            error: `Publish failed: ${resp.error}`,
+          },
         }));
         return;
       }
@@ -185,7 +203,11 @@ export default function InboxPage() {
       void requestPersistence();
       setHistory(listHistory());
 
-      const url = buildFragmentUrl(window.location.origin, result.handle, result.k_read_b64u);
+      const url = buildFragmentUrl(
+        window.location.origin,
+        result.handle,
+        result.k_read_b64u,
+      );
       setAttestByHandle((m) => ({
         ...m,
         [entry.handle]: { stage: "success", url },
@@ -193,7 +215,10 @@ export default function InboxPage() {
     } catch (e: any) {
       setAttestByHandle((m) => ({
         ...m,
-        [entry.handle]: { stage: "error", error: e?.message ?? "Attestation failed." },
+        [entry.handle]: {
+          stage: "error",
+          error: e?.message ?? "Attestation failed.",
+        },
       }));
     }
   }
@@ -253,7 +278,10 @@ export default function InboxPage() {
       }
       setBurnByHandle((m) => ({
         ...m,
-        [entry.handle]: { stage: "error", error: `burn failed (${result.status})` },
+        [entry.handle]: {
+          stage: "error",
+          error: `burn failed (${result.status})`,
+        },
       }));
     } catch (e: any) {
       setBurnByHandle((m) => ({
@@ -318,7 +346,10 @@ export default function InboxPage() {
       const k = deriveOriginKey(seedRec.seed, entry.n);
       const handleBytes = b64uDecode(entry.handle);
       const ts = Date.now();
-      const messageHash = fetchRepliesMessage({ handle: handleBytes, fetch_timestamp_ms: ts });
+      const messageHash = fetchRepliesMessage({
+        handle: handleBytes,
+        fetch_timestamp_ms: ts,
+      });
       const signature = schnorrSign(messageHash, k.k_origin_priv);
       const auth = `${b64uEncode(signature)}:${ts}`;
 
@@ -351,7 +382,10 @@ export default function InboxPage() {
           });
           decoded.push({ text, received_at: r.received_at });
         } catch {
-          decoded.push({ text: "(decrypt failed)", received_at: r.received_at });
+          decoded.push({
+            text: "(decrypt failed)",
+            received_at: r.received_at,
+          });
         }
       }
       setRepliesByHandle((m) => ({
@@ -371,7 +405,13 @@ export default function InboxPage() {
       <main style={pageStyle}>
         <Nav />
         <form onSubmit={handleUnlock} style={panelStyle}>
-          <p style={{ margin: 0, marginBottom: "var(--spacing-6)", color: "var(--color-ink-muted)" }}>
+          <p
+            style={{
+              margin: 0,
+              marginBottom: "var(--spacing-6)",
+              color: "var(--color-ink-muted)",
+            }}
+          >
             Enter your passphrase to unlock the seed for this session.
           </p>
           <input
@@ -384,7 +424,10 @@ export default function InboxPage() {
             style={inputStyle}
           />
           {unlockError && <p style={errorStyle}>{unlockError}</p>}
-          <button type="submit" style={{ ...btnStyle, marginTop: "var(--spacing-6)" }}>
+          <button
+            type="submit"
+            style={{ ...btnStyle, marginTop: "var(--spacing-6)" }}
+          >
             Unlock
           </button>
         </form>
@@ -403,7 +446,14 @@ export default function InboxPage() {
     <main style={pageStyle}>
       <Nav />
       <section style={{ ...panelStyle, maxWidth: "var(--max-list)" }}>
-        <p style={{ margin: 0, marginBottom: "var(--spacing-6)", color: "var(--color-ink-muted)", fontSize: "var(--text-caption)" }}>
+        <p
+          style={{
+            margin: 0,
+            marginBottom: "var(--spacing-6)",
+            color: "var(--color-ink-muted)",
+            fontSize: "var(--text-caption)",
+          }}
+        >
           {history.length} wyrd{history.length === 1 ? "" : "s"} on this device
         </p>
 
@@ -423,7 +473,13 @@ export default function InboxPage() {
         </div>
 
         {filtered.length === 0 && (
-          <p style={{ margin: 0, color: "var(--color-ink-muted)", fontSize: "var(--text-caption)" }}>
+          <p
+            style={{
+              margin: 0,
+              color: "var(--color-ink-muted)",
+              fontSize: "var(--text-caption)",
+            }}
+          >
             {history.length === 0
               ? "No wyrds yet. Compose one to begin."
               : "No wyrds match this filter."}
@@ -432,7 +488,9 @@ export default function InboxPage() {
 
         {filtered.map((entry) => {
           const isExpired = entry.expires_at <= now && !entry.gone_at;
-          const isBurned = entry.gone_reason === "burned" || (!!entry.gone_at && entry.gone_reason !== "expired");
+          const isBurned =
+            entry.gone_reason === "burned" ||
+            (!!entry.gone_at && entry.gone_reason !== "expired");
           const isGone = isExpired || !!entry.gone_at;
           const replyState = repliesByHandle[entry.handle];
           const burnUi = burnByHandle[entry.handle];
@@ -440,10 +498,20 @@ export default function InboxPage() {
           // Recovered-from-mnemonic entries lack k_read_b64u (read key isn't
           // seed-derivable). Fall through to a non-link rendering in that case.
           const url = entry.k_read_b64u
-            ? buildFragmentUrl(window.location.origin, entry.handle, entry.k_read_b64u)
+            ? buildFragmentUrl(
+                window.location.origin,
+                entry.handle,
+                entry.k_read_b64u,
+              )
             : null;
-          const statusLabel = isBurned ? "burned" : isExpired ? "expired" : "live";
-          const statusColor = isGone ? "var(--color-ink-subtle)" : "var(--color-mark-sealed)";
+          const statusLabel = isBurned
+            ? "burned"
+            : isExpired
+              ? "expired"
+              : "live";
+          const statusColor = isGone
+            ? "var(--color-ink-subtle)"
+            : "var(--color-mark-sealed)";
           return (
             <article
               key={entry.handle}
@@ -454,12 +522,27 @@ export default function InboxPage() {
                 opacity: isGone ? 0.7 : 1,
               }}
             >
-              <div style={{ display: "flex", justifyContent: "space-between", gap: "var(--spacing-3)", flexWrap: "wrap", alignItems: "flex-start" }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  gap: "var(--spacing-3)",
+                  flexWrap: "wrap",
+                  alignItems: "flex-start",
+                }}
+              >
                 <div style={{ flex: "1 1 0", minWidth: 0 }}>
                   {renamingHandle === entry.handle ? (
                     <form
-                      onSubmit={(e) => { e.preventDefault(); commitRename(entry.handle); }}
-                      style={{ display: "flex", gap: "var(--spacing-2)", alignItems: "center" }}
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        commitRename(entry.handle);
+                      }}
+                      style={{
+                        display: "flex",
+                        gap: "var(--spacing-2)",
+                        alignItems: "center",
+                      }}
                     >
                       <input
                         type="text"
@@ -473,7 +556,8 @@ export default function InboxPage() {
                           minWidth: 0,
                           background: "transparent",
                           border: "none",
-                          borderBottom: "1px solid var(--color-hairline-strong)",
+                          borderBottom:
+                            "1px solid var(--color-hairline-strong)",
                           color: "var(--color-ink)",
                           fontFamily: "var(--font-mono)",
                           fontSize: "var(--text-caption)",
@@ -481,8 +565,16 @@ export default function InboxPage() {
                           padding: "var(--spacing-1) 0",
                         }}
                       />
-                      <button type="submit" style={inlineBtn}>save</button>
-                      <button type="button" onClick={cancelRename} style={inlineBtn}>cancel</button>
+                      <button type="submit" style={inlineBtn}>
+                        save
+                      </button>
+                      <button
+                        type="button"
+                        onClick={cancelRename}
+                        style={inlineBtn}
+                      >
+                        cancel
+                      </button>
                     </form>
                   ) : url ? (
                     <a
@@ -527,20 +619,31 @@ export default function InboxPage() {
                     </span>
                   )}
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "var(--spacing-3)", flexShrink: 0 }}>
-                  {entry.replies_enabled && !isGone && replyState?.replies && replyState.replies.length > 0 && (
-                    <span
-                      style={{
-                        fontFamily: "var(--font-mono)",
-                        fontSize: "var(--text-microcaption)",
-                        color: "var(--color-accent)",
-                        padding: "2px 6px",
-                        border: "1px solid var(--color-hairline-strong)",
-                      }}
-                    >
-                      {replyState.replies.length} {replyState.replies.length === 1 ? "reply" : "replies"}
-                    </span>
-                  )}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "var(--spacing-3)",
+                    flexShrink: 0,
+                  }}
+                >
+                  {entry.replies_enabled &&
+                    !isGone &&
+                    replyState?.replies &&
+                    replyState.replies.length > 0 && (
+                      <span
+                        style={{
+                          fontFamily: "var(--font-mono)",
+                          fontSize: "var(--text-microcaption)",
+                          color: "var(--color-accent)",
+                          padding: "2px 6px",
+                          border: "1px solid var(--color-hairline-strong)",
+                        }}
+                      >
+                        {replyState.replies.length}{" "}
+                        {replyState.replies.length === 1 ? "reply" : "replies"}
+                      </span>
+                    )}
                   <span
                     style={{
                       fontFamily: "var(--font-mono)",
@@ -552,7 +655,19 @@ export default function InboxPage() {
                   </span>
                 </div>
               </div>
-              <p style={{ margin: 0, marginTop: "var(--spacing-2)", color: "var(--color-ink-subtle)", fontSize: "var(--text-microcaption)", fontFamily: "var(--font-mono)", display: "flex", gap: "var(--spacing-3)", flexWrap: "wrap", alignItems: "center" }}>
+              <p
+                style={{
+                  margin: 0,
+                  marginTop: "var(--spacing-2)",
+                  color: "var(--color-ink-subtle)",
+                  fontSize: "var(--text-microcaption)",
+                  fontFamily: "var(--font-mono)",
+                  display: "flex",
+                  gap: "var(--spacing-3)",
+                  flexWrap: "wrap",
+                  alignItems: "center",
+                }}
+              >
                 <span>
                   Sent {formatDate(entry.published_at)}
                   {entry.expires_at >= PERMANENT_EXPIRES_AT_MS - 1000
@@ -608,7 +723,13 @@ export default function InboxPage() {
                     Burn this wyrd? This cannot be undone. The host will return
                     410 Gone with a tombstone for 30 days, then nothing.
                   </p>
-                  <div style={{ display: "flex", gap: "var(--spacing-3)", flexWrap: "wrap" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "var(--spacing-3)",
+                      flexWrap: "wrap",
+                    }}
+                  >
                     <button
                       onClick={() => void confirmBurn(entry)}
                       disabled={burnUi.stage === "burning"}
@@ -659,20 +780,28 @@ export default function InboxPage() {
                       }}
                     >
                       Publish a permanent wyrd that proves you authored this
-                      one. The attestation contains only the target handle and
-                      a signature — never the original body. Share the new URL
+                      one. The attestation contains only the target handle and a
+                      signature — never the original body. Share the new URL
                       alongside the original; a renderer fetching both shows a
                       verification banner.
                     </p>
                   )}
                   {attestUi.stage !== "success" && (
-                    <div style={{ display: "flex", gap: "var(--spacing-3)", flexWrap: "wrap" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "var(--spacing-3)",
+                        flexWrap: "wrap",
+                      }}
+                    >
                       <button
                         onClick={() => void confirmAttest(entry)}
                         disabled={attestUi.stage === "publishing"}
                         style={inlineBtn}
                       >
-                        {attestUi.stage === "publishing" ? "publishing…" : "publish attestation"}
+                        {attestUi.stage === "publishing"
+                          ? "publishing…"
+                          : "publish attestation"}
                       </button>
                       <button
                         onClick={() => cancelAttest(entry.handle)}
@@ -707,9 +836,17 @@ export default function InboxPage() {
                       >
                         {attestUi.url}
                       </a>
-                      <div style={{ display: "flex", gap: "var(--spacing-3)", flexWrap: "wrap" }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: "var(--spacing-3)",
+                          flexWrap: "wrap",
+                        }}
+                      >
                         <button
-                          onClick={() => void navigator.clipboard.writeText(attestUi.url!)}
+                          onClick={() =>
+                            void navigator.clipboard.writeText(attestUi.url!)
+                          }
                           style={inlineBtn}
                         >
                           copy URL
@@ -739,17 +876,33 @@ export default function InboxPage() {
               {entry.replies_enabled && !isGone && (
                 <div style={{ marginTop: "var(--spacing-3)" }}>
                   {replyState?.loading && (
-                    <span style={{ color: "var(--color-ink-subtle)", fontSize: "var(--text-microcaption)" }}>
+                    <span
+                      style={{
+                        color: "var(--color-ink-subtle)",
+                        fontSize: "var(--text-microcaption)",
+                      }}
+                    >
                       loading replies…
                     </span>
                   )}
                   {replyState?.error && (
-                    <span style={{ color: "var(--color-danger)", fontSize: "var(--text-microcaption)" }}>
+                    <span
+                      style={{
+                        color: "var(--color-danger)",
+                        fontSize: "var(--text-microcaption)",
+                      }}
+                    >
                       {replyState.error}
                     </span>
                   )}
                   {replyState?.replies && replyState.replies.length === 0 && (
-                    <p style={{ margin: 0, color: "var(--color-ink-subtle)", fontSize: "var(--text-microcaption)" }}>
+                    <p
+                      style={{
+                        margin: 0,
+                        color: "var(--color-ink-subtle)",
+                        fontSize: "var(--text-microcaption)",
+                      }}
+                    >
                       no replies yet
                     </p>
                   )}
@@ -762,7 +915,8 @@ export default function InboxPage() {
                             paddingTop: "var(--spacing-3)",
                             paddingBottom: "var(--spacing-3)",
                             paddingLeft: "var(--spacing-4)",
-                            borderLeft: "1px solid var(--color-hairline-strong)",
+                            borderLeft:
+                              "1px solid var(--color-hairline-strong)",
                             marginTop: "var(--spacing-2)",
                             fontFamily: "var(--font-mono)",
                             fontSize: "var(--text-caption)",

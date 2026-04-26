@@ -29,17 +29,25 @@ interface PersistenceState {
 }
 
 export async function requestPersistence(): Promise<PersistenceState> {
-  if (typeof navigator === "undefined" || !navigator.storage || !("persist" in navigator.storage)) {
+  if (
+    typeof navigator === "undefined" ||
+    !navigator.storage ||
+    !("persist" in navigator.storage)
+  ) {
     return { supported: false, granted: null, asked: false };
   }
   try {
     const already = await navigator.storage.persisted();
     if (already) {
-      try { localStorage.setItem(FLAG_KEY, "1"); } catch {}
+      try {
+        localStorage.setItem(FLAG_KEY, "1");
+      } catch {}
       return { supported: true, granted: true, asked: true };
     }
     const granted = await navigator.storage.persist();
-    try { localStorage.setItem(FLAG_KEY, "1"); } catch {}
+    try {
+      localStorage.setItem(FLAG_KEY, "1");
+    } catch {}
     return { supported: true, granted, asked: true };
   } catch {
     return { supported: true, granted: false, asked: true };
@@ -47,11 +55,17 @@ export async function requestPersistence(): Promise<PersistenceState> {
 }
 
 export async function getPersistenceState(): Promise<PersistenceState> {
-  if (typeof navigator === "undefined" || !navigator.storage || !("persisted" in navigator.storage)) {
+  if (
+    typeof navigator === "undefined" ||
+    !navigator.storage ||
+    !("persisted" in navigator.storage)
+  ) {
     return { supported: false, granted: null, asked: false };
   }
   let asked = false;
-  try { asked = localStorage.getItem(FLAG_KEY) === "1"; } catch {}
+  try {
+    asked = localStorage.getItem(FLAG_KEY) === "1";
+  } catch {}
   try {
     const granted = await navigator.storage.persisted();
     return { supported: true, granted, asked };
@@ -67,7 +81,11 @@ export interface StorageEstimate {
 }
 
 export async function getStorageEstimate(): Promise<StorageEstimate | null> {
-  if (typeof navigator === "undefined" || !navigator.storage || !("estimate" in navigator.storage)) {
+  if (
+    typeof navigator === "undefined" ||
+    !navigator.storage ||
+    !("estimate" in navigator.storage)
+  ) {
     return null;
   }
   try {

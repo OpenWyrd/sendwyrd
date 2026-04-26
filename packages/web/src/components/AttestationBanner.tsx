@@ -106,12 +106,14 @@ export function AttestationBanner({ body }: Props) {
         <p style={metaStyle}>Verifying signature…</p>
       )}
       {state.kind === "malformed" && (
-        <p style={metaStyle}>This wyrd looks like an attestation but is malformed.</p>
+        <p style={metaStyle}>
+          This wyrd looks like an attestation but is malformed.
+        </p>
       )}
       {state.kind === "missing" && (
         <p style={metaStyle}>
-          The target wyrd ({state.target_handle}) was not found. The
-          signature can&apos;t be verified without it.
+          The target wyrd ({state.target_handle}) was not found. The signature
+          can&apos;t be verified without it.
         </p>
       )}
       {state.kind === "error" && (
@@ -119,22 +121,22 @@ export function AttestationBanner({ body }: Props) {
       )}
       {state.kind === "failed" && (
         <p style={{ ...metaStyle, color: "var(--color-danger)" }}>
-          ✗ Signature did not verify against the target&apos;s K_origin.
-          Treat as unverified.
+          ✗ Signature did not verify against the target&apos;s K_origin. Treat
+          as unverified.
         </p>
       )}
       {state.kind === "verified" && (
         <>
           <p style={{ ...metaStyle, color: "var(--color-mark-sealed)" }}>
-            ✓ Signature verifies. The author of this attestation holds
-            the seed that produced wyrd {state.target_handle}.
+            ✓ Signature verifies. The author of this attestation holds the seed
+            that produced wyrd {state.target_handle}.
           </p>
           <p style={metaStyle}>
             <a href={state.target_url} style={linkStyle}>
               Open the target wyrd
-            </a>
-            {" "}— if you also hold its read key, you can confirm the
-            content end-to-end.
+            </a>{" "}
+            — if you also hold its read key, you can confirm the content
+            end-to-end.
           </p>
         </>
       )}

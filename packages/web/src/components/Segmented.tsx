@@ -39,7 +39,8 @@ export function Segmented<T extends string>({
 }: SegmentedProps<T>) {
   const padY = size === "sm" ? "var(--spacing-2)" : "var(--spacing-3)";
   const padX = size === "sm" ? "var(--spacing-3)" : "var(--spacing-4)";
-  const fontSize = size === "sm" ? "var(--text-microcaption)" : "var(--text-caption)";
+  const fontSize =
+    size === "sm" ? "var(--text-microcaption)" : "var(--text-caption)";
 
   return (
     <div

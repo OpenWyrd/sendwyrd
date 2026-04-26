@@ -61,7 +61,8 @@ export const authorsRoutes = new Hono<{ Bindings: Env }>().get(
     const [sigB64u, tsStr] = auth.split(":");
     if (!sigB64u || !tsStr) return c.json({ error: "malformed_request" }, 400);
     const ts = Number(tsStr);
-    if (!Number.isFinite(ts)) return c.json({ error: "malformed_request" }, 400);
+    if (!Number.isFinite(ts))
+      return c.json({ error: "malformed_request" }, 400);
     if (Math.abs(ts - Date.now()) > REPLAY_WINDOW_MS) {
       return c.json({ error: "timestamp_outside_window" }, 422);
     }

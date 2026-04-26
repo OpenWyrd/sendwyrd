@@ -29,11 +29,7 @@ export const adminRoutes = new Hono<{ Bindings: Env }>().get(
     }
     const auth = c.req.header("authorization") ?? "";
     const token = auth.replace(/^Bearer\s+/i, "");
-    if (
-      !token ||
-      token.length !== expected.length ||
-      token !== expected
-    ) {
+    if (!token || token.length !== expected.length || token !== expected) {
       return c.json({ error: "unauthorized" }, 401);
     }
 

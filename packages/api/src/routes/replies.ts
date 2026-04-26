@@ -26,7 +26,8 @@ export const repliesRoutes = new Hono<{ Bindings: Env }>()
   /* POST /:handle/replies — anonymous submit */
   .post("/:handle/replies", async (c) => {
     const handle = c.req.param("handle");
-    if (!HANDLE_PATTERN.test(handle)) return c.json({ error: "not_found" }, 404);
+    if (!HANDLE_PATTERN.test(handle))
+      return c.json({ error: "not_found" }, 404);
 
     let body: any;
     try {
@@ -34,7 +35,10 @@ export const repliesRoutes = new Hono<{ Bindings: Env }>()
     } catch {
       return c.json({ error: "malformed_request" }, 400);
     }
-    if (typeof body.reply_blob !== "string" || typeof body.submit_timestamp_ms !== "number") {
+    if (
+      typeof body.reply_blob !== "string" ||
+      typeof body.submit_timestamp_ms !== "number"
+    ) {
       return c.json({ error: "malformed_request" }, 400);
     }
 
@@ -69,7 +73,14 @@ export const repliesRoutes = new Hono<{ Bindings: Env }>()
     }
     if (wyrd.expires_at.getTime() <= Date.now()) {
       // Lazy expire on access.
-      return c.json({ status: "gone", reason: "expired", gone_at: new Date().toISOString() }, 410);
+      return c.json(
+        {
+          status: "gone",
+          reason: "expired",
+          gone_at: new Date().toISOString(),
+        },
+        410,
+      );
     }
     if (!wyrd.replies_enabled) {
       return c.json({ error: "replies_disabled" }, 403);
@@ -96,14 +107,16 @@ export const repliesRoutes = new Hono<{ Bindings: Env }>()
   /* GET /:handle/replies — author-only, signed */
   .get("/:handle/replies", async (c) => {
     const handle = c.req.param("handle");
-    if (!HANDLE_PATTERN.test(handle)) return c.json({ error: "not_found" }, 404);
+    if (!HANDLE_PATTERN.test(handle))
+      return c.json({ error: "not_found" }, 404);
 
     const auth = c.req.header("X-Mop-Auth");
     if (!auth) return c.json({ error: "signature_required" }, 401);
     const [sigB64u, tsStr] = auth.split(":");
     if (!sigB64u || !tsStr) return c.json({ error: "malformed_request" }, 400);
     const ts = Number(tsStr);
-    if (!Number.isFinite(ts)) return c.json({ error: "malformed_request" }, 400);
+    if (!Number.isFinite(ts))
+      return c.json({ error: "malformed_request" }, 400);
     if (Math.abs(ts - Date.now()) > REPLAY_WINDOW_MS) {
       return c.json({ error: "timestamp_outside_window" }, 422);
     }

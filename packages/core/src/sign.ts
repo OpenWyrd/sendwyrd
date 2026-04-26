@@ -88,7 +88,10 @@ export function presenceCheckMessage(args: {
  * Sign a 32-byte message hash with BIP-340 Schnorr.
  * Returns 64-byte signature.
  */
-export function schnorrSign(messageHash: Uint8Array, privateKey: Uint8Array): Uint8Array {
+export function schnorrSign(
+  messageHash: Uint8Array,
+  privateKey: Uint8Array,
+): Uint8Array {
   return schnorr.sign(messageHash, privateKey);
 }
 

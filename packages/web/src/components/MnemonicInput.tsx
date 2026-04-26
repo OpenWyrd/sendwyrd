@@ -34,16 +34,16 @@ export function MnemonicInput({
   wordCount = 12,
   disabled = false,
 }: Props) {
-  const words = useMemo(() => splitToBoxes(value, wordCount), [value, wordCount]);
+  const words = useMemo(
+    () => splitToBoxes(value, wordCount),
+    [value, wordCount],
+  );
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [highlight, setHighlight] = useState(0);
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
 
-  const activeWord = activeIndex !== null ? words[activeIndex] ?? "" : "";
-  const suggestions = useMemo(
-    () => filterWordlist(activeWord),
-    [activeWord],
-  );
+  const activeWord = activeIndex !== null ? (words[activeIndex] ?? "") : "";
+  const suggestions = useMemo(() => filterWordlist(activeWord), [activeWord]);
 
   // Reset the highlight cursor whenever the suggestion list changes.
   useEffect(() => {
@@ -97,7 +97,11 @@ export function MnemonicInput({
       setHighlight((h) => Math.max(h - 1, 0));
       return;
     }
-    if ((e.key === "Enter" || e.key === "Tab") && suggestions.length > 0 && words[i]) {
+    if (
+      (e.key === "Enter" || e.key === "Tab") &&
+      suggestions.length > 0 &&
+      words[i]
+    ) {
       // Auto-complete to the highlighted suggestion when the user has typed
       // something and a match exists. Tab also advances focus naturally.
       const pick = suggestions[highlight] ?? suggestions[0];
@@ -237,8 +241,7 @@ export function MnemonicInput({
                         display: "block",
                         width: "100%",
                         textAlign: "left",
-                        padding:
-                          "var(--spacing-2) var(--spacing-3)",
+                        padding: "var(--spacing-2) var(--spacing-3)",
                         background:
                           k === highlight
                             ? "var(--color-surface)"

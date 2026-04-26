@@ -111,9 +111,9 @@ export function ReplyForm({ handle, k_origin_pub_b64u }: Props) {
             lineHeight: 1.5,
           }}
         >
-          Only the author can read this. Useful when you got this wyrd
-          forwarded through other people — your reply reaches the author
-          directly, without going back through the chain.
+          Only the author can read this. Useful when you got this wyrd forwarded
+          through other people — your reply reaches the author directly, without
+          going back through the chain.
         </p>
         <p
           style={{
@@ -123,8 +123,7 @@ export function ReplyForm({ handle, k_origin_pub_b64u }: Props) {
             color: "var(--color-ink-subtle)",
           }}
         >
-          anonymous · encrypted on your device · ECIES (secp256k1) ·
-          AES-256-GCM
+          anonymous · encrypted on your device · ECIES (secp256k1) · AES-256-GCM
         </p>
       </header>
 
@@ -167,7 +166,9 @@ export function ReplyForm({ handle, k_origin_pub_b64u }: Props) {
             style={{
               fontFamily: "var(--font-mono)",
               fontSize: "var(--text-microcaption)",
-              color: overCap ? "var(--color-danger)" : "var(--color-ink-subtle)",
+              color: overCap
+                ? "var(--color-danger)"
+                : "var(--color-ink-subtle)",
             }}
           >
             {count} / {REPLY_CODEPOINT_CAP}
@@ -178,7 +179,13 @@ export function ReplyForm({ handle, k_origin_pub_b64u }: Props) {
               </>
             )}
           </span>
-          <div style={{ display: "flex", alignItems: "center", gap: "var(--spacing-3)" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "var(--spacing-3)",
+            }}
+          >
             {justSent && (
               <span
                 style={{
@@ -197,11 +204,14 @@ export function ReplyForm({ handle, k_origin_pub_b64u }: Props) {
                 padding: "var(--spacing-2) var(--spacing-5)",
                 border: "1px solid var(--color-hairline-strong)",
                 background: canSend ? "var(--color-ink)" : "transparent",
-                color: canSend ? "var(--color-ground)" : "var(--color-ink-muted)",
+                color: canSend
+                  ? "var(--color-ground)"
+                  : "var(--color-ink-muted)",
                 fontFamily: "var(--font-mono)",
                 fontSize: "var(--text-caption)",
                 cursor: canSend ? "pointer" : "not-allowed",
-                transition: "background 120ms cubic-bezier(0.4, 0, 0.2, 1), color 120ms cubic-bezier(0.4, 0, 0.2, 1)",
+                transition:
+                  "background 120ms cubic-bezier(0.4, 0, 0.2, 1), color 120ms cubic-bezier(0.4, 0, 0.2, 1)",
               }}
             >
               {sending ? "Sending…" : "Send reply"}

@@ -25,7 +25,8 @@ async function main() {
   console.log("1) Author composes wyrd with replies_enabled");
   const { seed } = generateSeed(12);
   const compose = await composeWyrd({
-    plaintext: "Reply roundtrip test — recipients can encrypt to my K_origin_pub.",
+    plaintext:
+      "Reply roundtrip test — recipients can encrypt to my K_origin_pub.",
     seed,
     n: 0,
     ttl_seconds: 3600,
@@ -35,7 +36,10 @@ async function main() {
 
   const pubRes = await fetch(`${ORIGIN}/api/v1/wyrds`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", "MOP-Protocol-Version": "1" },
+    headers: {
+      "Content-Type": "application/json",
+      "MOP-Protocol-Version": "1",
+    },
     body: JSON.stringify(compose.publish_payload),
   });
   if (!pubRes.ok) {
@@ -46,7 +50,8 @@ async function main() {
   console.log(`   replies_enabled: true\n`);
 
   console.log("2) Recipient encrypts reply via ECIES");
-  const replyText = "I have notes on the cap-table mechanic. Happy to share — my email is m@example.com.";
+  const replyText =
+    "I have notes on the cap-table mechanic. Happy to share — my email is m@example.com.";
   const blob = await encryptReply({
     plaintext: replyText,
     handle: handleBytes,
@@ -55,29 +60,43 @@ async function main() {
   console.log(`   blob bytes: ${blob.length}\n`);
 
   console.log("3) Submit reply (anonymous)");
-  const submitRes = await fetch(`${ORIGIN}/api/v1/wyrds/${compose.handle}/replies`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "MOP-Protocol-Version": "1" },
-    body: JSON.stringify({
-      reply_blob: b64uEncode(blob),
-      submit_timestamp_ms: Date.now(),
-    }),
-  });
+  const submitRes = await fetch(
+    `${ORIGIN}/api/v1/wyrds/${compose.handle}/replies`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "MOP-Protocol-Version": "1",
+      },
+      body: JSON.stringify({
+        reply_blob: b64uEncode(blob),
+        submit_timestamp_ms: Date.now(),
+      }),
+    },
+  );
   if (submitRes.status !== 202) {
     console.error("submit failed", submitRes.status, await submitRes.json());
     process.exit(1);
   }
-  console.log(`   ${submitRes.status} ${JSON.stringify(await submitRes.json())}\n`);
+  console.log(
+    `   ${submitRes.status} ${JSON.stringify(await submitRes.json())}\n`,
+  );
 
   console.log("4) Author fetches replies (signed)");
   const ts = Date.now();
-  const messageHash = fetchRepliesMessage({ handle: handleBytes, fetch_timestamp_ms: ts });
+  const messageHash = fetchRepliesMessage({
+    handle: handleBytes,
+    fetch_timestamp_ms: ts,
+  });
   const signature = schnorrSign(messageHash, compose.k_origin.k_origin_priv);
   const auth = `${b64uEncode(signature)}:${ts}`;
 
-  const fetchRes = await fetch(`${ORIGIN}/api/v1/wyrds/${compose.handle}/replies`, {
-    headers: { "MOP-Protocol-Version": "1", "X-Mop-Auth": auth },
-  });
+  const fetchRes = await fetch(
+    `${ORIGIN}/api/v1/wyrds/${compose.handle}/replies`,
+    {
+      headers: { "MOP-Protocol-Version": "1", "X-Mop-Auth": auth },
+    },
+  );
   if (!fetchRes.ok) {
     console.error("fetch failed", fetchRes.status, await fetchRes.json());
     process.exit(1);

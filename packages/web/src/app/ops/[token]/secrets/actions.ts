@@ -36,22 +36,30 @@ export async function setSecretAction(formData: FormData) {
 
   // Worker name allowlist.
   if (!isAllowedWorker(worker)) {
-    redirect(`/ops/${token}/secrets?status=error&msg=${encodeURIComponent(`unknown worker: ${worker}`)}`);
+    redirect(
+      `/ops/${token}/secrets?status=error&msg=${encodeURIComponent(`unknown worker: ${worker}`)}`,
+    );
   }
 
   // Secret name validation: ALL_CAPS_WITH_UNDERSCORES, common convention.
   if (!/^[A-Z][A-Z0-9_]{0,63}$/.test(name)) {
-    redirect(`/ops/${token}/secrets?status=error&msg=${encodeURIComponent("name must match /^[A-Z][A-Z0-9_]{0,63}$/")}`);
+    redirect(
+      `/ops/${token}/secrets?status=error&msg=${encodeURIComponent("name must match /^[A-Z][A-Z0-9_]{0,63}$/")}`,
+    );
   }
 
   if (!value) {
-    redirect(`/ops/${token}/secrets?status=error&msg=${encodeURIComponent("value is empty")}`);
+    redirect(
+      `/ops/${token}/secrets?status=error&msg=${encodeURIComponent("value is empty")}`,
+    );
   }
 
   const cfToken = process.env.CLOUDFLARE_API_TOKEN ?? "";
   const accountId = process.env.CLOUDFLARE_ACCOUNT_ID ?? "";
   if (!cfToken || !accountId) {
-    redirect(`/ops/${token}/secrets?status=error&msg=${encodeURIComponent("worker missing CLOUDFLARE_API_TOKEN or CLOUDFLARE_ACCOUNT_ID")}`);
+    redirect(
+      `/ops/${token}/secrets?status=error&msg=${encodeURIComponent("worker missing CLOUDFLARE_API_TOKEN or CLOUDFLARE_ACCOUNT_ID")}`,
+    );
   }
 
   const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/workers/scripts/${worker}/secrets`;

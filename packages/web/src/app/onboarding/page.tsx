@@ -141,8 +141,13 @@ export default function OnboardingPage() {
               }}
             >
               {mnemonic.split(" ").map((word, i) => (
-                <div key={i} style={{ display: "flex", gap: "var(--spacing-2)" }}>
-                  <span style={{ color: "var(--color-ink-subtle)", minWidth: 24 }}>
+                <div
+                  key={i}
+                  style={{ display: "flex", gap: "var(--spacing-2)" }}
+                >
+                  <span
+                    style={{ color: "var(--color-ink-subtle)", minWidth: 24 }}
+                  >
                     {String(i + 1).padStart(2, "0")}
                   </span>
                   <span>{word}</span>

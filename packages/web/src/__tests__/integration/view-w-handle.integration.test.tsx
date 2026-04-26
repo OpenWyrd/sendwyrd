@@ -33,9 +33,7 @@ vi.mock("next/navigation", () => ({
 
 const burnWyrdMock = vi.fn();
 vi.mock("@/lib/api", async () => {
-  const actual = await vi.importActual<typeof import("@/lib/api")>(
-    "@/lib/api",
-  );
+  const actual = await vi.importActual<typeof import("@/lib/api")>("@/lib/api");
   return {
     ...actual,
     burnWyrd: (...args: unknown[]) => burnWyrdMock(...args),
@@ -70,7 +68,9 @@ interface ComposedFixture {
   seed: Uint8Array;
 }
 
-async function composeFixture(body = "the secret body"): Promise<ComposedFixture> {
+async function composeFixture(
+  body = "the secret body",
+): Promise<ComposedFixture> {
   const { seed } = generateSeed(12);
   const result = await composeWyrd({
     plaintext: body,
@@ -148,9 +148,7 @@ describe("FragmentClient — gone tombstone", () => {
     render(<FragmentClient handle="BBBBBBBBBBBBBBBB" initial={initial} />);
 
     await waitFor(() => {
-      expect(
-        screen.getByText(/withdrawn by its author/i),
-      ).toBeInTheDocument();
+      expect(screen.getByText(/withdrawn by its author/i)).toBeInTheDocument();
     });
   });
 });
@@ -159,16 +157,11 @@ describe("FragmentClient — network error", () => {
   it("renders the network-error fallback", async () => {
     setHashFragment("b".repeat(43));
     render(
-      <FragmentClient
-        handle="CCCCCCCCCCCCCCCC"
-        initial={{ kind: "error" }}
-      />,
+      <FragmentClient handle="CCCCCCCCCCCCCCCC" initial={{ kind: "error" }} />,
     );
 
     await waitFor(() => {
-      expect(
-        screen.getByText(/couldn.t be fetched/i),
-      ).toBeInTheDocument();
+      expect(screen.getByText(/couldn.t be fetched/i)).toBeInTheDocument();
     });
   });
 });
@@ -257,9 +250,7 @@ describe("FragmentClient — author-only burn affordance", () => {
       expect(burnWyrdMock).toHaveBeenCalledOnce();
     });
     await waitFor(() => {
-      expect(
-        screen.getByText(/withdrawn by its author/i),
-      ).toBeInTheDocument();
+      expect(screen.getByText(/withdrawn by its author/i)).toBeInTheDocument();
     });
   });
 });
@@ -270,15 +261,10 @@ describe("FragmentClient — missing key in fragment", () => {
     window.history.replaceState(null, "", "/w/DDDDDDDDDDDDDDDD");
     const fx = await composeFixture("doesn't matter — won't decrypt");
     render(
-      <FragmentClient
-        handle="DDDDDDDDDDDDDDDD"
-        initial={okInitial(fx)}
-      />,
+      <FragmentClient handle="DDDDDDDDDDDDDDDD" initial={okInitial(fx)} />,
     );
     await waitFor(() => {
-      expect(
-        screen.getByText(/missing its read key/i),
-      ).toBeInTheDocument();
+      expect(screen.getByText(/missing its read key/i)).toBeInTheDocument();
     });
   });
 });

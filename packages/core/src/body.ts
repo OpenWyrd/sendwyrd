@@ -15,7 +15,13 @@
  */
 
 const MEDIA_IMAGE = new Set([
-  "jpg", "jpeg", "png", "gif", "webp", "avif", "heic",
+  "jpg",
+  "jpeg",
+  "png",
+  "gif",
+  "webp",
+  "avif",
+  "heic",
 ]);
 const MEDIA_VIDEO = new Set(["mp4", "webm", "mov"]);
 const MEDIA_AUDIO = new Set(["mp3", "wav", "ogg", "opus"]);
@@ -192,12 +198,18 @@ export function parseSendwyrdUrl(
     /^\/w\/([A-Za-z0-9_-]{16})\/k\/([A-Za-z0-9_-]{43})$/,
   );
   if (pathFormMatch) {
-    return { handle: pathFormMatch[1]!, k_read: pathFormMatch[2]!, form: "public" };
+    return {
+      handle: pathFormMatch[1]!,
+      k_read: pathFormMatch[2]!,
+      form: "public",
+    };
   }
   // Fragment form: /w/{handle}#{k_read}
   const handleMatch = parsed.pathname.match(/^\/w\/([A-Za-z0-9_-]{16})$/);
   if (handleMatch) {
-    const fragment = parsed.hash.startsWith("#") ? parsed.hash.slice(1) : parsed.hash;
+    const fragment = parsed.hash.startsWith("#")
+      ? parsed.hash.slice(1)
+      : parsed.hash;
     if (fragment.length === 43 && /^[A-Za-z0-9_-]+$/.test(fragment)) {
       return { handle: handleMatch[1]!, k_read: fragment, form: "fragment" };
     }

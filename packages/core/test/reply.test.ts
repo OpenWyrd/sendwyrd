@@ -136,7 +136,12 @@ describe("reply — HKDF info string format", () => {
     );
     const decrypted = new Uint8Array(
       await crypto.subtle.decrypt(
-        { name: "AES-GCM", iv: toAB(iv), additionalData: toAB(aad), tagLength: 128 },
+        {
+          name: "AES-GCM",
+          iv: toAB(iv),
+          additionalData: toAB(aad),
+          tagLength: 128,
+        },
         key,
         toAB(ciphertextWithTag),
       ),
