@@ -81,8 +81,14 @@ describe("Settings — recovery flow", () => {
       name: /Recover from mnemonic/,
     });
     await user.click(recoverBtn);
-    const textarea = await screen.findByPlaceholderText(/word1 word2 word3/);
-    await user.type(textarea, "not a real mnemonic phrase");
+    // Paste a plausible-but-checksum-invalid 12-word phrase into the first box.
+    // The MnemonicInput distributes across boxes on multi-word paste.
+    const allTextboxes = await screen.findAllByRole("textbox");
+    const firstBox = allTextboxes[0]!;
+    await user.click(firstBox);
+    await user.paste(
+      "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon",
+    );
     const begin = screen.getByRole("button", { name: /Begin sweep/ });
     await user.click(begin);
     await waitFor(() => {
@@ -124,8 +130,10 @@ describe("Settings — recovery flow", () => {
     await user.click(
       await screen.findByRole("button", { name: /Recover from mnemonic/ }),
     );
-    const textarea = await screen.findByPlaceholderText(/word1 word2 word3/);
-    await user.type(textarea, VALID_MNEMONIC);
+    const allTextboxes = await screen.findAllByRole("textbox");
+    const firstBox = allTextboxes[0]!;
+    await user.click(firstBox);
+    await user.paste(VALID_MNEMONIC);
     await user.click(screen.getByRole("button", { name: /Begin sweep/ }));
 
     // Sweep takes a few presence-check rounds (gap-limit = 20). Wait for the

@@ -72,29 +72,24 @@ export default function BuildPage() {
               tokens; per-wyrd Schnorr signatures gate destructive ops.
             </li>
             <li>
-              <strong>Wire spec</strong>:{" "}
+              <strong>Wire spec</strong> — byte-for-byte description of
+              every endpoint, envelope layout, signed payload, and error
+              code. Currently at v1.0.4-draft. Available on request while
+              the implementation repo stays private; reach out to{" "}
               <a
-                href="https://github.com/openwyrd/sendwyrd/blob/main/what/docs/spec/spec_mop_v1.md"
+                href="https://x.com/deltaclimbs"
                 style={linkStyle}
                 rel="noreferrer"
               >
-                spec_mop_v1.md
+                @deltaclimbs
               </a>
-              {" "}— byte-for-byte description of every endpoint, envelope
-              layout, signed payload, and error code. Currently at v1.0.4-draft.
+              .
             </li>
             <li>
-              <strong>Reference TS implementation</strong>:{" "}
-              <a
-                href="https://github.com/openwyrd/sendwyrd/tree/main/packages/core"
-                style={linkStyle}
-                rel="noreferrer"
-              >
-                packages/core
-              </a>
-              {" "}— compose/decrypt envelope, HD derivation, URL parsing,
-              ECIES replies, Schnorr sign/verify. ~1.6k LOC, 96% unit-test
-              coverage.
+              <strong>Reference TS implementation</strong> —
+              compose/decrypt envelope, HD derivation, URL parsing, ECIES
+              replies, Schnorr sign/verify. ~1.6k LOC, 96% unit-test
+              coverage. Available on request alongside the spec.
             </li>
           </ul>
         </Section>
@@ -114,19 +109,20 @@ export default function BuildPage() {
             the full pipeline in ~50 lines.
           </p>
           <p style={pStyle}>
-            <strong>If you&apos;re in JS/TS</strong>: vendor{" "}
+            <strong>If you&apos;re in JS/TS</strong>: the reference
+            <Code>@sendwyrd/core</Code> module exports{" "}
+            <Code>composeWyrd</Code>, <Code>decryptFromBase64Url</Code>,{" "}
+            <Code>deriveOriginKey</Code>, <Code>buildFragmentUrl</Code>,{" "}
+            and <Code>parseWyrdUrl</Code>. The npm publish is on the
+            roadmap; until then, request access through{" "}
             <a
-              href="https://github.com/openwyrd/sendwyrd/tree/main/packages/core"
+              href="https://x.com/deltaclimbs"
               style={linkStyle}
               rel="noreferrer"
             >
-              packages/core
-            </a>{" "}
-            (or pull it from the repo until it&apos;s on npm — see Roadmap).
-            All primitives are exported from <Code>@sendwyrd/core</Code>:{" "}
-            <Code>composeWyrd</Code>, <Code>decryptFromBase64Url</Code>,{" "}
-            <Code>deriveOriginKey</Code>, <Code>buildFragmentUrl</Code>,{" "}
-            <Code>parseWyrdUrl</Code>.
+              @deltaclimbs
+            </a>
+            .
           </p>
           <p style={pStyle}>
             <strong>If you&apos;re in another language</strong>: the spec is
