@@ -2,7 +2,7 @@
 type: governance
 subtype: vision
 created: 2026-04-24
-updated: 2026-04-25
+updated: 2026-04-26
 last_edited_by: agent_operator
 status: active
 tags: [governance, vision, mop, sendwyrd]
@@ -105,7 +105,7 @@ Per ADR-015, SendWyrd is deliberately unopinionated about which of these to opti
 
 | # | Use case | Wedge |
 |---|----------|-------|
-| 1 | **Cross-post canonical URL** | Publish once on SendWyrd, share the URL across Twitter / iMessage / Slack as the canonical artifact for a thought. The URL is the artifact; the rails are distribution. |
+| 1 | **Cross-post canonical URL** | Publish once on SendWyrd, share the URL across Twitter / iMessage / Slack as the canonical artifact for a thought. The URL is the artifact; the rails are distribution. **Note (per ADR-021):** the URL deliberately does NOT unfurl into a link-card preview on social platforms. Recipients see a bare URL and must visit to read. The protocol refuses the algorithmic-preview surface to keep SendWyrd out of feed-rendering UIs — readers who click are higher-signal than readers who scroll-by. |
 | 2 | **Intro / ask routing** | "X is looking for someone who can help with Y." Recipients forward via trust networks; terminal recipient reaches origin via the reply primitive without anyone in the chain having to coordinate. Strips real overhead from a thing humans do constantly but inefficiently. |
 | 3 | **Whisper-network dissemination** | Off-algo circulation of edgy/early ideas — often pointer-cards to externally-hosted long-form (whitepapers, GDocs, etc.). The fact of dissemination, plus who-shared-with-whom, is itself meaningful. |
 | 4 | **Tweet-replacement** | Author posts the canonical wyrd URL on Twitter (or wherever) instead of native posts. Recursive references enable thread-via-quoting. Self-archive incentive deliberately weakened by brittleness rule (P4). |
@@ -117,7 +117,7 @@ Per ADR-015, SendWyrd is deliberately unopinionated about which of these to opti
 From the architecture pack §23, retained for orientation:
 
 - **Product**: insufficient differentiation vs. paste-into-iMessage; too much creation friction; "weird pastebin with no wedge."
-- **Technical**: capability leakage; preview-crawler interaction (resolved by host-blind + two-form addressing — see ADR-003, ADR-004); abuse flooding (PoW/rate-limit design pending).
+- **Technical**: capability leakage; preview-crawler interaction (resolved by host-blind single-form addressing — see ADR-003, ADR-021; supersedes the two-form approach in ADR-004); abuse flooding (PoW/rate-limit design pending).
 - **Strategic**: drift toward feature creep; pressure to add identity, threading, or feed primitives.
 
 The principles above exist to harden against the strategic risk specifically.

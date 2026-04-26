@@ -14,7 +14,6 @@ import {
   composeWyrd,
   countCountableCodepoints,
   buildFragmentUrl,
-  buildPublicUrl,
   generateSeed,
   BODY_CODEPOINT_CAP,
   TTL_SECONDS_DEFAULT,
@@ -49,7 +48,6 @@ export default function ComposePage() {
   const [unlockError, setUnlockError] = useState<string | null>(null);
   const [body, setBody] = useState("");
   const [ttl, setTtl] = useState(TTL_SECONDS_DEFAULT);
-  const [form, setForm] = useState<"sealed" | "open">("sealed");
   const [repliesEnabled, setRepliesEnabled] = useState(true);
   const [sending, setSending] = useState(false);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
@@ -172,10 +170,7 @@ export default function ComposePage() {
       void requestPersistence();
 
       const origin = window.location.origin;
-      const url =
-        form === "sealed"
-          ? buildFragmentUrl(origin, result.handle, result.k_read_b64u)
-          : buildPublicUrl(origin, result.handle, result.k_read_b64u);
+      const url = buildFragmentUrl(origin, result.handle, result.k_read_b64u);
       setShareUrl(url);
     } catch (e: any) {
       setError(e?.message ?? "Compose failed.");
@@ -280,7 +275,6 @@ export default function ComposePage() {
               setShareUrl(null);
               setBody("");
               setRepliesEnabled(true);
-              setForm("sealed");
               setTtl(TTL_SECONDS_DEFAULT);
             }}
             style={{ ...btnStyle, marginTop: "var(--spacing-8)" }}
@@ -296,28 +290,6 @@ export default function ComposePage() {
     <main style={pageStyle}>
       <Nav />
       <form onSubmit={handleSend} style={panelStyle}>
-        <div style={{ marginBottom: "var(--spacing-6)" }}>
-          <Segmented
-            name="form"
-            value={form}
-            onChange={(v) => setForm(v)}
-            layout="wrap"
-            ariaLabel="Privacy form"
-            options={[
-              {
-                value: "sealed",
-                label: "Sealed · private",
-                accent: "var(--color-mark-sealed)",
-              },
-              {
-                value: "open",
-                label: "Open · public sharing",
-                accent: "var(--color-mark-open)",
-              },
-            ]}
-          />
-        </div>
-
         <textarea
           value={body}
           onChange={(e) => {
