@@ -5,8 +5,10 @@
  *
  * Sections:
  *   - theme (system / dark / light)
+ *   - install (PWA install affordance — Chromium prompt or iOS instructions)
  *   - passphrase (open ↔ protected mode promotion/demotion)
  *   - backup mnemonic (reveal-on-confirm)
+ *   - storage (persistence state + quota estimate)
  *   - about
  *   - danger (forget seed)
  */
@@ -32,6 +34,13 @@ import { mergeHistoryEntries } from "@/lib/wyrdHistory";
 import { sweepFromMnemonic, type SweepProgress } from "@/lib/recovery";
 import { Segmented } from "@/components/Segmented";
 import { Nav } from "@/components/Nav";
+import { useInstallState, triggerInstall } from "@/lib/installPrompt";
+import {
+  getPersistenceState,
+  getStorageEstimate,
+  formatBytes,
+  type StorageEstimate,
+} from "@/lib/persistentStorage";
 
 type Theme = "system" | "dark" | "light";
 const THEME_KEY = "sendwyrd:theme";
@@ -61,6 +70,16 @@ export default function SettingsPage() {
   const [recoveryRunning, setRecoveryRunning] = useState(false);
   const [recoveryMessage, setRecoveryMessage] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
 
+  // Install prompt state (deferred beforeinstallprompt + iOS detection)
+  const install = useInstallState();
+  const [iosHelpOpen, setIosHelpOpen] = useState(false);
+
+  // Storage state
+  const [persistGranted, setPersistGranted] = useState<boolean | null>(null);
+  const [persistAsked, setPersistAsked] = useState(false);
+  const [persistSupported, setPersistSupported] = useState(true);
+  const [estimate, setEstimate] = useState<StorageEstimate | null>(null);
+
   useEffect(() => {
     const stored = (localStorage.getItem(THEME_KEY) as Theme | null) ?? "system";
     setTheme(stored);
@@ -68,6 +87,13 @@ export default function SettingsPage() {
     setSeedModeState(getSeedMode());
     setUnlockedState(isUnlocked());
     setMnemonic(getMnemonic());
+    void (async () => {
+      const ps = await getPersistenceState();
+      setPersistSupported(ps.supported);
+      setPersistGranted(ps.granted);
+      setPersistAsked(ps.asked);
+      setEstimate(await getStorageEstimate());
+    })();
   }, []);
 
   function changeTheme(next: Theme) {
@@ -221,6 +247,63 @@ export default function SettingsPage() {
           />
         </div>
 
+        <h2 style={sectionStyle}>Install</h2>
+        {install.installed && (
+          <p style={{ ...metaStyle, marginBottom: "var(--spacing-12)" }}>
+            Installed. SendWyrd runs as a standalone app on this device.
+          </p>
+        )}
+        {!install.installed && install.canPrompt && (
+          <>
+            <p style={{ ...metaStyle, marginBottom: "var(--spacing-4)" }}>
+              Install SendWyrd as an app. Standalone window, home-screen icon.
+              Same code, no native shell.
+            </p>
+            <button
+              onClick={async () => {
+                await triggerInstall();
+              }}
+              style={btnStyle}
+            >
+              Install SendWyrd
+            </button>
+          </>
+        )}
+        {!install.installed && !install.canPrompt && install.ios && (
+          <>
+            <p style={{ ...metaStyle, marginBottom: "var(--spacing-4)" }}>
+              On iOS: tap Share, then Add to Home Screen.
+            </p>
+            <button onClick={() => setIosHelpOpen((v) => !v)} style={btnStyle}>
+              {iosHelpOpen ? "Hide steps" : "Show steps"}
+            </button>
+            {iosHelpOpen && (
+              <ol
+                style={{
+                  margin: 0,
+                  marginTop: "var(--spacing-4)",
+                  paddingLeft: "var(--spacing-6)",
+                  fontFamily: "var(--font-mono)",
+                  fontSize: "var(--text-caption)",
+                  color: "var(--color-ink-muted)",
+                  lineHeight: 1.6,
+                }}
+              >
+                <li>Tap the Share button (square with arrow up).</li>
+                <li>Scroll down. Tap Add to Home Screen.</li>
+                <li>Confirm. The wyrd sigil appears on your home screen.</li>
+              </ol>
+            )}
+          </>
+        )}
+        {!install.installed && !install.canPrompt && !install.ios && (
+          <p style={{ ...metaStyle, marginBottom: "var(--spacing-4)" }}>
+            Browser install not offered. Use your browser&apos;s menu: look for
+            &ldquo;Install SendWyrd&rdquo; or &ldquo;Add to Home Screen&rdquo;.
+          </p>
+        )}
+        <div style={{ marginBottom: "var(--spacing-12)" }} />
+
         <h2 style={sectionStyle}>Passphrase</h2>
         {seedMode === null && (
           <p style={metaStyle}>No seed on this device yet. Compose a wyrd to generate one.</p>
@@ -297,8 +380,10 @@ export default function SettingsPage() {
         {seedMode && !mnemonicShown && (
           <>
             <p style={{ ...metaStyle, marginBottom: "var(--spacing-4)" }}>
-              Your 12-word recovery phrase. Write it down somewhere offline. If you lose this
-              device and didn&apos;t write it down, your seed is gone.
+              Your 12-word recovery phrase. Write it down somewhere offline. SendWyrd
+              stores your seed locally — back up your mnemonic. If local storage clears
+              or this device fails, your sealed wyrds vanish; the mnemonic is the only
+              path back to your authorship.
             </p>
             <button onClick={handleRevealMnemonic} style={btnStyle}>
               Reveal mnemonic
@@ -474,6 +559,51 @@ export default function SettingsPage() {
           </p>
         )}
         <div style={{ marginBottom: "var(--spacing-12)" }} />
+
+        <h2 style={sectionStyle}>Storage</h2>
+        {!persistSupported && (
+          <p style={{ ...metaStyle, marginBottom: "var(--spacing-12)" }}>
+            This browser doesn&apos;t expose persistent-storage APIs. Local
+            data may be evicted under storage pressure. Keep your mnemonic
+            backed up.
+          </p>
+        )}
+        {persistSupported && persistGranted === true && (
+          <p style={{ ...metaStyle, marginBottom: "var(--spacing-4)" }}>
+            Persistent storage granted. The browser is committed to keeping
+            your seed across sessions.
+          </p>
+        )}
+        {persistSupported && persistGranted === false && persistAsked && (
+          <p style={{ ...metaStyle, marginBottom: "var(--spacing-4)" }}>
+            Browser hasn&apos;t granted persistent storage. Your seed may be
+            evicted under storage pressure or after long inactivity. Back up
+            your mnemonic.
+          </p>
+        )}
+        {persistSupported && persistGranted === false && !persistAsked && (
+          <p style={{ ...metaStyle, marginBottom: "var(--spacing-4)" }}>
+            Persistent storage not yet requested. SendWyrd asks on first save.
+          </p>
+        )}
+        {estimate && (
+          <p
+            style={{
+              margin: 0,
+              marginTop: "var(--spacing-2)",
+              marginBottom: "var(--spacing-12)",
+              fontFamily: "var(--font-mono)",
+              fontSize: "var(--text-microcaption)",
+              color: "var(--color-ink-subtle)",
+            }}
+          >
+            using {formatBytes(estimate.usage)} of {formatBytes(estimate.quota)}{" "}
+            ({estimate.percent.toFixed(2)}%)
+          </p>
+        )}
+        {!estimate && persistSupported && (
+          <div style={{ marginBottom: "var(--spacing-12)" }} />
+        )}
 
         <h2 style={sectionStyle}>About</h2>
         <p style={{ ...metaStyle, marginBottom: "var(--spacing-12)" }}>

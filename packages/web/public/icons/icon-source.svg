@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Standard icon: dark ground, sigil scaled with comfortable padding.
+       Background matches --color-ground (#0a0a0a). Sigil ink matches --color-ink (#ededed). -->
+  <rect width="512" height="512" fill="#0a0a0a"/>
+  <!-- Sigil at viewBox 32x32 native; scale 12x and center. Padding ~80px. -->
+  <g transform="translate(64, 64) scale(12)">
+    <path d="M 5 5 L 16 18 L 11 27" fill="none" stroke="#ededed" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 27 5 L 16 18 L 21 27" fill="none" stroke="#ededed" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 16 5 L 16 18" fill="none" stroke="#ededed" stroke-width="1.5" stroke-linecap="round"/>
+    <circle cx="16" cy="18" r="1.5" fill="#ededed"/>
+  </g>
+</svg>
