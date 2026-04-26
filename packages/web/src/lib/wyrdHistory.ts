@@ -24,6 +24,14 @@ export interface HistoryEntry {
   replies_enabled: boolean;
   /** Optional client-side nickname; never transmitted to the host. */
   nickname?: string;
+  /**
+   * Local tombstone marker. Set when the author has burned the wyrd from
+   * this device, or when a fetch surfaced a 410 tombstone for it. The host
+   * is the source of truth; this is just a UX hint so the inbox doesn't
+   * surface burned rows as still-live.
+   */
+  gone_at?: number;
+  gone_reason?: "burned" | "expired";
 }
 
 export function listHistory(): HistoryEntry[] {
@@ -58,5 +66,24 @@ export function renameHistoryEntry(handle: string, nickname: string): void {
   if (idx === -1) return;
   const trimmed = nickname.trim();
   all[idx] = { ...all[idx]!, nickname: trimmed || undefined };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+}
+
+/**
+ * Mark a history entry as burned (or otherwise gone). Idempotent — re-marking
+ * does not overwrite an earlier `gone_at`. Used after a successful local burn,
+ * or when a 410 surfaces during fetch.
+ */
+export function markHistoryEntryGone(
+  handle: string,
+  reason: "burned" | "expired",
+  gone_at: number = Date.now(),
+): void {
+  if (typeof window === "undefined") return;
+  const all = listHistory();
+  const idx = all.findIndex((e) => e.handle === handle);
+  if (idx === -1) return;
+  if (all[idx]!.gone_at) return; // already marked
+  all[idx] = { ...all[idx]!, gone_at, gone_reason: reason };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
 }
