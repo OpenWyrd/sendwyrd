@@ -102,3 +102,25 @@ export function schnorrVerify(
 ): boolean {
   return schnorr.verify(signature, messageHash, xOnlyPubkey);
 }
+
+/**
+ * Hash the canonical authorship-attestation message:
+ *
+ *     sha256("mop:v1:authorship_attestation" || target_handle_bytes)
+ *
+ * Static attestation per ADR (TODO): the message binds only to the target
+ * handle, not to the attesting wyrd's own handle. That means the same
+ * signature could be replayed inside any attestation wyrd, but since the
+ * signature only ever proves "K_origin of target signed this," that is
+ * exactly what authorship-of-target asserts. Replay does not weaken the
+ * claim.
+ */
+export function authorshipAttestationMessage(args: {
+  target_handle: Uint8Array;
+}): Uint8Array {
+  const m = concat(
+    enc.encode("mop:v1:authorship_attestation"),
+    args.target_handle,
+  );
+  return sha256(m);
+}
