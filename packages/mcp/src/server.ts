@@ -16,9 +16,16 @@
  *   sendwyrd_history      — dump local wyrd history
  *   sendwyrd_inbox        — fetch+decrypt replies for own wyrds
  *   sendwyrd_recover      — HD sweep via presence-check
+ *
+ * Resources (read-only browsable state):
+ *
+ *   sendwyrd-mcp://wyrd/{handle}  — body of a wyrd in your local history
  */
 
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import {
+  McpServer,
+  ResourceTemplate,
+} from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import {
@@ -96,6 +103,9 @@ export async function startServer(): Promise<void> {
         "Compose with `sendwyrd_compose`. View any wyrd URL with `sendwyrd_view`.",
         "Burn / reply / attest are signed verbs — they require an unlocked seed.",
         "",
+        "Live wyrds in your local history are also exposed as MCP resources at",
+        "`sendwyrd-mcp://wyrd/{handle}`, browsable via resources/list.",
+        "",
         "Verbs only: there are no subscriptions, polling, or watch tools by design.",
         "SendWyrd is a relay primitive, not a chat host.",
       ].join("\n"),
@@ -115,9 +125,151 @@ export async function startServer(): Promise<void> {
   registerInbox(server, cfg);
   registerRecover(server, cfg);
   registerForget(server, cfg);
+  registerWyrdResource(server, cfg);
 
   const transport = new StdioServerTransport();
   await server.connect(transport);
+}
+
+// -- resources ---------------------------------------------------------------
+
+function registerWyrdResource(server: McpServer, cfg: McpConfig): void {
+  // Each live history entry is a readable resource. Listing returns one
+  // entry per non-burned wyrd; reading fetches the envelope and decrypts
+  // with the locally-stored K_read. Recovered entries (no K_read) read as
+  // a metadata-only placeholder so an agent can still cite the URI.
+  server.resource(
+    "wyrd",
+    new ResourceTemplate("sendwyrd-mcp://wyrd/{handle}", {
+      list: async () => ({
+        resources: listHistory(cfg)
+          .filter((e) => !e.gone_at)
+          .map((e) => ({
+            uri: `sendwyrd-mcp://wyrd/${e.handle}`,
+            name: e.nickname ?? e.handle,
+            description: e.is_attestation
+              ? `attestation (n=${e.n}, expires ${new Date(
+                  e.expires_at,
+                ).toISOString()})`
+              : `wyrd (n=${e.n}, expires ${new Date(
+                  e.expires_at,
+                ).toISOString()})`,
+            mimeType: "text/plain",
+          })),
+      }),
+    }),
+    async (uri, vars) => {
+      const handle = Array.isArray(vars.handle)
+        ? vars.handle[0]
+        : vars.handle;
+      if (!handle) {
+        return {
+          contents: [
+            {
+              uri: uri.href,
+              mimeType: "text/plain",
+              text: "(invalid resource URI: missing handle)",
+            },
+          ],
+        };
+      }
+      const entry = findHistory(cfg, handle);
+      if (!entry) {
+        return {
+          contents: [
+            {
+              uri: uri.href,
+              mimeType: "text/plain",
+              text: "(handle not in local history)",
+            },
+          ],
+        };
+      }
+      if (entry.gone_at) {
+        return {
+          contents: [
+            {
+              uri: uri.href,
+              mimeType: "text/plain",
+              text: `(${entry.gone_reason ?? "gone"} at ${new Date(
+                entry.gone_at,
+              ).toISOString()})`,
+            },
+          ],
+        };
+      }
+      if (!entry.k_read_b64u) {
+        // Recovered entry — the body is sealed without K_read.
+        return {
+          contents: [
+            {
+              uri: uri.href,
+              mimeType: "text/plain",
+              text: `(body sealed — recovered entry has no K_read; n=${entry.n}, k_origin_pub=${entry.k_origin_pub_b64u})`,
+            },
+          ],
+        };
+      }
+      const result = await fetchWyrd(cfg.origin, handle);
+      if (result.kind === "not_found") {
+        return {
+          contents: [
+            {
+              uri: uri.href,
+              mimeType: "text/plain",
+              text: "(not found on origin)",
+            },
+          ],
+        };
+      }
+      if (result.kind === "gone") {
+        return {
+          contents: [
+            {
+              uri: uri.href,
+              mimeType: "text/plain",
+              text: `(${result.data.reason} at ${result.data.gone_at})`,
+            },
+          ],
+        };
+      }
+      if (result.kind === "error") {
+        return {
+          contents: [
+            {
+              uri: uri.href,
+              mimeType: "text/plain",
+              text: `(fetch failed: HTTP ${result.status})`,
+            },
+          ],
+        };
+      }
+      const env = result.data;
+      try {
+        const body = await decryptFromBase64Url(env.envelope, {
+          k_read: b64uDecode(entry.k_read_b64u),
+          handle: b64uDecode(handle),
+          expires_at_ms: env.expires_at,
+          replies_enabled: env.replies_enabled,
+        });
+        return {
+          contents: [
+            { uri: uri.href, mimeType: "text/plain", text: body },
+          ],
+        };
+      } catch (e) {
+        return {
+          contents: [
+            {
+              uri: uri.href,
+              mimeType: "text/plain",
+              text: `(decrypt failed: ${(e as Error).message})`,
+            },
+          ],
+        };
+      }
+    },
+  );
 }
 
 // -- lifecycle ---------------------------------------------------------------
@@ -520,11 +672,14 @@ function registerReply(server: McpServer, cfg: McpConfig): void {
 function registerAttest(server: McpServer, cfg: McpConfig): void {
   server.tool(
     "sendwyrd_attest",
-    "Publish a static authorship attestation: re-derive K_origin_priv for a target wyrd you authored, sign the canonical message, and emit a 3-line attestation-formatted wyrd that anyone can verify against the target's published K_origin_pub. Target must be in your local history.",
+    "Publish a static authorship attestation: re-derive K_origin_priv for a target wyrd you authored, sign the canonical message, and emit a 3-line attestation-formatted wyrd that anyone can verify against the target's published K_origin_pub. If target_handle is omitted, attests the most-recent non-attestation, non-burned wyrd in your local history.",
     {
       target_handle: z
         .string()
-        .describe("16-char base64url handle of the wyrd to attest authorship of."),
+        .optional()
+        .describe(
+          "16-char base64url handle of the wyrd to attest authorship of. If omitted, the most-recent non-attestation, non-burned wyrd in your history is used.",
+        ),
       ttl_seconds: z
         .number()
         .int()
@@ -537,20 +692,40 @@ function registerAttest(server: McpServer, cfg: McpConfig): void {
     },
     async ({ target_handle, ttl_seconds }) => {
       try {
-        const targetEntry = findHistory(cfg, target_handle);
-        if (!targetEntry) {
-          return err(
-            "target_handle not in local history — cannot derive private key for attestation. Try sendwyrd_recover first.",
+        let targetEntry: HistoryEntry | undefined;
+        let resolvedTargetHandle: string;
+        if (target_handle) {
+          targetEntry = findHistory(cfg, target_handle);
+          resolvedTargetHandle = target_handle;
+          if (!targetEntry) {
+            return err(
+              "target_handle not in local history — cannot derive private key for attestation. Try sendwyrd_recover first.",
+            );
+          }
+        } else {
+          // Ergonomic default: the most-recent attestable wyrd.
+          // Sorted by listHistory (newest first); pick the first that's
+          // mine to attest — non-attestation, non-burned, not the
+          // attestation we'd be composing of an earlier attestation.
+          targetEntry = listHistory(cfg).find(
+            (e) => !e.is_attestation && !e.gone_at,
           );
+          if (!targetEntry) {
+            return err(
+              "no attestable wyrd in local history (need at least one non-attestation, non-burned wyrd you authored). Run sendwyrd_compose or sendwyrd_recover first.",
+            );
+          }
+          resolvedTargetHandle = targetEntry.handle;
         }
+
         const sc = await loadSeed(cfg);
         const sig_b64u = signAuthorshipAttestation({
           seed: sc.seed,
           n: targetEntry.n,
-          target_handle_b64u: target_handle,
+          target_handle_b64u: resolvedTargetHandle,
         });
         const body = composeAttestationBody({
-          target_handle,
+          target_handle: resolvedTargetHandle,
           sig_b64u,
         });
 
@@ -575,14 +750,16 @@ function registerAttest(server: McpServer, cfg: McpConfig): void {
           published_at: pub.published_at,
           expires_at: pub.expires_at,
           replies_enabled: false,
-          nickname: `attestation of ${target_handle}`,
+          nickname: `attestation of ${resolvedTargetHandle}`,
+          is_attestation: true,
         });
 
         return ok(
           asJson({
             attestation_url: url,
             attestation_handle: pub.handle,
-            target_handle,
+            target_handle: resolvedTargetHandle,
+            target_was_inferred: !target_handle,
           }),
         );
       } catch (e) {

@@ -44,6 +44,8 @@ export interface HistoryEntry {
   gone_at?: number;
   gone_reason?: "burned" | "expired";
   recovered?: boolean;
+  /** True when this wyrd's body is an authorship attestation we composed. */
+  is_attestation?: boolean;
 }
 
 interface OpenSeedFile {
