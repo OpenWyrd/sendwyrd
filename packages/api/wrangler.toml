@@ -1,0 +1,28 @@
+name = "sendwyrd-api"
+main = "src/index.ts"
+compatibility_date = "2026-04-01"
+compatibility_flags = ["nodejs_compat"]
+account_id = "***"
+
+# Mount the worker at sendwyrd.com/api/* once the zone is wired.
+# Routes are populated post-first-deploy via `wrangler deploy --route ...` or the dashboard.
+# routes = [
+#   { pattern = "sendwyrd.com/api/*", zone_name = "sendwyrd.com" }
+# ]
+
+# R2 binding (per ADR-020 §Backend; bucket created 2026-04-25).
+[[r2_buckets]]
+binding = "BLOBS"
+bucket_name = "sendwyrd-blobs"
+
+# Vars surfaced to the worker (non-secret).
+[vars]
+PROTOCOL_VERSION = "1"
+WEB_ORIGIN = "https://sendwyrd.com"
+
+# Secrets (DATABASE_URL, etc.) are set via:
+#   wrangler secret put DATABASE_URL
+# and live only in the Worker runtime — never in this file.
+
+[observability]
+enabled = true

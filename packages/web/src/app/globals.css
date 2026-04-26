@@ -1,0 +1,116 @@
+/**
+ * SendWyrd global stylesheet — design tokens per visual_direction_v1.md.
+ * Tailwind v4 inline theme via @theme.
+ */
+
+@import "tailwindcss";
+
+/* Dark theme is canonical (visual_direction_v1.md §2.3). */
+@theme {
+  /* Color tokens — dark theme defaults. Light theme overrides via .light class below. */
+  --color-ground: #0a0a0a;
+  --color-surface: #141414;
+  --color-hairline: #222222;
+  --color-hairline-strong: #3a3a3a;
+  --color-ink: #ededed;
+  --color-ink-muted: #888888;
+  --color-ink-subtle: #555555;
+  --color-accent: #7a8aa8;
+  --color-accent-soft: #3d4452;
+  --color-mark-sealed: #9da0a8;
+  --color-mark-open: #c2bca8;
+  --color-danger: #a87a7a;
+
+  /* Spacing scale — base unit 4px (visual_direction_v1.md §4). */
+  --spacing-1: 0.25rem;
+  --spacing-2: 0.5rem;
+  --spacing-3: 0.75rem;
+  --spacing-4: 1rem;
+  --spacing-5: 1.25rem;
+  --spacing-6: 1.5rem;
+  --spacing-8: 2rem;
+  --spacing-12: 3rem;
+  --spacing-16: 4rem;
+  --spacing-20: 5rem;
+  --spacing-24: 6rem;
+
+  /* Type scale (visual_direction_v1.md §3.2). */
+  --text-display: 3rem;
+  --text-h1: 2rem;
+  --text-h2: 1.5rem;
+  --text-h3: 1.125rem;
+  --text-body: 1rem;
+  --text-caption: 0.875rem;
+  --text-microcaption: 0.75rem;
+
+  /* Type families. */
+  --font-mono: "Berkeley Mono", "Geist Mono", "Söhne Mono", "JetBrains Mono", ui-monospace, monospace;
+  --font-display: "Söhne", "ABC Diatype", "Geist Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  /* Layout. */
+  --max-content: 640px;
+  --max-list: 720px;
+  --max-page: 1080px;
+}
+
+/* Light theme override — applied via class on <html> or media-query fallback. */
+.light {
+  --color-ground: #f8f4ed;
+  --color-surface: #f0ebe0;
+  --color-hairline: #d8d2c4;
+  --color-hairline-strong: #a8a095;
+  --color-ink: #1a1a1f;
+  --color-ink-muted: #666666;
+  --color-ink-subtle: #999999;
+  --color-accent: #5e6f8a;
+  --color-accent-soft: #b8c0cc;
+  --color-mark-sealed: #3a3f4a;
+  --color-mark-open: #6f6354;
+  --color-danger: #6f4a4a;
+}
+
+/* Honor user theme preference when no .light class is set. */
+@media (prefers-color-scheme: light) {
+  html:not(.dark) {
+    --color-ground: #f8f4ed;
+    --color-surface: #f0ebe0;
+    --color-hairline: #d8d2c4;
+    --color-hairline-strong: #a8a095;
+    --color-ink: #1a1a1f;
+    --color-ink-muted: #666666;
+    --color-ink-subtle: #999999;
+    --color-accent: #5e6f8a;
+    --color-accent-soft: #b8c0cc;
+    --color-mark-sealed: #3a3f4a;
+    --color-mark-open: #6f6354;
+    --color-danger: #6f4a4a;
+  }
+}
+
+/* Base styles. */
+html,
+body {
+  background: var(--color-ground);
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  font-size: var(--text-body);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Reduced motion — kill all animations per visual_direction_v1.md §12. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
