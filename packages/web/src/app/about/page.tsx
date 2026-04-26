@@ -207,10 +207,11 @@ export default function AboutPage() {
               overflowWrap: "anywhere",
             }}
           >
-            https://sendwyrd.com/w/{"{handle}"}#{"{K_read}"}
+            https://sendwyrd.com/w/{"{object_handle}"}#{"{K_read}"}
           </p>
           <p style={pStyle}>
-            The handle is in the path; the read key is in the URL fragment.
+            The object handle (a per-wyrd random identifier — not a user
+            handle) is in the path; the read key is in the URL fragment.
             Browsers don&apos;t transmit fragments to servers — so the host
             stays body-blind. Anyone holding the URL can read the wyrd;
             whoever you share it with can forward it to whoever they think
