@@ -5,7 +5,7 @@ created: 2026-04-24
 updated: 2026-04-26
 last_edited_by: agent_michael
 status: active
-tags: [governance, vision, mop, sendwyrd]
+tags: [governance, vision, mop, sendwyrd, post-agora]
 ---
 
 # VISION — Hyperlinks for Conversation
@@ -77,6 +77,36 @@ These principles are immutable within the v1 phase. Every implementation decisio
 The relational layer that makes SendWyrd work — the percolation of wyrds through trust networks — lives **outside** the protocol. It lives in the existing rails (iMessage threads, Signal groups, real-world relationships) that carry the URL. The protocol stays narrow. Trust rides the rail.
 
 This is the resolution of the *object-first vs. relational-first* tension: SendWyrd is **object-first as practical implementation, relational-first as distribution substrate.** The protocol primitive is the wyrd; the substrate it rides on is human relationships.
+
+---
+
+## The Post-Agora Topology
+
+The five principles above systematically refuse every component of an algorithmic public square — no identity, no platform, no feed, no notifications, no conversation. What's left is a substrate of identity-less, ephemeral, capability-keyed capsules with no native discovery layer.
+
+The natural follow-up — *"then how does anything reach anyone?"* — has a specific answer that isn't "another platform." **Routing becomes personal infrastructure, not platform infrastructure.** Per-user agents do the connective work that an algorithmic agora used to. The agora isn't replaced by another agora; it dissolves into a swarm of per-user routers, each working on behalf of one human, each opaque to the rest.
+
+This is not a sixth principle. It is the *consequence* of the five. Each principle structurally *enables* this topology:
+
+| Principle | What it enables for agent-routing |
+|-----------|-----------------------------------|
+| Hyperlinks for conversation | A wyrd-URL is venue-agnostic — the same capsule rides agent-to-agent contexts (a shared file, a DM, an inbox) the same as any other channel. |
+| Protocol carries text only | The agent network is implicit, not modeled. SendWyrd does not try to be an agent mesh; it is the capsule format the agents exchange. |
+| Capability over identity | Wyrds stay identity-less on the wire. Routing-context (who-sent-what-to-whom, who'd care, what to forward) lives at the agent layer, never on the protocol. |
+| Brittleness as feature | Wyrds die in 90 days. Routing is forced to be present-tense — nothing accumulates into a permanent ranked archive that re-creates the agora the protocol just refused. |
+| Contact, not conversation | Agents *transcribe* and *forward*; they never autonomously converse. Send-acts stay human-intentional. |
+
+### What this implies architecturally
+
+- **Agents cannot crawl SendWyrd.** There is no list-all, no feed, no discovery endpoint. The agent-routing layer operates only on streams the human has already opted into: wyrd URLs the human has received, wyrd URLs the human's contacts have sent, wyrd URLs surfaced via PKM / CRM integration (see `future_horizons.md` H1). The agent's job is **triage + forward + surface**, not search.
+- **Verbs only, never subscriptions.** Whatever surface SendWyrd exposes to agents (MCP, future SDKs) must be verb-shaped — compose, view, burn, reply, attest. No `_watch`, no `_subscribe`, no auto-reply, no inbox-poller. Subscription tools would push SendWyrd toward conversation-hosting and violate Principle 5.
+- **The agent acts *as* the human, with the human's keys.** Not a separate identity. An agent operating with the user's mnemonic *is* the user, cryptographically. There is no agent-class principal. The capability-over-identity rule is preserved.
+
+### Strategic significance
+
+This is the answer to *"why a primitive that refuses every feature?"* — because the feature refusal is what *creates* the routing-substrate-shaped vacancy that personal agents step into. A protocol that supplied its own discovery would compete with the agent layer; SendWyrd cooperates with it by abstaining.
+
+The MCP server (`packages/mcp/`) is the first concrete realization: any Claude Code / Claude Desktop / Cursor user's agent becomes a SendWyrd routing node by default. Without that binding, the substrate exists and no agent can pick up the capsules. With it, the capsule format and the routing layer click together. See `future_horizons.md` H3 for follow-on agent-routing surfaces (none of which are protocol changes).
 
 ---
 

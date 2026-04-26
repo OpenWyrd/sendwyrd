@@ -90,17 +90,13 @@ importers:
         version: 2.1.9(@types/node@22.19.17)(jsdom@25.0.1)(lightningcss@1.32.0)(terser@5.16.9)
 
   packages/mcp:
-    dependencies:
+    devDependencies:
       '@modelcontextprotocol/sdk':
         specifier: ^1.0.4
         version: 1.29.0(zod@3.25.76)
       '@sendwyrd/core':
         specifier: workspace:*
         version: link:../core
-      zod:
-        specifier: ^3.23.8
-        version: 3.25.76
-    devDependencies:
       '@types/node':
         specifier: ^22.10.5
         version: 22.19.17
@@ -116,6 +112,9 @@ importers:
       vitest:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@22.19.17)(jsdom@25.0.1)(lightningcss@1.32.0)(terser@5.16.9)
+      zod:
+        specifier: ^3.23.8
+        version: 3.25.76
 
   packages/web:
     dependencies:
