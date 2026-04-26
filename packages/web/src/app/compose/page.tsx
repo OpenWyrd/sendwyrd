@@ -356,7 +356,7 @@ export default function ComposePage() {
           </div>
           <p style={{ ...hintStyle, marginTop: "var(--spacing-2)", marginBottom: 0 }}>
             {repliesEnabled
-              ? "Recipients may send you one anonymous reply each."
+              ? "Anyone with the URL can send anonymous, encrypted replies."
               : "Recipients cannot reply."}
           </p>
         </div>
