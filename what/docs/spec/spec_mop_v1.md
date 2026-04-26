@@ -2,10 +2,10 @@
 type: spec
 created: 2026-04-25
 updated: 2026-04-26
-last_edited_by: agent_michael
+last_edited_by: agent_spec_patch
 status: draft
 tags: [spec, mop, protocol, wire, v1]
-spec_version: "1.0.2-draft"
+spec_version: "1.0.3-draft"
 ---
 
 # MOP Protocol Specification — v1
@@ -160,6 +160,23 @@ Where `seed_b64u` is the 32-byte BIP-39 seed (post-PBKDF2) encoded base64url. Th
 
 Implementations MAY also support encoding only an HD branch (e.g., `xprv`-rooted at `m/300'`) for limited scopes (a per-device sub-identity). v1 does not specify this; reserved for future use.
 
+### 5.5 What HD recovery does and does NOT restore
+
+`K_read` is **per-wyrd random, NOT seed-derived**. It is 32 bytes from CSPRNG generated at compose time (§7.3) and distributed exclusively via the URL fragment.
+
+This means the BIP-39 sweep on a fresh device (§5.3) reconstructs:
+
+- The user's list of published wyrd handles per `K_origin_pub`.
+- Each wyrd's `K_origin_priv` (from `m/300'/n'`) — sufficient to **decrypt replies** (ECIES with `K_origin_priv`, §14.3) and **burn** the wyrd (sign delete, §12).
+
+It does NOT reconstruct:
+
+- `K_read` for any wyrd. After local-storage loss, the user's sealed wyrd bodies are unreadable unless the user retained the share URL (which carries `K_read` in its fragment) somewhere outside the device — e.g., a copied link in a notes app, an email, a chat message.
+
+This is intentional per VISION P4 ("brittleness as feature"): the protocol refuses durable archive of plaintext bodies. The mnemonic restores authorship and operational control (reply-reading, burn) but not historical readability. Users SHOULD understand that **brittleness is the contract, not a bug** — if they need a body to survive device loss, they must retain the share URL elsewhere on purpose.
+
+The asymmetry is deliberate. Operational keys (`K_origin`) are deterministic and recoverable so the user keeps lifecycle control over their published wyrds. Read keys (`K_read`) are ephemeral and unrecoverable so the host cannot be coerced into reconstructing plaintext, and so a stolen seed alone cannot retroactively unseal historical bodies.
+
 ---
 
 ## 6. Wyrd structure
@@ -171,8 +188,8 @@ A wyrd at rest on the host consists of:
 | `handle` | 12 bytes binary (16 chars b64u in transport) | Client-generated at compose; server validates uniqueness on insert and rejects collisions with 409 |
 | `K_origin_pub` | 33 bytes binary (SEC1 compressed; 44 chars b64u in transport) | Client; derived from seed at `m/300'/n'` |
 | `envelope` | binary blob (see §7) | Client; encrypted body |
-| `published_at` | unix epoch milliseconds (uint64) | Server; assigned at publish |
-| `expires_at` | unix epoch milliseconds (uint64) | Server; `published_at + ttl_ms` (or `0` for permanent — discouraged, see ADR-006) |
+| `published_at` | unix epoch milliseconds (uint64) | Client-asserted within ±60s replay window; server validates and stores as-is. Never `server_now` directly. |
+| `expires_at` | unix epoch milliseconds (uint64) | Server; `published_at + ttl_ms` (or `253_370_764_800_000` if `ttl_seconds == 0` for permanent — discouraged, see ADR-006) |
 | `replies_enabled` | boolean | Client; per ADR-008 |
 | `gone_at` | unix epoch milliseconds (uint64), nullable | Server; set when expired or burned |
 | `gone_reason` | enum: `expired` \| `burned`, nullable | Server; per ADR-018 |
@@ -562,8 +579,24 @@ MOP-Protocol-Version: 1
 ```
 GET /api/v1/wyrds/{handle}/replies
 MOP-Protocol-Version: 1
-X-Mop-Auth: <base64url 64-byte Schnorr sig>:<unix-ms-timestamp>
+X-Mop-Auth: <sig_b64u>:<unix_ms>
 ```
+
+#### 14.2.1 Canonical `X-Mop-Auth` header format
+
+Endpoints that require `K_origin`-signed authentication carry the signature in a single HTTP header named `X-Mop-Auth`. The value is colon-delimited with exactly two fields:
+
+```
+X-Mop-Auth: <sig_b64u>:<unix_ms>
+```
+
+- `<sig_b64u>` — base64url-encoded BIP-340 Schnorr signature (64 bytes raw → 86 chars b64u, no padding) over the per-endpoint signed message.
+- `<unix_ms>` — unsigned decimal integer, unix epoch milliseconds, the timestamp that was incorporated into the signed message.
+- Separator: a single literal ASCII colon `:`. There is no surrounding whitespace.
+- Replay window: server rejects with `422 timestamp_outside_window` if `|unix_ms - server_now| > 60_000`.
+- Signature verification failure: server returns `422 signature_invalid` (never 401 — 401 means the header was absent).
+
+This format is shared by §14.2 (fetch replies) and §15.2 (presence-check). Both endpoints differ only in the per-endpoint `*_message` they sign; the header encoding is identical.
 
 The author's `K_origin_priv` signs:
 
@@ -662,10 +695,10 @@ Returns the list of wyrd handles published under this `K_origin_pub`. Used by cl
 
 ### 15.2 Auth
 
-The canonical host MAY require this endpoint to be signed (to prevent open enumeration of authorship clusters by adversaries scanning random pubkeys). Implementation-defined; canonical SendWyrd host will require:
+The canonical host MAY require this endpoint to be signed (to prevent open enumeration of authorship clusters by adversaries scanning random pubkeys). Implementation-defined; canonical SendWyrd host will require an `X-Mop-Auth` header per the canonical format defined in §14.2.1:
 
 ```
-X-Mop-Auth: <base64url 64-byte Schnorr sig>:<unix-ms-timestamp>
+X-Mop-Auth: <sig_b64u>:<unix_ms>
 ```
 
 Where the signed message is:
@@ -702,7 +735,30 @@ MOP-Protocol-Version: 1
 }
 ```
 
-Tombstoned and burned wyrds within the retention window are included (with `gone_at` / `gone_reason` populated). Wyrds past tombstone retention are omitted.
+#### Per-entry shape
+
+Each element of `handles` carries the same keys regardless of liveness state:
+
+- **Live entries** (not expired, not burned): `gone_at: null` and `gone_reason: null` — both fields MUST be present and explicitly null. Clients MUST NOT infer liveness from key absence; the keys are always present.
+- **Tombstoned entries** within the 30-day retention window: `gone_at: <unix_ms>` and `gone_reason: "expired" | "burned"`.
+- **Past-retention entries** are omitted from the list (server filters them out; the entry is not returned at all).
+
+#### Empty result
+
+When the queried `K_origin_pub` has zero published wyrds (or all of them are past tombstone retention), the server returns:
+
+```
+HTTP/1.1 200 OK
+Content-Type: application/json
+MOP-Protocol-Version: 1
+
+{
+  "k_origin_pub": "<base64url 33-byte>",
+  "handles": []
+}
+```
+
+This is **200 OK with an empty array**, never 404. Proof-of-possession (the valid `X-Mop-Auth` signature) succeeded; "you have zero" is a valid answer to "what handles do you have?". 404 is reserved for the lookup-of-a-nonexistent-wyrd case (`GET /api/v1/wyrds/{handle}` on an unknown handle).
 
 ---
 
@@ -740,13 +796,13 @@ The `Retry-After` HTTP header SHOULD also be set. Numbers are ADR-013 starting p
 |------|--------------------|---------|
 | 400 | `malformed_request` | JSON parse failure or schema mismatch. |
 | 400 | `invalid_base64url` | Field that should be base64url is not. |
-| 401 | `signature_required` | Endpoint needs `X-Mop-Auth` and it's missing. |
+| 401 | `signature_required` | Endpoint needs `X-Mop-Auth` and it's missing. (Distinct from `signature_invalid` below — 401 means the header was absent; 422 means a header was present but verification failed.) |
 | 403 | `replies_disabled` | Reply-submit on a wyrd where `replies_enabled = false`. |
 | 404 | `not_found` | Handle does not exist (or tombstone retention expired). |
 | 409 | `handle_collision_retry` | Client-supplied handle is already taken. Client retries with fresh 12-byte handle. |
 | 410 | (see §13) | Tombstone — wyrd is gone. |
 | 413 | `payload_too_large` | Envelope or reply blob exceeds size cap. |
-| 422 | `signature_invalid` | Schnorr signature failed verification. |
+| 422 | `signature_invalid` | Schnorr signature failed verification. Returned by `POST /api/v1/wyrds`, `DELETE /api/v1/wyrds/{handle}`, `GET /api/v1/wyrds/{handle}/replies`, and `GET /api/v1/authors/{K_origin_pub}/handles`. Never 401 — 401 is reserved for `signature_required` (header missing). |
 | 422 | `timestamp_outside_window` | Client timestamp outside ±60s replay window. |
 | 422 | `pubkey_invalid` | `k_origin_pub` not a valid secp256k1 point. |
 | 422 | `ttl_out_of_range` | `ttl_seconds` outside `[0, 31_536_000]`. (`0` is the permanent-storage sentinel and is accepted; see §9.2.) |
@@ -806,6 +862,13 @@ Items that the wire spec deliberately leaves to implementation phase (Phase E) o
 
 ## 21. Changelog
 
+- **v1.0.3-draft (2026-04-26)** — sync to shipped post-Tier-1. Six drift points reconciled with the deployed API (`packages/api/src/routes/{wyrds,authors,replies}.ts`):
+  1. **`published_at` is client-asserted** (§6 wyrd-structure table, §9.3 step 7). The server stores `publish_timestamp_ms` as-is after validating it is within the ±60s replay window. The server never substitutes `server_now`. This preserves the AAD binding (§7.2) — `expires_at = publish_timestamp_ms + ttl_seconds * 1000` is computed from the client's signed timestamp, so the server cannot extend or contract TTL.
+  2. **§15 empty list returns `200 OK` with `handles: []`** (§15.3). Proof-of-possession passed; "you have zero" is a valid answer. 404 is reserved for unknown-handle lookups, never for empty author results.
+  3. **`X-Mop-Auth` header format canonicalized** (§14.2.1, referenced by §15.2). Format: `<sig_b64u>:<unix_ms>` — base64url Schnorr signature, single ASCII colon, decimal unix-ms timestamp. Both reply-fetch and presence-check share the encoding.
+  4. **`gone_at: null` for live entries** (§15.3 per-entry shape). Each `handles[]` element always carries `gone_at` and `gone_reason` keys. Live entries set both to `null`. Tombstoned entries within retention populate them. Past-retention entries are omitted from the array entirely. Clients MUST NOT infer liveness from key absence.
+  5. **`K_read` non-derivability note** (§5.5). HD recovery restores `K_origin` (operational keys: read replies, burn) but NOT `K_read` (per-wyrd random, fragment-only). Sealed bodies become unreadable after local-storage loss unless the share URL was retained elsewhere. Brittleness is the contract per VISION P4, not a bug. Asymmetry is deliberate: operational control survives device loss; historical readability does not.
+  6. **`signature_invalid` returns 422, not 401** (§17 error inventory, clarified). 401 (`signature_required`) means the `X-Mop-Auth` header was absent. 422 (`signature_invalid`) means a header was present but Schnorr verification failed. Endpoints affected: publish, delete, fetch-replies, presence-check.
 - **v1.0.2-draft (2026-04-26)** — single-form addressing per ADR-021. Public path-form (`/w/{handle}/k/{K_read}`) removed. Composers emit only the fragment form. §4 collapsed to a single canonical form. §11 retained as a legacy-redirect stub (transitional client-side redirect from path → fragment). Privacy-posture indicator (§ADR-019) is now monomorphic Sealed. OG / SEO metadata generation removed — link previews on social platforms do not unfurl by design.
 - **v1.0.1-draft (2026-04-25)** — sync to shipped: client-generated handle (now signed in `publish_message`), `ttl_seconds = 0` accepted as permanent-storage sentinel (year-9999 `expires_at`), `REPLY_CODEPOINT_CAP = 300` and `REPLY_BLOB_BYTE_CEILING = 2500` (replies match wyrd-body terseness; anti-scope-creep). Cross-ref fixes: error-code section renumbered §15→§17 and rate-limits §14→§16 in §9.5.
 - **v1.0.0-draft (2026-04-25)** — initial wire spec consolidating ADRs 003–020.
