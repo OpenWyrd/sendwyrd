@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 const points: string[] = [
-  "Every social media platform has lock-in, and every messaging app limits social shareability. What if instead you had messages which you share with people you think are relevant, and they can pass them forward. Depth over breadth.",
+  "Every social media platform has lock-in, and every messaging app limits social shareability. What if instead you had messages which you share with people you think are relevant, and they can pass them forward? Depth over breadth.",
   "6 degrees of separation rule-of-thumb. If you embed a request — “I am such-and-such person, and I want to find people who might be interested in such-and-such project” — and your friends pass that to a person who is more likely than them to know someone like that, and it iterates, can the global social graph become faster to traverse?",
   "If you broker introductions for people, can you have a single object — a digital envelope of sorts — that you hand off to the most relevant person, rather than having to orchestrate the connection chain?",
   "Within the tradeoffs of security and reach, can a useful balance be found with capability links where you rely on human judgement as to whether you trust the graph of people downstream?",

@@ -8,7 +8,7 @@ Protocol codename: **MOP** (Message Object Protocol). Consumer brand: **SendWyrd
 
 ## Why
 
-1. **Every social media platform has lock-in, and every messaging app limits social shareability.** What if instead you had messages which you share with people you think are relevant, and they can pass them forward. *Depth over breadth.*
+1. **Every social media platform has lock-in, and every messaging app limits social shareability.** What if instead you had messages which you share with people you think are relevant, and they can pass them forward? *Depth over breadth.*
 
 2. **6 degrees of separation rule-of-thumb.** If you embed a request — *"I am such-and-such person, and I want to find people who might be interested in such-and-such project"* — and your friends pass that to a person who is more likely than them to know someone like that, and it iterates, can the global social graph become faster to traverse?
 
