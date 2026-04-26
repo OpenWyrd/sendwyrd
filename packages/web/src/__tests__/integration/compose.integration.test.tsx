@@ -75,29 +75,29 @@ describe("Compose — counter + over-cap", () => {
     expect(screen.getByText(/5 \/ 300/)).toBeInTheDocument();
   });
 
-  it("disables Send when body is empty", async () => {
+  it("disables Compose when body is empty", async () => {
     render(<ComposePage />);
-    const send = await screen.findByRole("button", { name: /^Send$/ });
+    const send = await screen.findByRole("button", { name: /^Compose$/ });
     expect(send).toBeDisabled();
   });
 
-  it("enables Send when body has content", async () => {
+  it("enables Compose when body has content", async () => {
     const user = userEvent.setup();
     render(<ComposePage />);
     const textarea = await screen.findByPlaceholderText(/A wyrd…/);
     await user.type(textarea, "ok");
-    const send = await screen.findByRole("button", { name: /^Send$/ });
+    const send = await screen.findByRole("button", { name: /^Compose$/ });
     expect(send).not.toBeDisabled();
   });
 });
 
-describe("Compose — successful send", () => {
+describe("Compose — successful publish", () => {
   it("invokes publishWyrd with a properly-shaped payload and renders share URL + Copy", async () => {
     const user = userEvent.setup();
     render(<ComposePage />);
     const textarea = await screen.findByPlaceholderText(/A wyrd…/);
     await user.type(textarea, "the wyrd body");
-    const send = await screen.findByRole("button", { name: /^Send$/ });
+    const send = await screen.findByRole("button", { name: /^Compose$/ });
     await user.click(send);
 
     await waitFor(() => {
@@ -133,7 +133,7 @@ describe("Compose — successful send", () => {
     render(<ComposePage />);
     const textarea = await screen.findByPlaceholderText(/A wyrd…/);
     await user.type(textarea, "x");
-    const send = await screen.findByRole("button", { name: /^Send$/ });
+    const send = await screen.findByRole("button", { name: /^Compose$/ });
     await user.click(send);
     await waitFor(() => {
       expect(screen.getByText(/Publish failed: rate_limited/)).toBeInTheDocument();

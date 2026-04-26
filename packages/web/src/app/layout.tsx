@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import { SentryInit } from "@/components/SentryInit";
+import { MobileComposeBar } from "@/components/MobileComposeBar";
 
 export const metadata: Metadata = {
   title: "SendWyrd",
@@ -67,6 +68,7 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body>
         {children}
+        <MobileComposeBar />
         <ServiceWorkerRegister />
         <SentryInit />
       </body>

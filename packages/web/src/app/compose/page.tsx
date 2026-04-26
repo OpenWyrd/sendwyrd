@@ -369,7 +369,7 @@ export default function ComposePage() {
             cursor: overCap || count === 0 || sending ? "not-allowed" : "pointer",
           }}
         >
-          {sending ? "Sending…" : "Send"}
+          {sending ? "Composing…" : "Compose"}
         </button>
       </form>
     </main>
