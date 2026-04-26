@@ -1,5 +1,7 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+
 /**
  * Fragment-form view per visual_direction_v1.md §10.4.
  *
@@ -248,6 +250,34 @@ export default function FragmentClient({
  * fragment included, so K_read travels with the URL and never leaves the
  * device for the host.
  */
+/**
+ * Compose a new wyrd that quotes the one currently being viewed —
+ * analogous to a quote-tweet. Navigates to /compose with the current
+ * wyrd's full URL (handle + fragment K_read) prefilled into the body
+ * via the existing ?url= query the Web Share Target handler also uses.
+ * The recipient's renderer will surface the quoted wyrd as an embed
+ * card (resolveTransitives + WyrdBody) — no new server primitive
+ * required, just composition.
+ */
+function QuoteAffordance() {
+  const router = useRouter();
+  function handleQuote() {
+    if (typeof window === "undefined") return;
+    const url = window.location.href;
+    router.push(`/compose?url=${encodeURIComponent(url)}`);
+  }
+  return (
+    <button
+      type="button"
+      onClick={handleQuote}
+      style={shareTriggerStyle}
+      aria-label="Compose a new wyrd quoting this one"
+    >
+      quote
+    </button>
+  );
+}
+
 function ShareAffordance() {
   const [copied, setCopied] = useState(false);
 
@@ -275,6 +305,7 @@ function ShareAffordance() {
 
   return (
     <div style={shareRowStyle}>
+      <QuoteAffordance />
       <button
         type="button"
         onClick={() => void handleShare()}
@@ -494,6 +525,7 @@ const shareRowStyle: React.CSSProperties = {
   borderTop: "1px solid var(--color-hairline)",
   display: "flex",
   justifyContent: "flex-end",
+  gap: "var(--spacing-4)",
 };
 const shareTriggerStyle: React.CSSProperties = {
   background: "transparent",
