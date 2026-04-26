@@ -9,6 +9,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { generateSeed } from "@sendwyrd/core";
 import { hasSeed, storeSeed } from "@/lib/seedClient";
+import { requestPersistence } from "@/lib/persistentStorage";
 
 type Step = "generate" | "mnemonic" | "passphrase";
 
@@ -60,6 +61,9 @@ export default function OnboardingPage() {
     setSaving(true);
     try {
       await storeSeed({ seed, counter: 0, passphrase });
+      // Ask the browser to keep this seed across sessions. Silent — we never
+      // block onboarding on the result.
+      void requestPersistence();
       router.push("/compose");
     } catch (e: any) {
       setError(e?.message ?? "Failed to save seed.");
@@ -114,9 +118,10 @@ export default function OnboardingPage() {
         {step === "mnemonic" && (
           <>
             <p style={{ margin: 0, marginBottom: "var(--spacing-6)" }}>
-              Write this down somewhere offline. If you lose this device and
-              didn&apos;t write it down, your seed is gone — that&apos;s how
-              SendWyrd works.
+              Write this down somewhere offline. SendWyrd stores the seed
+              locally — if local storage clears or this device fails and you
+              didn&apos;t back up the mnemonic, your sealed wyrds are gone.
+              That&apos;s how SendWyrd works.
             </p>
             <div
               style={{

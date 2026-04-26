@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Maskable icon: full-bleed dark ground, sigil sized to safe area.
+       Maskable safe area is the inner 80% (centered ~410x410 of 512).
+       Spec: https://www.w3.org/TR/appmanifest/#purpose-member.
+       Sigil scale chosen so even an aggressive circular mask preserves the mark. -->
+  <rect width="512" height="512" fill="#0a0a0a"/>
+  <!-- Scale 9x sigil (288 of 512), centered. Leaves ~112px on each side. -->
+  <g transform="translate(112, 112) scale(9)">
+    <path d="M 5 5 L 16 18 L 11 27" fill="none" stroke="#ededed" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 27 5 L 16 18 L 21 27" fill="none" stroke="#ededed" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 16 5 L 16 18" fill="none" stroke="#ededed" stroke-width="1.5" stroke-linecap="round"/>
+    <circle cx="16" cy="18" r="1.5" fill="#ededed"/>
+  </g>
+</svg>
