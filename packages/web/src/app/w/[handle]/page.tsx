@@ -15,6 +15,7 @@ import { fetchWyrd } from "@/lib/api";
 import { PrivacyIndicator } from "@/components/PrivacyIndicator";
 import { WyrdBody } from "@/components/WyrdBody";
 import { ReplyForm } from "@/components/ReplyForm";
+import { Nav } from "@/components/Nav";
 import { resolveTransitives, type ResolutionMap } from "@/lib/resolveBody";
 
 type State =
@@ -94,7 +95,7 @@ export default function FragmentView() {
         gap: "var(--spacing-8)",
       }}
     >
-      <h1 style={wordmarkStyle}>SendWyrd</h1>
+      <Nav />
 
       {state.kind === "loading" && (
         <p style={metaStyle}>…</p>
@@ -178,13 +179,6 @@ function formatDate(iso: string): string {
   });
 }
 
-const wordmarkStyle: React.CSSProperties = {
-  fontFamily: "var(--font-display)",
-  fontSize: "var(--text-h2)",
-  fontWeight: 600,
-  margin: 0,
-  color: "var(--color-ink)",
-};
 const panelStyle: React.CSSProperties = {
   width: "100%",
   maxWidth: "var(--max-content)",

@@ -8,6 +8,7 @@ import { notFound } from "next/navigation";
 import { decryptFromBase64Url, b64uDecode, HANDLE_CHARS, K_READ_CHARS } from "@sendwyrd/core";
 import { PrivacyIndicator } from "@/components/PrivacyIndicator";
 import { WyrdBody } from "@/components/WyrdBody";
+import { Nav } from "@/components/Nav";
 import { resolveTransitives, type ResolutionMap } from "@/lib/resolveBody";
 import type { Metadata } from "next";
 
@@ -103,7 +104,7 @@ export default async function PublicFormView({ params }: PageProps) {
   if (result.kind === "gone") {
     return (
       <main style={pageStyle}>
-        <h1 style={wordmarkStyle}>SendWyrd</h1>
+        <Nav />
         <article style={panelStyle}>
           <PrivacyIndicator state="open" />
           <p style={{ ...goneStyle, marginTop: "var(--spacing-6)" }}>
@@ -118,7 +119,7 @@ export default async function PublicFormView({ params }: PageProps) {
 
   return (
     <main style={pageStyle}>
-      <h1 style={wordmarkStyle}>SendWyrd</h1>
+      <Nav />
       <article style={panelStyle}>
         <PrivacyIndicator state="open" />
         <div
@@ -161,13 +162,6 @@ const pageStyle: React.CSSProperties = {
   alignItems: "center",
   padding: "var(--spacing-12) var(--spacing-6)",
   gap: "var(--spacing-8)",
-};
-const wordmarkStyle: React.CSSProperties = {
-  fontFamily: "var(--font-display)",
-  fontSize: "var(--text-h2)",
-  fontWeight: 600,
-  margin: 0,
-  color: "var(--color-ink)",
 };
 const panelStyle: React.CSSProperties = {
   width: "100%",

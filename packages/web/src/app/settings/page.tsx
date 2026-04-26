@@ -1,14 +1,31 @@
 "use client";
 
 /**
- * Settings page per visual_direction_v1.md §10.8.
- * v1: theme toggle + forget-seed. Backup mnemonic + change passphrase land in Phase G2.
+ * Settings per visual_direction_v1.md §10.8.
+ *
+ * Sections:
+ *   - theme (system / dark / light)
+ *   - passphrase (open ↔ protected mode promotion/demotion)
+ *   - backup mnemonic (reveal-on-confirm)
+ *   - about
+ *   - danger (forget seed)
  */
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { hasSeed, forgetSeed } from "@/lib/seedClient";
+import {
+  hasSeed,
+  forgetSeed,
+  getSeedMode,
+  isUnlocked,
+  unlockSeed,
+  getMnemonic,
+  protectWithPassphrase,
+  unprotectSeed,
+  type SeedMode,
+} from "@/lib/seedClient";
 import { Segmented } from "@/components/Segmented";
+import { Nav } from "@/components/Nav";
 
 type Theme = "system" | "dark" | "light";
 const THEME_KEY = "sendwyrd:theme";
@@ -16,13 +33,26 @@ const THEME_KEY = "sendwyrd:theme";
 export default function SettingsPage() {
   const router = useRouter();
   const [theme, setTheme] = useState<Theme>("system");
-  const [seedPresent, setSeedPresent] = useState(false);
+  const [seedMode, setSeedModeState] = useState<SeedMode>(null);
+  const [, setUnlockedState] = useState(false);
+
+  // Passphrase form state
+  const [pp, setPp] = useState("");
+  const [ppConfirm, setPpConfirm] = useState("");
+  const [unlockPp, setUnlockPp] = useState("");
+  const [ppMessage, setPpMessage] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+
+  // Mnemonic reveal state
+  const [mnemonicShown, setMnemonicShown] = useState(false);
+  const [mnemonic, setMnemonic] = useState<string | null>(null);
 
   useEffect(() => {
     const stored = (localStorage.getItem(THEME_KEY) as Theme | null) ?? "system";
     setTheme(stored);
     applyTheme(stored);
-    setSeedPresent(hasSeed());
+    setSeedModeState(getSeedMode());
+    setUnlockedState(isUnlocked());
+    setMnemonic(getMnemonic());
   }, []);
 
   function changeTheme(next: Theme) {
@@ -31,17 +61,77 @@ export default function SettingsPage() {
     applyTheme(next);
   }
 
+  function refreshState() {
+    setSeedModeState(getSeedMode());
+    setUnlockedState(isUnlocked());
+    setMnemonic(getMnemonic());
+  }
+
+  async function handleAddPassphrase(e: React.FormEvent) {
+    e.preventDefault();
+    setPpMessage(null);
+    if (pp.length < 8) {
+      setPpMessage({ kind: "err", text: "Passphrase must be at least 8 characters." });
+      return;
+    }
+    if (pp !== ppConfirm) {
+      setPpMessage({ kind: "err", text: "Passphrases don't match." });
+      return;
+    }
+    try {
+      await protectWithPassphrase(pp);
+      setPp("");
+      setPpConfirm("");
+      setPpMessage({ kind: "ok", text: "Passphrase added. Seed is now encrypted at rest." });
+      refreshState();
+    } catch (e: any) {
+      setPpMessage({ kind: "err", text: e?.message ?? "Failed to set passphrase." });
+    }
+  }
+
+  async function handleRemovePassphrase(e: React.FormEvent) {
+    e.preventDefault();
+    setPpMessage(null);
+    try {
+      await unlockSeed(unlockPp);
+      unprotectSeed();
+      setUnlockPp("");
+      setPpMessage({ kind: "ok", text: "Passphrase removed. Seed is now in plain localStorage." });
+      refreshState();
+    } catch {
+      setPpMessage({ kind: "err", text: "Wrong passphrase." });
+    }
+  }
+
+  async function handleRevealMnemonic() {
+    if (seedMode === "protected" && !isUnlocked()) {
+      const pp = window.prompt("Enter passphrase to reveal mnemonic");
+      if (!pp) return;
+      try {
+        const data = await unlockSeed(pp);
+        setMnemonic(data.mnemonic ?? null);
+        setUnlockedState(true);
+      } catch {
+        alert("Wrong passphrase.");
+        return;
+      }
+    } else {
+      setMnemonic(getMnemonic());
+    }
+    setMnemonicShown(true);
+  }
+
   function doForgetSeed() {
     if (!confirm("Forget the seed on this device? You will need your mnemonic to recover.")) return;
     if (!confirm("Are you sure? This is final.")) return;
     forgetSeed();
-    setSeedPresent(false);
+    setSeedModeState(null);
     router.push("/");
   }
 
   return (
     <main style={pageStyle}>
-      <h1 style={wordmarkStyle}>SendWyrd</h1>
+      <Nav />
 
       <section style={panelStyle}>
         <h2 style={sectionStyle}>Theme</h2>
@@ -59,6 +149,123 @@ export default function SettingsPage() {
           />
         </div>
 
+        <h2 style={sectionStyle}>Passphrase</h2>
+        {seedMode === null && (
+          <p style={metaStyle}>No seed on this device yet. Compose a wyrd to generate one.</p>
+        )}
+        {seedMode === "open" && (
+          <>
+            <p style={{ ...metaStyle, marginBottom: "var(--spacing-4)" }}>
+              Your seed is currently stored in plain localStorage on this device.
+              Add a passphrase to encrypt it at rest (PBKDF2-AES-256-GCM, 600k iterations).
+            </p>
+            <form onSubmit={handleAddPassphrase}>
+              <input
+                type="password"
+                autoComplete="new-password"
+                value={pp}
+                onChange={(e) => setPp(e.target.value)}
+                placeholder="passphrase"
+                style={inputStyle}
+              />
+              <input
+                type="password"
+                autoComplete="new-password"
+                value={ppConfirm}
+                onChange={(e) => setPpConfirm(e.target.value)}
+                placeholder="confirm"
+                style={{ ...inputStyle, marginTop: "var(--spacing-3)" }}
+              />
+              <button type="submit" style={{ ...btnStyle, marginTop: "var(--spacing-4)" }}>
+                Set passphrase
+              </button>
+            </form>
+          </>
+        )}
+        {seedMode === "protected" && (
+          <>
+            <p style={{ ...metaStyle, marginBottom: "var(--spacing-4)" }}>
+              Your seed is encrypted with a passphrase. To remove it (and store the seed in
+              plain localStorage), enter your current passphrase.
+            </p>
+            <form onSubmit={handleRemovePassphrase}>
+              <input
+                type="password"
+                autoComplete="current-password"
+                value={unlockPp}
+                onChange={(e) => setUnlockPp(e.target.value)}
+                placeholder="current passphrase"
+                style={inputStyle}
+              />
+              <button type="submit" style={{ ...btnStyle, marginTop: "var(--spacing-4)" }}>
+                Remove passphrase
+              </button>
+            </form>
+          </>
+        )}
+        {ppMessage && (
+          <p
+            style={{
+              margin: 0,
+              marginTop: "var(--spacing-3)",
+              fontFamily: "var(--font-mono)",
+              fontSize: "var(--text-microcaption)",
+              color: ppMessage.kind === "ok" ? "var(--color-mark-sealed)" : "var(--color-danger)",
+            }}
+          >
+            {ppMessage.text}
+          </p>
+        )}
+        <div style={{ marginBottom: "var(--spacing-12)" }} />
+
+        <h2 style={sectionStyle}>Backup mnemonic</h2>
+        {!seedMode && (
+          <p style={metaStyle}>No seed yet.</p>
+        )}
+        {seedMode && !mnemonicShown && (
+          <>
+            <p style={{ ...metaStyle, marginBottom: "var(--spacing-4)" }}>
+              Your 12-word recovery phrase. Write it down somewhere offline. If you lose this
+              device and didn&apos;t write it down, your seed is gone.
+            </p>
+            <button onClick={handleRevealMnemonic} style={btnStyle}>
+              Reveal mnemonic
+            </button>
+          </>
+        )}
+        {seedMode && mnemonicShown && mnemonic && (
+          <>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(4, 1fr)",
+                gap: "var(--spacing-3)",
+                padding: "var(--spacing-6)",
+                border: "1px solid var(--color-hairline)",
+                fontFamily: "var(--font-mono)",
+                fontSize: "var(--text-caption)",
+                marginBottom: "var(--spacing-3)",
+              }}
+            >
+              {mnemonic.split(" ").map((word, i) => (
+                <div key={i} style={{ display: "flex", gap: "var(--spacing-2)" }}>
+                  <span style={{ color: "var(--color-ink-subtle)", minWidth: 20 }}>
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <span>{word}</span>
+                </div>
+              ))}
+            </div>
+            <button onClick={() => setMnemonicShown(false)} style={btnStyle}>
+              Hide
+            </button>
+          </>
+        )}
+        {seedMode && mnemonicShown && !mnemonic && (
+          <p style={metaStyle}>Mnemonic not stored for this seed (pre-dates backup support).</p>
+        )}
+        <div style={{ marginBottom: "var(--spacing-12)" }} />
+
         <h2 style={sectionStyle}>About</h2>
         <p style={{ ...metaStyle, marginBottom: "var(--spacing-12)" }}>
           SendWyrd v0.1 · MOP protocol v1
@@ -71,7 +278,7 @@ export default function SettingsPage() {
         <h2 style={{ ...sectionStyle, color: "var(--color-danger)" }}>Danger</h2>
         <button
           onClick={doForgetSeed}
-          disabled={!seedPresent}
+          disabled={!hasSeed()}
           style={{
             padding: "var(--spacing-3) var(--spacing-6)",
             border: "1px solid var(--color-danger)",
@@ -79,8 +286,8 @@ export default function SettingsPage() {
             color: "var(--color-danger)",
             fontFamily: "var(--font-mono)",
             fontSize: "var(--text-caption)",
-            cursor: seedPresent ? "pointer" : "not-allowed",
-            opacity: seedPresent ? 1 : 0.4,
+            cursor: hasSeed() ? "pointer" : "not-allowed",
+            opacity: hasSeed() ? 1 : 0.4,
           }}
         >
           Forget seed on this device
@@ -95,7 +302,6 @@ function applyTheme(theme: Theme) {
   html.classList.remove("dark", "light");
   if (theme === "dark") html.classList.add("dark");
   else if (theme === "light") html.classList.add("light");
-  // "system" leaves no override class — falls back to prefers-color-scheme.
 }
 
 const pageStyle: React.CSSProperties = {
@@ -105,13 +311,6 @@ const pageStyle: React.CSSProperties = {
   alignItems: "center",
   padding: "var(--spacing-12) var(--spacing-6)",
   gap: "var(--spacing-12)",
-};
-const wordmarkStyle: React.CSSProperties = {
-  fontFamily: "var(--font-display)",
-  fontSize: "var(--text-h2)",
-  fontWeight: 600,
-  margin: 0,
-  color: "var(--color-ink)",
 };
 const panelStyle: React.CSSProperties = {
   width: "100%",
@@ -137,6 +336,26 @@ const metaStyle: React.CSSProperties = {
   fontSize: "var(--text-caption)",
   color: "var(--color-ink-muted)",
   lineHeight: 1.6,
+};
+const btnStyle: React.CSSProperties = {
+  padding: "var(--spacing-3) var(--spacing-6)",
+  border: "1px solid var(--color-hairline-strong)",
+  background: "transparent",
+  color: "var(--color-ink)",
+  fontFamily: "var(--font-mono)",
+  fontSize: "var(--text-caption)",
+  cursor: "pointer",
+};
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  padding: "var(--spacing-3) var(--spacing-4)",
+  background: "transparent",
+  border: "none",
+  borderBottom: "1px solid var(--color-hairline)",
+  color: "var(--color-ink)",
+  fontFamily: "var(--font-mono)",
+  fontSize: "var(--text-body)",
+  outline: "none",
 };
 const linkStyle: React.CSSProperties = {
   color: "var(--color-accent)",

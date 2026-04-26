@@ -17,7 +17,9 @@ import { wordlist } from "@scure/bip39/wordlists/english";
 import type { Base64Url } from "./types.js";
 import { b64uDecode, b64uEncode } from "./encoding.js";
 
-export const SEED_STORE_VERSION = 0x01;
+export const SEED_STORE_VERSION_V1 = 0x01;
+export const SEED_STORE_VERSION_V2 = 0x02;
+export const SEED_STORE_VERSION = SEED_STORE_VERSION_V2;
 export const SALT_BYTES = 16;
 export const IV_BYTES = 12;
 export const TAG_BYTES = 16;
@@ -30,6 +32,8 @@ export interface SeedAndCounter {
   seed: Uint8Array;
   /** Next free HD index `n` to use on next compose. */
   counter: number;
+  /** BIP-39 mnemonic (for backup display); persisted alongside the seed. */
+  mnemonic?: string;
 }
 
 /**
@@ -69,9 +73,13 @@ export async function encryptSeedRecord(
   const iv = crypto.getRandomValues(new Uint8Array(IV_BYTES));
   const aesKey = await deriveAesKeyFromPassphrase(args.passphrase, salt, iterations);
 
-  const plaintext = new Uint8Array(4 + SEED_BYTES);
-  new DataView(plaintext.buffer).setUint32(0, args.counter, false);
-  plaintext.set(args.seed, 4);
+  // V2 plaintext: JSON {counter, mnemonic, seed_b64u}
+  const payload = JSON.stringify({
+    counter: args.counter,
+    mnemonic: args.mnemonic ?? null,
+    seed_b64u: b64uEncode(args.seed),
+  });
+  const plaintext = new TextEncoder().encode(payload);
 
   const ciphertextWithTag = new Uint8Array(
     await crypto.subtle.encrypt(
@@ -103,10 +111,12 @@ export async function decryptSeedRecord(
   passphrase: string,
 ): Promise<SeedAndCounter> {
   const record = b64uDecode(recordB64u);
-  const minLen = 1 + SALT_BYTES + IV_BYTES + 4 + 4 + SEED_BYTES + TAG_BYTES;
-  if (record.length < minLen) throw new Error("seed record too short");
-  if (record[0] !== SEED_STORE_VERSION) {
-    throw new Error(`seed record version unsupported: 0x${record[0]?.toString(16)}`);
+  if (record.length < 1 + SALT_BYTES + IV_BYTES + 4) {
+    throw new Error("seed record too short");
+  }
+  const ver = record[0];
+  if (ver !== SEED_STORE_VERSION_V1 && ver !== SEED_STORE_VERSION_V2) {
+    throw new Error(`seed record version unsupported: 0x${ver?.toString(16)}`);
   }
   let o = 1;
   const salt = record.slice(o, o + SALT_BYTES);
@@ -128,6 +138,19 @@ export async function decryptSeedRecord(
       bufferSource(ciphertextWithTag),
     ),
   );
+  if (ver === SEED_STORE_VERSION_V2) {
+    const j = JSON.parse(new TextDecoder().decode(plaintext)) as {
+      counter: number;
+      mnemonic: string | null;
+      seed_b64u: string;
+    };
+    return {
+      seed: b64uDecode(j.seed_b64u),
+      counter: j.counter,
+      mnemonic: j.mnemonic ?? undefined,
+    };
+  }
+  // V1 legacy binary payload
   if (plaintext.length !== 4 + SEED_BYTES) {
     throw new Error("decrypted seed payload has wrong length");
   }

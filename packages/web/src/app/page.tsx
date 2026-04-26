@@ -122,6 +122,17 @@ export default function LandingPage() {
       >
         Compose a wyrd
       </Link>
+      <p
+        style={{
+          margin: 0,
+          color: "var(--color-ink-subtle)",
+          fontFamily: "var(--font-mono)",
+          fontSize: "var(--text-microcaption)",
+          textAlign: "center",
+        }}
+      >
+        no account · no signup · just compose
+      </p>
     </main>
   );
 }
