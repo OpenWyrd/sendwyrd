@@ -14,4 +14,9 @@ export interface Env {
 
   // Secrets (from `wrangler secret put`).
   DATABASE_URL: string;
+  /**
+   * Sentry DSN — optional. When unset/empty, Sentry initializes in no-op
+   * mode (no events sent). Set via `wrangler secret put SENTRY_DSN`.
+   */
+  SENTRY_DSN?: string;
 }
