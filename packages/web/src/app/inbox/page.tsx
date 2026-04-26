@@ -14,20 +14,31 @@ import {
   b64uDecode,
   b64uEncode,
   buildFragmentUrl,
+  composeAttestationBody,
+  composeWyrd,
   decryptReply,
   deriveOriginKey,
   fetchRepliesMessage,
   schnorrSign,
+  signAuthorshipAttestation,
   PERMANENT_EXPIRES_AT_MS,
 } from "@sendwyrd/core";
-import { hasSeed, isUnlocked, unlockSeed, getSeed } from "@/lib/seedClient";
 import {
+  hasSeed,
+  isUnlocked,
+  unlockSeed,
+  getSeed,
+  consumeNextIndex,
+} from "@/lib/seedClient";
+import {
+  addHistoryEntry,
   listHistory,
   markHistoryEntryGone,
   renameHistoryEntry,
   type HistoryEntry,
 } from "@/lib/wyrdHistory";
-import { burnWyrd } from "@/lib/api";
+import { burnWyrd, publishWyrd } from "@/lib/api";
+import { requestPersistence } from "@/lib/persistentStorage";
 import { Segmented } from "@/components/Segmented";
 import { Nav } from "@/components/Nav";
 
@@ -36,6 +47,16 @@ type Filter = "all" | "live" | "gone";
 interface BurnUiState {
   /** confirm: row showed prompt; burning: request in flight; error: surfaced. */
   stage: "confirm" | "burning" | "error";
+  error?: string;
+}
+
+interface AttestUiState {
+  /**
+   * confirm: row showed prompt; publishing: request in flight; success:
+   * attestation wyrd published, URL ready to copy; error: surfaced.
+   */
+  stage: "confirm" | "publishing" | "success" | "error";
+  url?: string;
   error?: string;
 }
 
@@ -62,6 +83,7 @@ export default function InboxPage() {
   const [renamingHandle, setRenamingHandle] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
   const [burnByHandle, setBurnByHandle] = useState<Record<string, BurnUiState>>({});
+  const [attestByHandle, setAttestByHandle] = useState<Record<string, AttestUiState>>({});
 
   function startRename(entry: HistoryEntry) {
     setRenamingHandle(entry.handle);
@@ -87,6 +109,93 @@ export default function InboxPage() {
       delete next[handle];
       return next;
     });
+  }
+
+  function startAttest(entry: HistoryEntry) {
+    setAttestByHandle((m) => ({ ...m, [entry.handle]: { stage: "confirm" } }));
+  }
+  function cancelAttest(handle: string) {
+    setAttestByHandle((m) => {
+      const next = { ...m };
+      delete next[handle];
+      return next;
+    });
+  }
+
+  async function confirmAttest(entry: HistoryEntry) {
+    const seedRec = getSeed();
+    if (!seedRec) {
+      setUnlocked(false);
+      setAttestByHandle((m) => ({
+        ...m,
+        [entry.handle]: { stage: "error", error: "Session expired — passphrase needed again." },
+      }));
+      return;
+    }
+    setAttestByHandle((m) => ({ ...m, [entry.handle]: { stage: "publishing" } }));
+    try {
+      const sig_b64u = signAuthorshipAttestation({
+        seed: seedRec.seed,
+        n: entry.n,
+        target_handle_b64u: entry.handle,
+      });
+      const body = composeAttestationBody({
+        target_handle: entry.handle,
+        sig_b64u,
+      });
+
+      let n: number;
+      try {
+        n = await consumeNextIndex();
+      } catch {
+        setUnlocked(false);
+        setAttestByHandle((m) => ({
+          ...m,
+          [entry.handle]: { stage: "error", error: "Session expired — passphrase needed again." },
+        }));
+        return;
+      }
+
+      const result = await composeWyrd({
+        plaintext: body,
+        seed: seedRec.seed,
+        n,
+        ttl_seconds: 0, // permanent — attestations exist to be durable evidence
+        replies_enabled: false,
+      });
+
+      const resp = await publishWyrd(result.publish_payload);
+      if ("error" in resp) {
+        setAttestByHandle((m) => ({
+          ...m,
+          [entry.handle]: { stage: "error", error: `Publish failed: ${resp.error}` },
+        }));
+        return;
+      }
+
+      addHistoryEntry({
+        handle: result.handle,
+        n,
+        k_origin_pub_b64u: b64uEncode(result.k_origin.k_origin_pub),
+        k_read_b64u: result.k_read_b64u,
+        published_at: resp.published_at,
+        expires_at: resp.expires_at,
+        replies_enabled: false,
+      });
+      void requestPersistence();
+      setHistory(listHistory());
+
+      const url = buildFragmentUrl(window.location.origin, result.handle, result.k_read_b64u);
+      setAttestByHandle((m) => ({
+        ...m,
+        [entry.handle]: { stage: "success", url },
+      }));
+    } catch (e: any) {
+      setAttestByHandle((m) => ({
+        ...m,
+        [entry.handle]: { stage: "error", error: e?.message ?? "Attestation failed." },
+      }));
+    }
   }
 
   async function confirmBurn(entry: HistoryEntry) {
@@ -327,6 +436,7 @@ export default function InboxPage() {
           const isGone = isExpired || !!entry.gone_at;
           const replyState = repliesByHandle[entry.handle];
           const burnUi = burnByHandle[entry.handle];
+          const attestUi = attestByHandle[entry.handle];
           // Recovered-from-mnemonic entries lack k_read_b64u (read key isn't
           // seed-derivable). Fall through to a non-link rendering in that case.
           const url = entry.k_read_b64u
@@ -465,6 +575,15 @@ export default function InboxPage() {
                     burn
                   </button>
                 )}
+                {!isGone && !attestUi && (
+                  <button
+                    onClick={() => startAttest(entry)}
+                    style={inlineBtn}
+                    aria-label={`Attest authorship of ${entry.nickname || entry.handle}`}
+                  >
+                    attest authorship
+                  </button>
+                )}
               </p>
               {burnUi && (
                 <div
@@ -514,6 +633,105 @@ export default function InboxPage() {
                       }}
                     >
                       {burnUi.error}
+                    </span>
+                  )}
+                </div>
+              )}
+              {attestUi && (
+                <div
+                  style={{
+                    marginTop: "var(--spacing-3)",
+                    padding: "var(--spacing-3)",
+                    border: "1px solid var(--color-hairline-strong)",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "var(--spacing-3)",
+                  }}
+                >
+                  {attestUi.stage !== "success" && (
+                    <p
+                      style={{
+                        margin: 0,
+                        fontFamily: "var(--font-mono)",
+                        fontSize: "var(--text-microcaption)",
+                        color: "var(--color-ink-muted)",
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      Publish a permanent wyrd that proves you authored this
+                      one. The attestation contains only the target handle and
+                      a signature — never the original body. Share the new URL
+                      alongside the original; a renderer fetching both shows a
+                      verification banner.
+                    </p>
+                  )}
+                  {attestUi.stage !== "success" && (
+                    <div style={{ display: "flex", gap: "var(--spacing-3)", flexWrap: "wrap" }}>
+                      <button
+                        onClick={() => void confirmAttest(entry)}
+                        disabled={attestUi.stage === "publishing"}
+                        style={inlineBtn}
+                      >
+                        {attestUi.stage === "publishing" ? "publishing…" : "publish attestation"}
+                      </button>
+                      <button
+                        onClick={() => cancelAttest(entry.handle)}
+                        disabled={attestUi.stage === "publishing"}
+                        style={inlineBtn}
+                      >
+                        cancel
+                      </button>
+                    </div>
+                  )}
+                  {attestUi.stage === "success" && attestUi.url && (
+                    <>
+                      <p
+                        style={{
+                          margin: 0,
+                          fontFamily: "var(--font-mono)",
+                          fontSize: "var(--text-microcaption)",
+                          color: "var(--color-ink-muted)",
+                          lineHeight: 1.5,
+                        }}
+                      >
+                        Attestation published. Share alongside the original:
+                      </p>
+                      <a
+                        href={attestUi.url}
+                        style={{
+                          fontFamily: "var(--font-mono)",
+                          fontSize: "var(--text-microcaption)",
+                          color: "var(--color-ink)",
+                          overflowWrap: "anywhere",
+                        }}
+                      >
+                        {attestUi.url}
+                      </a>
+                      <div style={{ display: "flex", gap: "var(--spacing-3)", flexWrap: "wrap" }}>
+                        <button
+                          onClick={() => void navigator.clipboard.writeText(attestUi.url!)}
+                          style={inlineBtn}
+                        >
+                          copy URL
+                        </button>
+                        <button
+                          onClick={() => cancelAttest(entry.handle)}
+                          style={inlineBtn}
+                        >
+                          done
+                        </button>
+                      </div>
+                    </>
+                  )}
+                  {attestUi.stage === "error" && attestUi.error && (
+                    <span
+                      style={{
+                        fontFamily: "var(--font-mono)",
+                        fontSize: "var(--text-microcaption)",
+                        color: "var(--color-danger)",
+                      }}
+                    >
+                      {attestUi.error}
                     </span>
                   )}
                 </div>

@@ -331,21 +331,41 @@ export default function AboutPage() {
             authorship can&apos;t be proven by reusing one signing key.
           </p>
           <p style={pStyle}>
-            If the question of authorship comes up after the fact, the
-            author can publish an attestation wyrd: a small structured
-            body whose Schnorr signature is produced by the original
-            wyrd&apos;s <Code>K_origin_priv</Code> (re-derived from the
-            seed at the original index). Anyone fetches the original
-            wyrd&apos;s <Code>K_origin_pub</Code> from the host and
-            verifies. The chain holds without storing any persistent
-            identity — the seed is the proof.
+            To prove authorship after the fact, open{" "}
+            <a href="/inbox" style={linkStyle}>/inbox</a>, find the wyrd,
+            and tap <strong>attest authorship</strong>. SendWyrd
+            re-derives that wyrd&apos;s <Code>K_origin_priv</Code> from
+            your seed at the original index, signs a canonical message
+            bound to the target handle, and publishes a new permanent
+            wyrd whose body is the three-line attestation:
+          </p>
+          <p
+            style={{
+              ...pStyle,
+              padding: "var(--spacing-3) var(--spacing-4)",
+              border: "1px solid var(--color-hairline)",
+              color: "var(--color-ink-muted)",
+              whiteSpace: "pre",
+              overflowX: "auto",
+            }}
+          >
+            {`sendwyrd-attestation/v1
+target=<object_handle>
+sig=<base64url-signature>`}
           </p>
           <p style={pStyle}>
-            This sits outside the main flow on purpose. Most wyrds never
-            need attestation; the protocol is forwarding-by-default, and
-            stable provenance is a heavy thing to add to a forwardable
-            artifact. The mechanism is here when it&apos;s the right
-            tool, not pushed into routine composition.
+            Share the attestation URL alongside the original. A renderer
+            opening the attestation fetches the original&apos;s{" "}
+            <Code>K_origin_pub</Code> from the host and verifies the
+            signature, surfacing a verification banner. No persistent
+            identity is stored on either side — the seed is the only
+            thing that has to survive.
+          </p>
+          <p style={pStyle}>
+            Most wyrds never need an attestation; forwarding-by-default
+            is the norm and stable provenance is a heavy thing to bind to
+            a forwardable artifact. The mechanism exists for the case
+            where it&apos;s the right tool, not for routine composition.
           </p>
         </Section>
 
@@ -380,10 +400,9 @@ export default function AboutPage() {
             whatever attestation layer the participants choose to bring.
           </p>
           <p style={pStyle}>
-            The deepest difference is the archive. Nostr accumulates an
-            indelible signed event log per identity (a feature for some uses;
-            an anti-feature for opinion-publishing-as-identity-building).
-            SendWyrd refuses the archive on purpose.
+            The deepest difference is the archive. Nostr accumulates a
+            signed event log per identity. SendWyrd refuses the archive
+            on purpose.
           </p>
         </Section>
 
