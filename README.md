@@ -76,7 +76,7 @@ SendWyrd makes the opposite call. No stable per-user key — per-wyrd random `K_
 
 The two solve different problems. Nostr optimizes for *censorship-resistant public broadcasting* — important. SendWyrd optimizes for *host-blind ephemeral handoff through trust networks* — a different problem in the same neighborhood. They compose: a wyrd body can embed an `npub` as plain text if you want attribution. SendWyrd doesn't model identity; it inherits whatever the body declares.
 
-The deepest difference is the archive. Nostr accumulates an indelible signed event log per identity (a feature for some uses; an anti-feature for opinion-publishing-as-identity-building). SendWyrd refuses the archive on purpose.
+The deepest difference is the archive. Nostr accumulates a signed event log per identity. SendWyrd refuses the archive on purpose.
 
 ---
 
