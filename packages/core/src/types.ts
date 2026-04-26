@@ -38,8 +38,10 @@ export interface WyrdRecord {
 
 export type GoneReason = "expired" | "burned" | "key_mismatch";
 
-/** Per spec §9 — POST /api/v1/wyrds */
+/** Per spec §9 — POST /api/v1/wyrds.
+ *  NOTE: handle is client-generated (supersedes spec §9.3 — see compose.ts header). */
 export interface PublishRequest {
+  handle: Base64Url;
   envelope: Base64Url;
   k_origin_pub: Base64Url;
   ttl_seconds: number;

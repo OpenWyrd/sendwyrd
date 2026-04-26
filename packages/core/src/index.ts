@@ -11,3 +11,11 @@ export * from "./url.js";
 export * from "./envelope.js";
 export * from "./hd.js";
 export * from "./sign.js";
+export * from "./seedStore.js";
+export {
+  composeWyrd,
+  countCodepoints,
+  type ComposeArgs,
+  type ComposeResult,
+  type PublishPayload,
+} from "./compose.js";
