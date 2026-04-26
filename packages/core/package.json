@@ -1,0 +1,30 @@
+{
+  "name": "@sendwyrd/core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SendWyrd shared core: crypto envelope, HD derivation, URL parsing, wire types. Consumed by web, api, and (post-v1) native shells.",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./crypto": "./src/envelope.ts",
+    "./hd": "./src/hd.ts",
+    "./url": "./src/url.ts",
+    "./types": "./src/types.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc",
+    "test": "echo 'no tests yet' && exit 0"
+  },
+  "dependencies": {
+    "@noble/curves": "^1.7.0",
+    "@noble/hashes": "^1.6.1",
+    "@scure/bip32": "^1.6.0",
+    "@scure/bip39": "^1.5.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+}

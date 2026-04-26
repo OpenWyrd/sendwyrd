@@ -40,3 +40,29 @@ env/
 
 # Cloudflare Wrangler local cache
 .wrangler/
+
+# Node / pnpm
+node_modules/
+.pnpm-store/
+
+# Next.js
+.next/
+out/
+
+# Turborepo
+.turbo/
+
+# Build outputs (TS / bundlers)
+*.tsbuildinfo
+
+# Environment / secrets (never commit)
+.dev.vars
+.env.production
+.env.development
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
