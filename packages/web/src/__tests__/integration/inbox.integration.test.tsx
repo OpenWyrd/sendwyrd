@@ -8,6 +8,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 
 const mockReplace = vi.fn();
 const mockPush = vi.fn();
@@ -157,5 +158,114 @@ describe("Inbox — filter pills", () => {
     });
     expect(screen.getByLabelText(/live/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^gone$/i)).toBeInTheDocument();
+  });
+});
+
+describe("Inbox — authorship attestation", () => {
+  it("renders the 'attest authorship' action on live entries", async () => {
+    addHistoryEntry(
+      makeEntry({
+        handle: "live000000000aaa",
+        published_at: Date.now() - 1000,
+        expires_at: Date.now() + 86_400_000,
+      }),
+    );
+    render(<InboxPage />);
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: /attest authorship/i }),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("does NOT render the action on burned/expired entries", async () => {
+    addHistoryEntry(
+      makeEntry({
+        handle: "burn00000000burn",
+        gone_at: Date.now() - 1000,
+        gone_reason: "burned",
+      }),
+    );
+    render(<InboxPage />);
+    await waitFor(() => {
+      expect(screen.getByText("burn00000000burn")).toBeInTheDocument();
+    });
+    expect(
+      screen.queryByRole("button", { name: /attest authorship/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("publishes an attestation and shows the URL on success", async () => {
+    const user = userEvent.setup();
+    // Override fetch with a publish-aware mock that captures the POST.
+    const captured: Array<{ url: string; init?: RequestInit }> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        captured.push({ url, init });
+        // Publish endpoint: return a success-shaped envelope.
+        if (
+          typeof url === "string" &&
+          url.includes("/api/v1/wyrds") &&
+          init?.method === "POST"
+        ) {
+          return new Response(
+            JSON.stringify({
+              handle: "attestPublished0",
+              published_at: 1_700_000_000_000,
+              expires_at: 253_402_300_799_000,
+            }),
+            {
+              status: 200,
+              headers: { "content-type": "application/json" },
+            },
+          );
+        }
+        // Default: empty replies set (matches the global stub).
+        return new Response(JSON.stringify({ handle: "x", replies: [] }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      }),
+    );
+
+    addHistoryEntry(
+      makeEntry({
+        handle: "AAAAAAAAAAAAAAAA",
+        n: 0,
+        published_at: Date.now() - 1000,
+        expires_at: Date.now() + 86_400_000,
+      }),
+    );
+    render(<InboxPage />);
+
+    const attestBtn = await screen.findByRole("button", {
+      name: /attest authorship/i,
+    });
+    await user.click(attestBtn);
+
+    const publishBtn = await screen.findByRole("button", {
+      name: /publish attestation/i,
+    });
+    await user.click(publishBtn);
+
+    // Success state surfaces a "copy URL" affordance and the published URL.
+    await waitFor(
+      () => {
+        expect(
+          screen.getByRole("button", { name: /copy url/i }),
+        ).toBeInTheDocument();
+      },
+      { timeout: 5_000 },
+    );
+
+    // Confirm the publish endpoint was actually hit.
+    const publishCalls = captured.filter(
+      (c) =>
+        typeof c.url === "string" &&
+        c.url.includes("/api/v1/wyrds") &&
+        c.init?.method === "POST",
+    );
+    expect(publishCalls.length).toBeGreaterThanOrEqual(1);
   });
 });
