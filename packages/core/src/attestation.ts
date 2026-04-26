@@ -39,11 +39,14 @@ import { HANDLE_CHARS } from "./types.js";
 const ATTESTATION_HEADER = "sendwyrd-attestation/v1";
 const SIG_CHARS = 86; // base64url(64-byte schnorr sig) without padding
 
-const ATTESTATION_BODY_REGEX = new RegExp(
-  `^${ATTESTATION_HEADER}\\n` +
-    `target=([A-Za-z0-9_-]{${HANDLE_CHARS}})\\n` +
-    `sig=([A-Za-z0-9_-]{${SIG_CHARS}})$`,
+// Per-line regexes are kept simple and free of \n escapes — Next.js's SWC
+// compilation has historically mangled multi-line RegExp source built via
+// string concatenation with \\n. Splitting the body on newlines first and
+// then matching each line is both simpler and more robust.
+const TARGET_LINE_REGEX = new RegExp(
+  `^target=([A-Za-z0-9_-]{${HANDLE_CHARS}})$`,
 );
+const SIG_LINE_REGEX = new RegExp(`^sig=([A-Za-z0-9_-]{${SIG_CHARS}})$`);
 
 export interface AttestationParts {
   target_handle: string;
@@ -66,12 +69,18 @@ export function composeAttestationBody(parts: AttestationParts): string {
 /**
  * Parse a body as an authorship attestation. Returns the parts on a
  * shape match, or null otherwise. The match is strict — the body must
- * be the entire attestation with no leading/trailing content.
+ * be exactly three lines (header / target / sig) with no leading or
+ * trailing content.
  */
 export function parseAttestationBody(body: string): AttestationParts | null {
-  const m = body.match(ATTESTATION_BODY_REGEX);
-  if (!m) return null;
-  return { target_handle: m[1]!, sig_b64u: m[2]! };
+  const lines = body.split("\n");
+  if (lines.length !== 3) return null;
+  if (lines[0] !== ATTESTATION_HEADER) return null;
+  const targetMatch = lines[1]!.match(TARGET_LINE_REGEX);
+  if (!targetMatch) return null;
+  const sigMatch = lines[2]!.match(SIG_LINE_REGEX);
+  if (!sigMatch) return null;
+  return { target_handle: targetMatch[1]!, sig_b64u: sigMatch[1]! };
 }
 
 /**
@@ -80,7 +89,7 @@ export function parseAttestationBody(body: string): AttestationParts | null {
  * parts. Equivalent to `parseAttestationBody(body) !== null`.
  */
 export function isAttestationBody(body: string): boolean {
-  return ATTESTATION_BODY_REGEX.test(body);
+  return parseAttestationBody(body) !== null;
 }
 
 /**
