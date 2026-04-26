@@ -307,17 +307,6 @@ export default function AboutPage() {
               envelopes only; no plaintext anywhere on the host.
             </li>
             <li>
-              <strong>Source</strong>:{" "}
-              <a
-                href="https://github.com/openwyrd/sendwyrd"
-                style={linkStyle}
-                rel="noreferrer"
-              >
-                github.com/openwyrd/sendwyrd
-              </a>
-              .
-            </li>
-            <li>
               <strong>Wire spec</strong>:{" "}
               <a
                 href="https://github.com/openwyrd/sendwyrd/blob/main/what/docs/spec/spec_mop_v1.md"
@@ -328,6 +317,17 @@ export default function AboutPage() {
               </a>{" "}
               — every architectural decision is recorded as an ADR in the same
               repo.
+            </li>
+            <li>
+              <strong>By</strong>:{" "}
+              <a
+                href="https://x.com/deltaclimbs"
+                style={linkStyle}
+                rel="noreferrer"
+              >
+                @deltaclimbs
+              </a>
+              .
             </li>
           </ul>
         </Section>
