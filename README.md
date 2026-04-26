@@ -27,10 +27,10 @@ Protocol codename: **MOP** (Message Object Protocol). Consumer brand: **SendWyrd
 A wyrd is a 300-codepoint, end-to-end-encrypted text block that becomes a shareable URL — a portable, composable, forward-worthy conversational artifact that travels through existing messaging rails (iMessage, Signal, WhatsApp, Slack, email) rather than through a native feed or discovery layer.
 
 ```
-https://sendwyrd.com/w/{handle}#{K_read}
+https://sendwyrd.com/w/{object_handle}#{K_read}
 ```
 
-The handle is in the path; the read key is in the URL fragment. Browsers don't transmit fragments to servers — so the host stays body-blind. Anyone holding the URL can read the wyrd; whoever you share it with can forward it to whoever they think is relevant.
+The object handle (a per-wyrd random identifier — not a user handle) is in the path; the read key is in the URL fragment. Browsers don't transmit fragments to servers — so the host stays body-blind. Anyone holding the URL can read the wyrd; whoever you share it with can forward it to whoever they think is relevant.
 
 - **No accounts.** Capability over identity.
 - **No feed.** No timeline, no algorithm, no public broadcast.

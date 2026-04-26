@@ -178,17 +178,17 @@ export default function BuildPage() {
               <Code>POST /api/v1/wyrds</Code> — publish a wyrd
             </li>
             <li>
-              <Code>GET /api/v1/wyrds/{"{handle}"}</Code> — fetch the encrypted
+              <Code>GET /api/v1/wyrds/{"{object_handle}"}</Code> — fetch the encrypted
               envelope (decrypt client-side with <Code>K_read</Code>)
             </li>
             <li>
-              <Code>DELETE /api/v1/wyrds/{"{handle}"}</Code> — burn (Schnorr-signed)
+              <Code>DELETE /api/v1/wyrds/{"{object_handle}"}</Code> — burn (Schnorr-signed)
             </li>
             <li>
-              <Code>POST /api/v1/wyrds/{"{handle}"}/replies</Code> — submit a reply (ECIES-encrypted to <Code>K_origin_pub</Code>)
+              <Code>POST /api/v1/wyrds/{"{object_handle}"}/replies</Code> — submit a reply (ECIES-encrypted to <Code>K_origin_pub</Code>)
             </li>
             <li>
-              <Code>GET /api/v1/wyrds/{"{handle}"}/replies</Code> — fetch replies (Schnorr-signed query)
+              <Code>GET /api/v1/wyrds/{"{object_handle}"}/replies</Code> — fetch replies (Schnorr-signed query)
             </li>
             <li>
               <Code>GET /api/v1/authors/{"{K_origin_pub_b64u}"}/handles</Code> — presence-check for HD recovery sweep
