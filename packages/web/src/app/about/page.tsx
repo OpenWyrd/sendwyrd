@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Nav } from "@/components/Nav";
 
 export const metadata: Metadata = {
   title: "About · SendWyrd",
@@ -86,10 +87,11 @@ export default function AboutPage() {
         flexDirection: "column",
         alignItems: "center",
         padding:
-          "var(--spacing-20) var(--spacing-6) var(--spacing-24)",
+          "var(--spacing-12) var(--spacing-6) var(--spacing-24)",
         gap: "var(--spacing-12)",
       }}
     >
+      <Nav />
       <header
         style={{
           width: "100%",

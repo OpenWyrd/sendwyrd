@@ -12,6 +12,7 @@ import { WyrdSigil } from "@/components/WyrdSigil";
 const ITEMS: Array<{ href: string; label: string }> = [
   { href: "/compose", label: "compose" },
   { href: "/inbox", label: "inbox" },
+  { href: "/about", label: "why" },
   { href: "/settings", label: "settings" },
 ];
 
