@@ -48,7 +48,7 @@ export function OpenGlyph({ size = 18, className }: IndicatorProps) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 16 16"
+      viewBox="0 0 18 16"
       width={size}
       height={size}
       role="img"
@@ -56,16 +56,9 @@ export function OpenGlyph({ size = 18, className }: IndicatorProps) {
       className={className}
       style={{ display: "block" }}
     >
-      {/* Open shackle — leans left, detached from body. */}
-      <path
-        d="M 5 8 V 5.5 Q 5 2.5 8 2.5 Q 11 2.5 11 5.5"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.25"
-        strokeLinecap="round"
-      />
+      {/* Body */}
       <rect
-        x="3.5"
+        x="2"
         y="8"
         width="9"
         height="6"
@@ -73,6 +66,16 @@ export function OpenGlyph({ size = 18, className }: IndicatorProps) {
         fill="none"
         stroke="currentColor"
         strokeWidth="1.25"
+      />
+      {/* Shackle: anchored at left foot inside body, swung up-and-right
+         so the right foot floats clearly above + right of the body —
+         distinctly "open" not just "detached". */}
+      <path
+        d="M 3.5 8 V 5 Q 3.5 1 8 1 Q 13.5 1 15 5 L 15 6.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.25"
+        strokeLinecap="round"
       />
     </svg>
   );
