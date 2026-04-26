@@ -1,0 +1,67 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Serialize prod deploys. Don't cancel an in-flight deploy when a new push
+# arrives — let it finish to avoid mid-deploy state weirdness on Cloudflare.
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy api + web to Cloudflare
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      # Build core (its dist/ is consumed by api + web at deploy time via the
+      # workspace exports — turbo handles the dependency graph).
+      - name: Build (turbo)
+        run: pnpm build
+
+      - name: Deploy api worker
+        # Note: invoke wrangler via `exec` because `pnpm deploy` is a reserved
+        # built-in pnpm command (file copy), not the npm script.
+        run: pnpm --filter @sendwyrd/api exec wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      # Web requires the OpenNext-Cloudflare build step (separate from the
+      # plain `next build` that pnpm build runs via turbo). Mirror what the
+      # user runs locally: build → deploy.
+      - name: Build web for Cloudflare
+        run: pnpm --filter @sendwyrd/web exec opennextjs-cloudflare build
+
+      - name: Deploy web worker
+        run: pnpm --filter @sendwyrd/web exec opennextjs-cloudflare deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      # Safety net. If smoke fails, the workflow exits non-zero and the run
+      # is marked broken in GitHub.
+      - name: Smoke test (e2e against production)
+        run: pnpm --filter @sendwyrd/core exec tsx scripts/e2e-smoke.ts
