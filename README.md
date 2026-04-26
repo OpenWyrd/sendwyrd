@@ -35,7 +35,7 @@ The object handle (a per-wyrd random identifier — not a user handle) is in the
 - **No accounts.** Capability over identity.
 - **No feed.** No timeline, no algorithm, no public broadcast.
 - **No archive.** Default 90-day TTL; you can pick shorter or none.
-- **Brittleness as feature.** The architecture refuses durable identity and durable archive on purpose.
+- **Mosaic Quality as feature.** The architecture refuses durable identity and durable archive on purpose. Each wyrd is a tile in a mosaic — independently meaningful; lost tiles leave gaps but don't break what remains.
 
 The protocol carries text only. Identity, signing, trust, and provenance are either inlined by the user into the body (a name, a Nostr signature) or inherited from the share channel ("a friend sent me this"). Trust rides the rail.
 
@@ -60,7 +60,7 @@ Possession of the URL is access. Forwarding is the default and the point. There 
 - **Distribution**: `K_read` lives in the URL fragment. Browsers do not transmit fragments to servers (RFC 3986). The host is body-blind on every request.
 - **AAD binding**: every envelope binds version, handle, expiry, and reply-mode into the AES-GCM authenticated data. Tampering any field fails decryption.
 
-## Brittleness as contract
+## Mosaic Quality as contract
 
 `K_read` is per-wyrd random, not derived from your seed. If you lose the URL, the body becomes unreadable — even if you still hold your mnemonic.
 
