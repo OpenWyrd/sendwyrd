@@ -300,6 +300,34 @@ export default function AboutPage() {
           </p>
         </Section>
 
+        <Subhead>Authorship attestations</Subhead>
+
+        <Section>
+          <p style={pStyle}>
+            Each wyrd has its own random <Code>K_origin</Code> keypair, so
+            two wyrds by the same person sign with different keys. That is
+            what keeps the host blind to authorship — and it also means
+            authorship can&apos;t be proven by reusing one signing key.
+          </p>
+          <p style={pStyle}>
+            If the question of authorship comes up after the fact, the
+            author can publish an attestation wyrd: a small structured
+            body whose Schnorr signature is produced by the original
+            wyrd&apos;s <Code>K_origin_priv</Code> (re-derived from the
+            seed at the original index). Anyone fetches the original
+            wyrd&apos;s <Code>K_origin_pub</Code> from the host and
+            verifies. The chain holds without storing any persistent
+            identity — the seed is the proof.
+          </p>
+          <p style={pStyle}>
+            This sits outside the main flow on purpose. Most wyrds never
+            need attestation; the protocol is forwarding-by-default, and
+            stable provenance is a heavy thing to add to a forwardable
+            artifact. The mechanism is here when it&apos;s the right
+            tool, not pushed into routine composition.
+          </p>
+        </Section>
+
         <Subhead>Why not Nostr</Subhead>
 
         <Section>

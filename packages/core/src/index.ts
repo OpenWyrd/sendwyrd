@@ -14,6 +14,7 @@ export * from "./sign.js";
 export * from "./seedStore.js";
 export * from "./body.js";
 export * from "./reply.js";
+export * from "./attestation.js";
 export {
   composeWyrd,
   countCodepoints,
