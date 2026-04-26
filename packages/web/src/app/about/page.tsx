@@ -93,14 +93,12 @@ export default function AboutPage() {
     >
       <Nav />
       <header
+        className="about-prose"
         style={{
           width: "100%",
           maxWidth: "var(--max-content)",
           fontFamily: "var(--font-mono)",
           color: "var(--color-ink)",
-          textAlign: "justify",
-          hyphens: "auto",
-          WebkitHyphens: "auto",
         }}
       >
         <h1
@@ -128,6 +126,7 @@ export default function AboutPage() {
       </header>
 
       <ol
+        className="about-prose"
         style={{
           width: "100%",
           maxWidth: "var(--max-content)",
@@ -138,9 +137,6 @@ export default function AboutPage() {
           color: "var(--color-ink)",
           lineHeight: 1.7,
           counterReset: "about-counter",
-          textAlign: "justify",
-          hyphens: "auto",
-          WebkitHyphens: "auto",
         }}
       >
         {points.map((p, i) => (
@@ -173,6 +169,7 @@ export default function AboutPage() {
       </ol>
 
       <article
+        className="about-prose"
         style={{
           width: "100%",
           maxWidth: "var(--max-content)",
@@ -182,9 +179,6 @@ export default function AboutPage() {
           display: "flex",
           flexDirection: "column",
           gap: "var(--spacing-12)",
-          textAlign: "justify",
-          hyphens: "auto",
-          WebkitHyphens: "auto",
         }}
       >
         <Subhead>How it works</Subhead>
@@ -199,6 +193,7 @@ export default function AboutPage() {
           </p>
           <p style={pStyle}>The URL takes one canonical form:</p>
           <p
+            className="about-url"
             style={{
               ...pStyle,
               padding: "var(--spacing-3) var(--spacing-4)",
@@ -340,6 +335,7 @@ export default function AboutPage() {
             wyrd whose body is the three-line attestation:
           </p>
           <p
+            className="about-code"
             style={{
               ...pStyle,
               padding: "var(--spacing-3) var(--spacing-4)",

@@ -187,6 +187,41 @@ body {
   }
 }
 
+/* /about page — stretch text. Body is monospace, so justification works
+   primarily through inter-word spacing (every glyph is the same width).
+   Hyphenation rarely engages in mono; we still set hyphens: auto so any
+   browser/font that can hyphenate will, and we cap word-spacing growth on
+   narrow viewports so a stray long token does not produce comical gaps.
+   Code, URL boxes, and the attestation example must NOT inherit justify;
+   single-line headers get text-align: start explicitly. */
+.about-prose {
+  text-align: justify;
+  text-align-last: start;
+  text-justify: inter-word;
+  hyphens: auto;
+  -webkit-hyphens: auto;
+  -ms-hyphens: auto;
+  hyphenate-limit-chars: 6 3 3;
+  overflow-wrap: break-word;
+}
+.about-prose h1,
+.about-prose h2,
+.about-prose code,
+.about-prose pre,
+.about-prose .about-code,
+.about-prose .about-url {
+  text-align: start;
+  hyphens: manual;
+  -webkit-hyphens: manual;
+}
+@media (max-width: 640px) {
+  /* Narrow columns are where mono justify gets ugliest. Cap inter-word
+     stretch so a sparse line does not visually disintegrate. */
+  .about-prose {
+    word-spacing: -0.02em;
+  }
+}
+
 /* Reduced motion — kill all animations per visual_direction_v1.md §12. */
 @media (prefers-reduced-motion: reduce) {
   *,
