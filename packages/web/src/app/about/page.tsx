@@ -319,6 +319,13 @@ export default function AboutPage() {
               repo.
             </li>
             <li>
+              <strong>API / build on this</strong>:{" "}
+              <a href="/build" style={linkStyle}>
+                /build
+              </a>
+              .
+            </li>
+            <li>
               <strong>By</strong>:{" "}
               <a
                 href="https://x.com/deltaclimbs"
