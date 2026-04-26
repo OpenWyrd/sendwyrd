@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Nav } from "@/components/Nav";
+import { PrivacyIndicator } from "@/components/PrivacyIndicator";
 
 export const metadata: Metadata = {
   title: "About · SendWyrd",
@@ -67,6 +68,43 @@ function Code({ children }: { children: React.ReactNode }) {
   );
 }
 
+function SpecimenWyrd({ body, count }: { body: string; count: number }) {
+  return (
+    <article
+      style={{
+        fontFamily: "var(--font-mono)",
+        padding: "var(--spacing-3) var(--spacing-4)",
+        border: "1px solid var(--color-hairline)",
+      }}
+    >
+      <PrivacyIndicator />
+      <p
+        style={{
+          margin: 0,
+          paddingTop: "var(--spacing-3)",
+          paddingBottom: "var(--spacing-2)",
+          color: "var(--color-ink)",
+          whiteSpace: "pre-wrap",
+          lineHeight: 1.6,
+          fontStyle: "italic",
+        }}
+      >
+        {body}
+      </p>
+      <p
+        style={{
+          margin: 0,
+          color: "var(--color-ink-muted)",
+          fontSize: "var(--text-caption)",
+          textAlign: "right",
+        }}
+      >
+        {count} / 300
+      </p>
+    </article>
+  );
+}
+
 export default function AboutPage() {
   return (
     <main
@@ -123,6 +161,45 @@ export default function AboutPage() {
           lineHeight: 1.7,
         }}
       >
+        <CollapsibleSection title="Example Wyrds" defaultOpen>
+          <p style={pStyle}>
+            A wyrd is a tweet-length introduction for whatever the sender
+            wants to pass forward — a question, an artifact, a signal, a
+            connection. The same shape carries many kinds of weight.
+          </p>
+          <SpecimenWyrd
+            body={
+              "12-page paper I've been chewing on — counter-positioning in capital allocation when consensus runs the other way. Honest critique welcome. https://research.example.com/cp.pdf"
+            }
+            count={177}
+          />
+          <SpecimenWyrd
+            body={
+              "Two sources flagging a serious supply disruption by Q3. Nothing public yet. Pass quietly to anyone who'd want time to think before the cycle catches up."
+            }
+            count={154}
+          />
+          <SpecimenWyrd
+            body={
+              "Looking for a staff systems engineer who's shipped at scale. Two-person team, post-revenue, intentionally quiet. Forward if a name comes to mind."
+            }
+            count={150}
+          />
+          <SpecimenWyrd
+            body={
+              "In Tokyo Apr 30 – May 3. Pass to anyone here worth knowing — happy to be pointed in interesting directions."
+            }
+            count={108}
+          />
+          <p style={pStyle}>
+            None of these need a paragraph of explanation when shared.
+            The wyrd is the introduction. As that pattern normalizes, a
+            wyrd URL appearing in an iMessage or a DM becomes recognizable
+            on sight as a high-signal object — passed by someone who
+            thought it was worth your time.
+          </p>
+        </CollapsibleSection>
+
         <CollapsibleSection title="How it works">
           <p style={pStyle}>
             A wyrd is a 300-codepoint, end-to-end-encrypted text block that
