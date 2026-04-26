@@ -14,6 +14,7 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+!packages/web/src/app/build/
 .eggs/
 *.egg
 .venv/
