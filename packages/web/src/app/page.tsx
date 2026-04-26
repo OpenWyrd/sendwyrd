@@ -1,12 +1,17 @@
 /**
- * Landing page.
+ * Landing page per visual_direction_v1.md §10.1.
  *
- * Layout per visual_direction_v1.md §10.1. Real copy lives in Phase F;
- * this is a placeholder that respects the structure (wordmark, sigil,
- * specimen, prose, single CTA).
+ * Layout: wordmark → breathing wyrd sigil → specimen wyrd (with privacy
+ * indicator + mono body + caption) → one paragraph of prose explaining the
+ * primitive (no use-case lead, per ADR-015) → single CTA.
+ *
+ * No nav bar, no footer, no testimonials, no pricing, no feature comparison.
+ * One column, breathes, ends.
  */
 
 import Link from "next/link";
+import { WyrdSigil } from "@/components/WyrdSigil";
+import { PrivacyIndicator } from "@/components/PrivacyIndicator";
 
 export default function LandingPage() {
   return (
@@ -16,11 +21,11 @@ export default function LandingPage() {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        justifyContent: "center",
-        padding: "var(--spacing-24) var(--spacing-6)",
-        gap: "var(--spacing-12)",
+        padding: "var(--spacing-20) var(--spacing-6) var(--spacing-24)",
+        gap: "var(--spacing-16)",
       }}
     >
+      {/* Wordmark */}
       <h1
         style={{
           fontFamily: "var(--font-display)",
@@ -28,54 +33,81 @@ export default function LandingPage() {
           fontWeight: 600,
           letterSpacing: "-0.02em",
           margin: 0,
+          color: "var(--color-ink)",
         }}
       >
         SendWyrd
       </h1>
 
-      {/* TODO Phase F — replace with the wyrd sigil (visual_direction_v1.md §7) */}
-      <div
-        aria-hidden
-        style={{
-          width: 96,
-          height: 96,
-          border: "1px solid var(--color-hairline)",
-          color: "var(--color-ink-subtle)",
-        }}
+      {/* Breathing sigil — landing only */}
+      <WyrdSigil
+        size={96}
+        breathing
+        ariaLabel="SendWyrd sigil"
+        className=""
       />
 
-      {/* Specimen placeholder — Phase F populates with a real-feeling demo wyrd. */}
+      {/* Specimen — a real-feeling rendered wyrd, demonstrating the form.
+          Per ADR-015 (use-case agnostic), the body reads naturally for any
+          of the four candidate use cases. */}
       <article
         style={{
           width: "100%",
           maxWidth: "var(--max-content)",
-          paddingTop: "var(--spacing-6)",
-          paddingBottom: "var(--spacing-6)",
-          borderTop: "1px solid var(--color-hairline)",
-          borderBottom: "1px solid var(--color-hairline)",
           fontFamily: "var(--font-mono)",
-          color: "var(--color-ink)",
         }}
       >
-        <p style={{ margin: 0 }}>
-          {/* Specimen body placeholder. */}
-          A wyrd is a short, encrypted message that lives at a URL and
-          disappears when its time is up. Send it through the channels you
-          already use.
-        </p>
+        <PrivacyIndicator state="sealed" />
+
         <p
           style={{
             margin: 0,
-            marginTop: "var(--spacing-3)",
+            paddingTop: "var(--spacing-6)",
+            paddingBottom: "var(--spacing-3)",
+            color: "var(--color-ink)",
+            whiteSpace: "pre-wrap",
+            lineHeight: 1.6,
+          }}
+        >
+          {
+            "Looking for someone who's negotiated a SAFE conversion in a post-bridge round at YC. Specifically the cap-table mechanics when there are two outstanding notes. Pass this along if it lands — happy to compare notes."
+          }
+        </p>
+
+        <p
+          style={{
+            margin: 0,
             color: "var(--color-ink-muted)",
             fontSize: "var(--text-caption)",
             textAlign: "right",
           }}
         >
-          287 / 300
+          213 / 300
         </p>
       </article>
 
+      {/* Prose — what is this. Per ADR-015, no use-case lead. */}
+      <section
+        style={{
+          width: "100%",
+          maxWidth: "var(--max-content)",
+          fontFamily: "var(--font-mono)",
+          color: "var(--color-ink-muted)",
+          lineHeight: 1.6,
+        }}
+      >
+        <p style={{ margin: 0, marginBottom: "var(--spacing-4)" }}>
+          A wyrd is a short, encrypted message that lives at a URL and dissolves
+          when its time is up. You compose. You share the URL through the
+          channels you already use. The protocol stays out of the way.
+        </p>
+        <p style={{ margin: 0 }}>
+          No accounts. No feed. No archive. Capability over identity. The thing
+          you send takes its course.
+        </p>
+      </section>
+
+      {/* CTA */}
       <Link
         href="/compose"
         style={{
@@ -85,6 +117,7 @@ export default function LandingPage() {
           textDecoration: "none",
           fontFamily: "var(--font-mono)",
           fontSize: "var(--text-body)",
+          letterSpacing: "0.02em",
         }}
       >
         Compose a wyrd
