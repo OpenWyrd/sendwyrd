@@ -16,6 +16,67 @@ const points: string[] = [
   "The entire internet has been contorted by dopamine and philosophies of constraints built up over millennia, which weakens the individual — and yet the most powerful force will be found in the most capable human network. Rather than receding from the web, can AI revealing what is inhuman allow us to discover the power of human networks collaborating and accumulating resources to their advantage?",
 ];
 
+const pStyle: React.CSSProperties = { margin: 0 };
+const ulStyle: React.CSSProperties = {
+  margin: 0,
+  paddingLeft: "var(--spacing-5)",
+  display: "flex",
+  flexDirection: "column",
+  gap: "var(--spacing-3)",
+};
+const linkStyle: React.CSSProperties = {
+  color: "inherit",
+  textDecoration: "underline",
+  textUnderlineOffset: 2,
+};
+
+function Subhead({ children }: { children: React.ReactNode }) {
+  return (
+    <h2
+      style={{
+        fontFamily: "var(--font-display)",
+        fontSize: "var(--text-h3)",
+        fontWeight: 600,
+        letterSpacing: "-0.01em",
+        margin: 0,
+        marginBottom: "calc(-1 * var(--spacing-8))",
+        paddingBottom: "var(--spacing-3)",
+        borderBottom: "1px solid var(--color-hairline)",
+      }}
+    >
+      {children}
+    </h2>
+  );
+}
+
+function Section({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "var(--spacing-4)",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function Code({ children }: { children: React.ReactNode }) {
+  return (
+    <code
+      style={{
+        fontFamily: "var(--font-mono)",
+        fontSize: "0.95em",
+        color: "var(--color-ink-muted)",
+      }}
+    >
+      {children}
+    </code>
+  );
+}
+
 export default function AboutPage() {
   return (
     <main
@@ -102,6 +163,175 @@ export default function AboutPage() {
           </li>
         ))}
       </ol>
+
+      <article
+        style={{
+          width: "100%",
+          maxWidth: "var(--max-content)",
+          fontFamily: "var(--font-mono)",
+          color: "var(--color-ink)",
+          lineHeight: 1.7,
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--spacing-12)",
+        }}
+      >
+        <Subhead>Architecture</Subhead>
+
+        <Section>
+          <p style={pStyle}>
+            The architecture refuses identity. The protocol carries text and
+            capability keys; nothing else. No accounts, no usernames, no
+            logins, no PKI.
+          </p>
+          <p style={pStyle}>
+            Each wyrd has its own random <Code>K_origin</Code> keypair, derived
+            at <Code>m/300&apos;/n&apos;</Code> for an incrementing{" "}
+            <Code>n</Code>. Two wyrds composed by the same person produce
+            different <Code>K_origin_pub</Code> values. The host cannot tell
+            whether two wyrds came from the same author. Counting distinct{" "}
+            <Code>K_origin_pub</Code> values equals counting wyrds, not people.
+          </p>
+          <p style={pStyle}>
+            Possession of the URL is access. Forwarding is the default and the
+            point. There is no friend graph, no follower list, no broadcast
+            surface, no &ldquo;who&rdquo; primitive of any kind.
+          </p>
+        </Section>
+
+        <Subhead>Cryptography</Subhead>
+
+        <Section>
+          <ul style={ulStyle}>
+            <li>
+              <strong>Body envelope</strong>: AES-256-GCM via the Web Crypto
+              API. <Code>K_read</Code> is 32 bytes of CSPRNG, generated
+              per-wyrd at compose time.
+            </li>
+            <li>
+              <strong>Author keys</strong>: secp256k1; signatures via BIP-340
+              Schnorr (publish, burn). One keypair per wyrd.
+            </li>
+            <li>
+              <strong>Replies</strong>: ECIES — anyone with the URL encrypts a
+              reply to <Code>K_origin_pub</Code>; only the author can decrypt.
+              One-shot.
+            </li>
+            <li>
+              <strong>Seed</strong>: BIP-39 mnemonic (12 or 24 words). HD path:{" "}
+              <Code>m/300&apos;/n&apos;</Code> (BIP-43 flat purpose, hardened
+              indices).
+            </li>
+            <li>
+              <strong>Distribution</strong>: <Code>K_read</Code> lives in the
+              URL fragment. Browsers do not transmit fragments to servers
+              (RFC 3986). The host is body-blind on every request.
+            </li>
+            <li>
+              <strong>AAD binding</strong>: every envelope binds version,
+              handle, expiry, and reply-mode into the AES-GCM authenticated
+              data. Tampering any field fails decryption.
+            </li>
+          </ul>
+        </Section>
+
+        <Subhead>Brittleness</Subhead>
+
+        <Section>
+          <p style={pStyle}>
+            <Code>K_read</Code> is per-wyrd random, not derived from your seed.
+            If you lose the URL, the body becomes unreadable — even if you
+            still hold your mnemonic.
+          </p>
+          <p style={pStyle}>
+            Mnemonic recovery rebuilds your wyrd-handle list and your author
+            keys (you can decrypt replies, burn old wyrds, prove authorship)
+            but cannot reconstruct <Code>K_read</Code> for sealed wyrds whose
+            URLs you&apos;ve lost. The protocol refuses durable archive on
+            purpose.
+          </p>
+          <p style={pStyle}>
+            Default TTL is 90 days. Local storage may evict. Mnemonic backup is
+            the only recovery path the protocol offers — and even that
+            recovers identity, not content. Nietzschean: content fits a moment,
+            then is gone.
+          </p>
+        </Section>
+
+        <Subhead>Why not Nostr</Subhead>
+
+        <Section>
+          <p style={pStyle}>
+            Nostr is identity-first. Each user has a stable{" "}
+            <Code>npub</Code>/<Code>nsec</Code> keypair. Events are signed by
+            that stable key, posted to relays, aggregated by clients into
+            feeds. Most events are public broadcasts.
+          </p>
+          <p style={pStyle}>
+            SendWyrd makes the opposite call. No stable per-user key — per-wyrd
+            random <Code>K_origin</Code>. No public broadcast — the URL is the
+            only path. The host stays blind. The protocol refuses durable
+            archive.
+          </p>
+          <p style={pStyle}>
+            The two solve different problems. Nostr optimizes for{" "}
+            <em>censorship-resistant public broadcasting</em> — important.
+            SendWyrd optimizes for{" "}
+            <em>host-blind ephemeral handoff through trust networks</em> — a
+            different problem in the same neighborhood. They compose: a wyrd
+            body can embed an <Code>npub</Code> as plain text if you want
+            attribution. SendWyrd doesn&apos;t model identity; it inherits
+            whatever the body declares.
+          </p>
+          <p style={pStyle}>
+            The deepest difference is the archive. Nostr accumulates an
+            indelible signed event log per identity (a feature for some uses;
+            an anti-feature for opinion-publishing-as-identity-building).
+            SendWyrd refuses the archive on purpose.
+          </p>
+        </Section>
+
+        <Subhead>Stack</Subhead>
+
+        <Section>
+          <ul style={ulStyle}>
+            <li>
+              <strong>Web</strong>: Next.js on Cloudflare Workers (OpenNext);
+              installable PWA.
+            </li>
+            <li>
+              <strong>API</strong>: Hono on Cloudflare Workers.
+            </li>
+            <li>
+              <strong>Database</strong>: Neon Postgres. Stores encrypted
+              envelopes only; no plaintext anywhere on the host.
+            </li>
+            <li>
+              <strong>Source</strong>:{" "}
+              <a
+                href="https://github.com/openwyrd/sendwyrd"
+                style={linkStyle}
+                rel="noreferrer"
+              >
+                github.com/openwyrd/sendwyrd
+              </a>
+              .
+            </li>
+            <li>
+              <strong>Wire spec</strong>:{" "}
+              <a
+                href="https://github.com/openwyrd/sendwyrd/blob/main/what/docs/spec/spec_mop_v1.md"
+                style={linkStyle}
+                rel="noreferrer"
+              >
+                spec_mop_v1.md
+              </a>{" "}
+              — every architectural decision is recorded as an ADR in the same
+              repo.
+            </li>
+          </ul>
+        </Section>
+      </article>
 
       <Link
         href="/compose"
