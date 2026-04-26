@@ -71,13 +71,23 @@ Architecture phase is closed. All ADR-level decisions are banked (003–020). Re
 | D | Visual/UX direction (`what/docs/spec/visual_direction_v1.md`) — color tokens, type, spacing, motion budget, glyph specs, IA, screen-by-screen flows | **Done (2026-04-25)** |
 | E | Repo scaffolding + deploy: monorepo (core/api/web), Drizzle schema migrated, web + API live at https://sendwyrd.com via Cloudflare Workers (api at sendwyrd.com/api/*, web via @opennextjs/cloudflare at sendwyrd.com/*) | **Done (2026-04-25)** |
 | F | Landing copy + demo wyrd content + wyrd sigil SVG + privacy indicator glyphs (Sealed knot / Open parallel) — live | **Done (2026-04-25)** |
-| G | Implementation: replace 501 stubs with real handlers; client-side compose/encrypt/sign/publish; renderer decryption; HD inbox; replies | Pending |
+| G | Implementation: real worker handlers (publish/fetch/burn), client compose pipeline, fragment-form view, public-form SSR view, onboarding, settings (theme + forget seed). Verified live e2e roundtrip on sendwyrd.com. | **Done MVP (2026-04-25)** — replies, inbox HD-sweep, mnemonic backup deferred to G2 |
 
 When B–F are complete, v1 implementation becomes a single execution pass — every decision is pre-locked, no interrupts during coding.
 
 ## Active Blockers
 
-None. Phases B–F complete; product is live as a stubbed shell at https://sendwyrd.com. Next session picks up Phase G (implementation): replace 501 stubs with real handlers per `spec_mop_v1.md`. Token stash for programmatic CF / Neon ops is at `~/.config/cloudflare/sendwyrd_api_token` (mode 600, owner-only, never committed).
+None. **Product is live and shipping** at https://sendwyrd.com. End-to-end publish / share / view roundtrip works. Token stash for CF / Neon ops at `~/.config/cloudflare/sendwyrd_api_token` (mode 600, never committed).
+
+Next-up **Phase G2** (deferred-from-MVP):
+
+- Reply submit/fetch (POST/GET `/api/v1/wyrds/:handle/replies`) — wire spec §14, currently 501-stubbed
+- Inbox aggregation via HD sweep (`/inbox`, presence-check endpoint)
+- Mnemonic backup UI in settings (re-show 12 words after passphrase reauth)
+- Burn affordance from `/w/:handle` view (signed delete UI)
+- Sentry redaction-aware integration (per `feedback_decision_delegation` plan)
+
+The next session picks these up.
 
 ## Recent Decisions Timeline
 
@@ -114,6 +124,7 @@ None. Phases B–F complete; product is live as a stubbed shell at https://sendw
 | 2026-04-25 | Provisioned: Neon project `holy-poetry-85164505`, R2 bucket `sendwyrd-blobs`, Cloudflare Workers `sendwyrd-api` and `sendwyrd-web`, custom AAAA record on apex | Open-questions resume 2 |
 | 2026-04-25 | Phase E deploy verified live: `GET https://sendwyrd.com/api/v1/health` → 200 with `mop-protocol-version: 1`; `GET https://sendwyrd.com/` → 200 Next.js HTML | Open-questions resume 2 |
 | 2026-04-25 | Phase F (landing copy, wyrd sigil, privacy indicator glyphs) shipped live at https://sendwyrd.com/ | Open-questions resume 2 |
+| 2026-04-25 | Phase G MVP shipped: real publish/fetch/burn handlers, client compose pipeline, fragment-form decrypt-on-view, public-form SSR with OG metadata, onboarding (3-step), compose UI, settings (theme + forget). E2E roundtrip verified on production. | Open-questions resume 2 |
 
 ## Partial-Resume Detection
 
