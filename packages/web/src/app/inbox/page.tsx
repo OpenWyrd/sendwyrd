@@ -21,6 +21,7 @@ import {
 } from "@sendwyrd/core";
 import { hasSeed, isUnlocked, unlockSeed, getSeed } from "@/lib/seedClient";
 import { listHistory, type HistoryEntry } from "@/lib/wyrdHistory";
+import { Segmented } from "@/components/Segmented";
 
 type Filter = "all" | "live" | "gone";
 
@@ -171,26 +172,19 @@ export default function InboxPage() {
           {history.length} wyrd{history.length === 1 ? "" : "s"} on this device
         </p>
 
-        <div style={{ display: "flex", gap: "var(--spacing-4)", marginBottom: "var(--spacing-6)" }}>
-          {(["all", "live", "gone"] as const).map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              style={{
-                background: "transparent",
-                border: "none",
-                color: filter === f ? "var(--color-ink)" : "var(--color-ink-muted)",
-                fontFamily: "var(--font-mono)",
-                fontSize: "var(--text-caption)",
-                cursor: "pointer",
-                padding: 0,
-                textDecoration: filter === f ? "underline" : "none",
-                textUnderlineOffset: "4px",
-              }}
-            >
-              {f}
-            </button>
-          ))}
+        <div style={{ marginBottom: "var(--spacing-6)" }}>
+          <Segmented
+            name="filter"
+            value={filter}
+            onChange={(v) => setFilter(v as Filter)}
+            size="sm"
+            ariaLabel="Filter"
+            options={[
+              { value: "all", label: "all" },
+              { value: "live", label: "live" },
+              { value: "gone", label: "gone" },
+            ]}
+          />
         </div>
 
         {filtered.length === 0 && (
