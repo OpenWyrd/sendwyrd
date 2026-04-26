@@ -7,6 +7,13 @@ const config: NextConfig = {
   reactStrictMode: true,
   // No analytics, no image optimization domain allowlist (renderer fetches OG client-side per ADR-011).
   poweredByHeader: false,
+  // Emit `.map` files in production so Sentry can resolve minified stack
+  // traces. Next 15's flag is boolean only (no `'hidden'` mode); the CI
+  // workflow uploads maps to Sentry then DELETES them from the build
+  // output before `opennextjs-cloudflare build` copies assets to the
+  // worker bundle. Source maps must never reach clients (giving the
+  // world an unminified codebase). See `.github/workflows/deploy.yml`.
+  productionBrowserSourceMaps: true,
   // Privacy hardening at the framework level — see renderer_contract_v1.md §2.2.
   async headers() {
     return [

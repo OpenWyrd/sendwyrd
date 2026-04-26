@@ -37,30 +37,102 @@ jobs:
         run: pnpm typecheck
 
       # Build core (its dist/ is consumed by api + web at deploy time via the
-      # workspace exports — turbo handles the dependency graph).
+      # workspace exports — turbo handles the dependency graph). NEXT_PUBLIC_*
+      # env vars must be set HERE — Next inlines them into the client bundle
+      # at build time. The web `next build` runs again inside the OpenNext
+      # build below (it can't reuse this output because OpenNext requires
+      # standalone build mode); turbo caches the core output, which is what
+      # actually matters for this step.
       - name: Build (turbo)
         run: pnpm build
+        env:
+          NEXT_PUBLIC_RELEASE: ${{ github.sha }}
 
       - name: Deploy api worker
         # Note: invoke wrangler via `exec` because `pnpm deploy` is a reserved
-        # built-in pnpm command (file copy), not the npm script.
-        run: pnpm --filter @sendwyrd/api exec wrangler deploy
+        # built-in pnpm command (file copy), not the npm script. Pass the
+        # release id as a non-secret var so the @sentry/cloudflare wrapper
+        # can tag server-side events with the same SHA the web bundle and
+        # uploaded source maps are tagged with.
+        run: pnpm --filter @sendwyrd/api exec wrangler deploy --var SENTRY_RELEASE:${{ github.sha }}
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       # Web requires the OpenNext-Cloudflare build step (separate from the
-      # plain `next build` that pnpm build runs via turbo). Mirror what the
-      # user runs locally: build → deploy.
+      # plain `next build` that pnpm build runs via turbo). OpenNext drives
+      # its own `next build` in standalone mode and copies `.next/static`
+      # into `.open-next/assets/_next/static` — that copied tree is what
+      # actually ships to clients via the worker's static-asset binding.
+      # Source maps + Sentry upload + strip happen AFTER this step, against
+      # the `.open-next/assets` tree (the ground truth for what ships).
       #
-      # NEXT_PUBLIC_SENTRY_DSN is inlined into the client bundle by Next at
-      # build time (NEXT_PUBLIC_* convention). Public-by-design — DSNs are
-      # public per Sentry contract; storing as a secret only keeps it out
-      # of git history. See packages/web/src/components/SentryInit.tsx.
+      # Two env vars inline into the client bundle at this step:
+      #   NEXT_PUBLIC_SENTRY_DSN — Sentry DSN for client-side error reporting
+      #     (see packages/web/src/components/SentryInit.tsx). Public-by-design
+      #     per Sentry contract; storing as a secret only keeps it out of git.
+      #   NEXT_PUBLIC_RELEASE  — git SHA, for source-map ↔ release matching.
+      # Both are inlined by Next at build time per NEXT_PUBLIC_* convention.
       - name: Build web for Cloudflare
         run: pnpm --filter @sendwyrd/web exec opennextjs-cloudflare build
         env:
           NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
+          NEXT_PUBLIC_RELEASE: ${{ github.sha }}
+
+      # Inject debug IDs into the shipped web bundles + upload source maps
+      # to Sentry. `productionBrowserSourceMaps: true` in next.config.ts
+      # makes Next emit the .map files; OpenNext copies them into
+      # `.open-next/assets/_next/static`. We inject + upload there so the
+      # debug IDs in shipped bundles match the maps Sentry will resolve
+      # against.
+      - name: Upload web source maps to Sentry
+        run: |
+          npx --package=@sentry/cli sentry-cli sourcemaps inject packages/web/.open-next/assets/_next/static
+          npx --package=@sentry/cli sentry-cli sourcemaps upload \
+            --org "$SENTRY_ORG" \
+            --project "$SENTRY_PROJECT_WEB" \
+            --release "$GITHUB_SHA" \
+            packages/web/.open-next/assets/_next/static
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT_WEB: ${{ secrets.SENTRY_PROJECT_WEB }}
+
+      # NON-NEGOTIABLE. Source maps shipped to clients = giving the world
+      # an unminified codebase. Sentry already has them (uploaded above).
+      # Strip the .map files AND the `//# sourceMappingURL=...` references
+      # from .js / .css files BEFORE the worker is deployed.
+      #
+      # Operates on `.open-next/assets/_next/static` — that's the ground
+      # truth for what the worker serves. We deliberately do NOT touch
+      # `.next/static`; if it leaks into a deploy via some other path,
+      # that's a separate bug — but the worker only ships from
+      # `.open-next/assets`, per `wrangler.jsonc` `assets.directory`.
+      - name: Strip source maps from web build output
+        run: |
+          set -eo pipefail
+          ASSETS=packages/web/.open-next/assets/_next/static
+          map_count=$(find "$ASSETS" -name '*.map' | wc -l)
+          echo "Stripping ${map_count} .map files from ${ASSETS}"
+          find "$ASSETS" -name '*.map' -delete
+          # Drop the trailing `//# sourceMappingURL=...` line from every
+          # .js / .css file so browsers don't 404-fetch the now-deleted
+          # maps and devtools don't display "source map not found"
+          # warnings on the console.
+          find "$ASSETS" \( -name '*.js' -o -name '*.css' \) -print0 \
+            | xargs -0 sed -i -E '/^\/\/[#@] sourceMappingURL=/d; /^\/\*[#@] sourceMappingURL=.*\*\/$/d'
+          # Sanity check — fail the deploy if any .map slipped through.
+          remaining=$(find "$ASSETS" -name '*.map' | wc -l)
+          if [ "$remaining" -ne 0 ]; then
+            echo "ERROR: ${remaining} .map files still present in ${ASSETS} after strip" >&2
+            exit 1
+          fi
+          # And no stray sourceMappingURL refs.
+          ref_count=$(grep -rl "sourceMappingURL" "$ASSETS" 2>/dev/null | wc -l)
+          if [ "$ref_count" -ne 0 ]; then
+            echo "ERROR: ${ref_count} files still reference sourceMappingURL in ${ASSETS}" >&2
+            exit 1
+          fi
 
       - name: Deploy web worker
         run: pnpm --filter @sendwyrd/web exec opennextjs-cloudflare deploy
