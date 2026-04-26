@@ -190,3 +190,30 @@ export function getMnemonic(): string | null {
   const seed = getSeed();
   return seed?.mnemonic ?? null;
 }
+
+/** Get the raw seed bytes as base64url for non-standard backup. */
+export function getSeedBackupString(): string | null {
+  const seed = getSeed();
+  if (!seed) return null;
+  return b64uEncode(seed.seed);
+}
+
+/** Replace the current seed with a fresh one (new mnemonic). Resets counter to 0. */
+export async function regenerateSeed(args: {
+  newSeed: Uint8Array;
+  newMnemonic: string;
+  passphraseIfProtected?: string;
+}): Promise<void> {
+  const mode = getSeedMode();
+  if (mode === "protected") {
+    if (!args.passphraseIfProtected) throw new Error("passphrase_required");
+    await storeProtectedSeed({
+      seed: args.newSeed,
+      counter: 0,
+      mnemonic: args.newMnemonic,
+      passphrase: args.passphraseIfProtected,
+    });
+  } else {
+    storeOpenSeed({ seed: args.newSeed, counter: 0, mnemonic: args.newMnemonic });
+  }
+}
