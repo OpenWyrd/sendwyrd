@@ -62,12 +62,15 @@ function Segment({
     return <span>{seg.value}</span>;
   }
   if (seg.type === "sendwyrd") {
-    return <SendwyrdEmbed url={seg.url} resolved={transitives[seg.url]} />;
+    return <SendwyrdEmbed url={seg.href} resolved={transitives[seg.href]} />;
   }
-  if (seg.type === "image") return <ImageEmbed url={seg.url} hostname={seg.hostname} />;
-  if (seg.type === "video") return <VideoEmbed url={seg.url} hostname={seg.hostname} />;
-  if (seg.type === "audio") return <AudioEmbed url={seg.url} hostname={seg.hostname} />;
-  return <LinkEmbed url={seg.url} hostname={seg.hostname} />;
+  // Auto-embed media uses href (always has a scheme). LinkEmbed renders
+  // the OG card via the unfurl proxy; it also uses href to fetch and as
+  // the navigation target.
+  if (seg.type === "image") return <ImageEmbed url={seg.href} hostname={seg.hostname} />;
+  if (seg.type === "video") return <VideoEmbed url={seg.href} hostname={seg.hostname} />;
+  if (seg.type === "audio") return <AudioEmbed url={seg.href} hostname={seg.hostname} />;
+  return <LinkEmbed url={seg.href} hostname={seg.hostname} />;
 }
 
 function EmbedFrame({ children, hostname }: { children: React.ReactNode; hostname: string }) {
