@@ -7,6 +7,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { WyrdSigil } from "@/components/WyrdSigil";
 
 const ITEMS: Array<{ href: string; label: string }> = [
   { href: "/compose", label: "compose" },
@@ -35,6 +36,9 @@ export function Nav() {
       <Link
         href="/compose"
         style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "var(--spacing-2)",
           fontFamily: "var(--font-display)",
           fontSize: "var(--text-h3)",
           fontWeight: 600,
@@ -43,6 +47,9 @@ export function Nav() {
           letterSpacing: "-0.01em",
         }}
       >
+        <span aria-hidden="true" style={{ display: "inline-flex" }}>
+          <WyrdSigil size={24} ariaLabel="" />
+        </span>
         SendWyrd
       </Link>
       <ul
