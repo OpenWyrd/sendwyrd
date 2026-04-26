@@ -23,8 +23,13 @@
  * and we do not bring it back at the client layer either.
  */
 
-const SHELL_CACHE = "sendwyrd-shell-v1";
-const RUNTIME_CACHE = "sendwyrd-runtime-v1";
+// Bump these when changing cache semantics so old caches get evicted on
+// activate. v1 served the landing page stale-while-revalidate, which trapped
+// returning visitors on HTML referencing chunk hashes that no longer existed
+// after a deploy → "Application error" on hydration. v2 fetches the landing
+// HTML network-first and only falls back to the precached shell offline.
+const SHELL_CACHE = "sendwyrd-shell-v2";
+const RUNTIME_CACHE = "sendwyrd-runtime-v2";
 
 // Minimal precache list — landing only. Next.js chunks have hashed names so
 // we can't enumerate them here; they'll be picked up by stale-while-revalidate
@@ -117,9 +122,12 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Landing page — try cache, fall through to network.
+  // Landing page — network-first, refresh the shell cache on success, fall
+  // back to the precached shell only when offline. Never serve stale HTML
+  // from cache while online: HTML embeds chunk hashes that change every
+  // deploy, and serving stale HTML breaks hydration on returning visitors.
   if (req.mode === "navigate" && url.pathname === "/") {
-    event.respondWith(staleWhileRevalidate(req, SHELL_CACHE));
+    event.respondWith(networkFirstUpdateCache(req, SHELL_CACHE));
     return;
   }
 
@@ -138,6 +146,21 @@ async function networkFirstNoStore(req) {
       status: 503,
       headers: { "Content-Type": "text/plain" },
     });
+  }
+}
+
+async function networkFirstUpdateCache(req, cacheName) {
+  try {
+    const res = await fetch(req);
+    if (res && res.status === 200 && res.type === "basic") {
+      const cache = await caches.open(cacheName);
+      cache.put(req, res.clone());
+    }
+    return res;
+  } catch {
+    const cached = await caches.match(req);
+    if (cached) return cached;
+    return offlineFallback();
   }
 }
 
