@@ -100,31 +100,67 @@ export function ReplyForm({ handle, k_origin_pub_b64u }: Props) {
             letterSpacing: "-0.01em",
           }}
         >
-          Reply
+          DM Author
         </h2>
-        <p
-          style={{
-            margin: 0,
-            fontFamily: "var(--font-mono)",
-            fontSize: "var(--text-caption)",
-            color: "var(--color-ink-muted)",
-            lineHeight: 1.5,
-          }}
-        >
-          Only the author can read this. Useful when you got this wyrd forwarded
-          through other people — your reply reaches the author directly, without
-          going back through the chain.
-        </p>
-        <p
-          style={{
-            margin: 0,
-            fontFamily: "var(--font-mono)",
-            fontSize: "var(--text-microcaption)",
-            color: "var(--color-ink-subtle)",
-          }}
-        >
-          anonymous · encrypted on your device · ECIES (secp256k1) · AES-256-GCM
-        </p>
+        <details className="reply-disclosure">
+          <summary
+            style={{
+              fontFamily: "var(--font-mono)",
+              fontSize: "var(--text-microcaption)",
+              color: "var(--color-ink-subtle)",
+              cursor: "pointer",
+              listStyle: "none",
+            }}
+          >
+            What is a DM?
+          </summary>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "var(--spacing-2)",
+              marginTop: "var(--spacing-3)",
+            }}
+          >
+            <p
+              style={{
+                margin: 0,
+                fontFamily: "var(--font-mono)",
+                fontSize: "var(--text-caption)",
+                color: "var(--color-ink-muted)",
+                lineHeight: 1.5,
+              }}
+            >
+              Only the author can read this. Useful when you got this wyrd
+              forwarded through other people — your message reaches the author
+              directly, without going back through the chain.
+            </p>
+            <p
+              style={{
+                margin: 0,
+                fontFamily: "var(--font-mono)",
+                fontSize: "var(--text-caption)",
+                color: "var(--color-ink-muted)",
+                lineHeight: 1.5,
+              }}
+            >
+              One-shot. The author can read your DM but can&apos;t reply to it
+              through SendWyrd. If you want a back-and-forth, put a way to
+              reach you inside the message itself.
+            </p>
+            <p
+              style={{
+                margin: 0,
+                fontFamily: "var(--font-mono)",
+                fontSize: "var(--text-microcaption)",
+                color: "var(--color-ink-subtle)",
+              }}
+            >
+              anonymous · encrypted on your device · ECIES (secp256k1) ·
+              AES-256-GCM
+            </p>
+          </div>
+        </details>
       </header>
 
       <form onSubmit={handleSubmit}>
@@ -214,7 +250,7 @@ export function ReplyForm({ handle, k_origin_pub_b64u }: Props) {
                   "background 120ms cubic-bezier(0.4, 0, 0.2, 1), color 120ms cubic-bezier(0.4, 0, 0.2, 1)",
               }}
             >
-              {sending ? "Sending…" : "Send reply"}
+              {sending ? "Sending…" : "Send"}
             </button>
           </div>
         </div>

@@ -28,6 +28,7 @@ import { burnWyrd } from "@/lib/api";
 import { PrivacyIndicator } from "@/components/PrivacyIndicator";
 import { WyrdBody } from "@/components/WyrdBody";
 import { ReplyForm } from "@/components/ReplyForm";
+import { InstallAffordance } from "@/components/InstallAffordance";
 import { Nav } from "@/components/Nav";
 import { resolveTransitives, type ResolutionMap } from "@/lib/resolveBody";
 import { getSeed, isUnlocked, unlockSeed } from "@/lib/seedClient";
@@ -213,13 +214,14 @@ export default function FragmentClient({
               </>
             )}
           </p>
+          <ShareAffordance />
+          <InstallAffordance variant="wyrd" />
           {state.data.replies_enabled && (
             <ReplyForm
               handle={state.data.handle}
               k_origin_pub_b64u={state.data.k_origin_pub}
             />
           )}
-          <ShareAffordance />
           {historyEntry &&
             !historyEntry.gone_at &&
             historyEntry.k_origin_pub_b64u === state.data.k_origin_pub && (
@@ -538,23 +540,22 @@ const goneStyle: React.CSSProperties = {
   color: "var(--color-ink-muted)",
 };
 const shareRowStyle: React.CSSProperties = {
-  marginTop: "var(--spacing-8)",
+  marginTop: "var(--spacing-6)",
   paddingTop: "var(--spacing-4)",
   borderTop: "1px solid var(--color-hairline)",
   display: "flex",
   justifyContent: "flex-end",
-  gap: "var(--spacing-4)",
+  gap: "var(--spacing-3)",
 };
 const shareTriggerStyle: React.CSSProperties = {
+  padding: "var(--spacing-2) var(--spacing-4)",
+  border: "1px solid var(--color-hairline-strong)",
   background: "transparent",
-  border: "none",
-  padding: 0,
-  color: "var(--color-ink-subtle)",
+  color: "var(--color-ink-muted)",
   fontFamily: "var(--font-mono)",
-  fontSize: "var(--text-microcaption)",
+  fontSize: "var(--text-caption)",
   cursor: "pointer",
-  textDecoration: "underline",
-  textUnderlineOffset: 2,
+  letterSpacing: "0.02em",
 };
 const burnRowStyle: React.CSSProperties = {
   marginTop: "var(--spacing-8)",

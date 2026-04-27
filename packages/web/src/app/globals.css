@@ -247,6 +247,16 @@ body {
   gap: var(--spacing-4);
 }
 
+/* DM-author disclosure — small inline-style summary. The browser default
+   marker can't be hidden with inline `list-style:none` on WebKit, so it
+   needs its own pseudo override here. */
+.reply-disclosure summary::-webkit-details-marker {
+  display: none;
+}
+.reply-disclosure summary::marker {
+  content: "";
+}
+
 /* Reduced motion — kill all animations per visual_direction_v1.md §12. */
 @media (prefers-reduced-motion: reduce) {
   *,

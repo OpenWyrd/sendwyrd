@@ -454,7 +454,12 @@ export default function InboxPage() {
             fontSize: "var(--text-caption)",
           }}
         >
-          {history.length} wyrd{history.length === 1 ? "" : "s"} on this device
+          {history.length} wyrd{history.length === 1 ? "" : "s"} on this device{" "}
+          <span style={{ color: "var(--color-ink-subtle)" }}>
+            (local to this browser — clearing site data wipes the list; relay
+            wyrds still age out on their own TTL, and your seed is what
+            recovers handles from elsewhere)
+          </span>
         </p>
 
         <div style={{ marginBottom: "var(--spacing-6)" }}>

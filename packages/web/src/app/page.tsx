@@ -148,7 +148,7 @@ export default function LandingPage() {
         Compose a wyrd
       </Link>
 
-      <InstallAffordance />
+      <InstallAffordance variant="homepage" />
       <p
         style={{
           margin: 0,
