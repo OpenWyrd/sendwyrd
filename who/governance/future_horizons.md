@@ -5,7 +5,7 @@ created: 2026-04-25
 updated: 2026-04-26
 last_edited_by: agent_operator
 status: active
-tags: [governance, future, aspirations, sendwyrd]
+tags: [governance, future, aspirations, sendwyrd, post-agora]
 ---
 
 # Future Horizons
@@ -113,3 +113,47 @@ The strategic point: these are **client capabilities atop the existing protocol 
 When SendWyrd has paying-customer-shaped demand (people asking to pay for *something*), AND at least one of these three constraints is the specific friction. Probably audio comes first if it comes at all — voice is a natural extension of "intent and action" framing. Attachments and the 3000-cap are second-order, dependent on the audio-first shape working.
 
 The other trigger: a sibling tool in `~/lattice/` (e.g. an audio-journaling project) needs to compose wyrds programmatically. At that point the audio path becomes a usable building block before it's a paid feature.
+
+---
+
+## H3 — Agent-routing surfaces atop the post-agora topology
+
+### Idea
+
+VISION.md banks the **post-agora topology**: SendWyrd refuses to host an agora; per-user agents do the routing work that algorithmic platforms used to. The MCP server (`packages/mcp/`, shipped 2026-04-26) is the first concrete realization of that topology — it makes every Claude Code / Claude Desktop / Cursor user's agent a SendWyrd routing node by default.
+
+H3 is the family of follow-on surfaces that exercise the topology more deeply, in directions that *do not* require protocol changes and *do not* violate any of the five principles:
+
+- **Native MCP server in the Anthropic / Smithery / open-MCP registries.** Once `npm publish @sendwyrd/mcp` lands, ship the listing entry. Each registry adds a discovery surface for agent operators without adding a discovery surface for *wyrds*.
+- **Agent-callable routing rules.** A small DSL or config schema for "if I receive a wyrd matching X, forward to contacts with tag Y" — runs entirely on the agent side, never on the protocol. Rule-state lives in the user's agent context (memory, config files, PKM-tagged contacts). The MCP `forward` verb that would emerge from this is still a one-shot (per call), not a subscription. Routing rules read the user's intent declaratively but compose into discrete `compose+share` calls per match.
+- **PKM / CRM bridging via agent loops.** When H1 (PKM/CRM integration) matures, an agent operator's loop becomes: receive wyrd URL → look up sender in personal CRM → cross-reference with PKM tags on intent ("looking-for-X") → surface to the human as "this matches your active intro-search for Y." This is H1 implemented at the routing layer rather than the platform layer — the natural pairing.
+- **Inter-agent capsule exchange via shared substrates.** If two agents share access to a substrate (a Slack DM, a shared note, a federated inbox), wyrd URLs propagate through that substrate the same way they propagate through human-to-human channels. Each agent independently decides whether to surface a received wyrd to its human. No new protocol — the wyrd is the capsule, the substrate is whatever the humans already share.
+- **Local-first agent SDKs.** A thin TypeScript / Python SDK that wraps the same wire spec the MCP exposes, for agent contexts that aren't MCP-shaped (long-running daemons, queue workers, background routing services). Always verb-shaped, never subscription-shaped.
+
+### Why it's interesting
+
+H3 is the **strategic argument for shipping a primitive that refuses every feature**. The feature refusal is what creates the routing-substrate-shaped vacancy that personal agents step into. A protocol that supplied its own discovery would compete with the agent layer; SendWyrd cooperates with it by abstaining.
+
+For the user (the operator), this also dovetails with the broader `~/lattice/` workspace ambition — sibling projects (`personal_crm/`, `power_broker/`, etc.) become routing-rule sources for the user's own SendWyrd-aware agent. The agent reads CRM tags + PKM context, transcribes the user's wyrd-publish intent, and forwards capsules through trust networks — all without SendWyrd ever modeling the trust network on its own wire.
+
+### What it would architecturally require
+
+All H3 surfaces ride on the existing wire spec and the existing MCP verb set. None requires protocol changes:
+
+- **MCP registry listings**: metadata commits to the relevant registries (Anthropic's MCP catalog, Smithery, etc.) once `@sendwyrd/mcp` is on npm.
+- **Routing rules DSL**: a small config schema (YAML or JSON) the agent's MCP context loads at session start; matches incoming wyrd metadata against rule patterns; emits `compose` + `share-via-channel-X` calls per match. Pure agent-side logic.
+- **PKM/CRM bridging**: H1 integrations (extensions, webhooks, RSS) feed a stream the agent then routes. The agent is the glue; the integrations are the I/O.
+- **Inter-agent capsule exchange**: zero protocol work — wyrd URLs already propagate venue-agnostically.
+- **Local-first SDKs**: thin wrappers around the same publish / fetch / burn / replies / presence-check endpoints the MCP already calls. Could ship as `@sendwyrd/sdk` (separate package).
+
+### Why it's not v1
+
+- v1 ships the substrate (protocol + MCP). H3 surfaces are *consumers* of the substrate. They depend on observed routing-pattern friction, not anticipated friction.
+- Each surface is its own product (registry listing, rules DSL, agent SDK). Spreading focus before observed routing demand is the failure mode.
+- Routing rules in particular invite scope-creep pressure to bring routing-state to the protocol. Defer until enough agent operators have improvised local routing rules in pure-MCP that the patterns *crystallize* — at which point the DSL standardizes the patterns rather than inventing them.
+
+### Trigger for revisit
+
+When the MCP has at least 50 active installations AND we observe at least one user manually scripting routing logic on top of it (a shell loop, a cron job, an agent prompt that does compose-and-forward) — that's the signal to invest in H3 surfaces. Until then, the bare verb set is sufficient and the topology proves itself by usage, not by feature surface.
+
+A second trigger: a sibling project in `~/lattice/` (e.g. `personal_crm/`, `power_broker/`) reaches a point where it would benefit from a routing-aware SendWyrd integration. At that moment one of the H3 surfaces becomes concrete and has a clear home.

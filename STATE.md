@@ -1,22 +1,22 @@
 ---
 type: state
 created: 2026-04-24
-updated: 2026-04-25
+updated: 2026-04-26
 status: active
 last_edited_by: agent_operator
-last_session: session_operator_20260425_mop_open_questions_resume_2
-tags: [state, governance, mop]
+last_session: session_operator_20260426_mcp_server
+tags: [state, governance, mop, sendwyrd]
 ---
 
 # Operational State — SendWyrd
 
 ## Current Phase
 
-**v1 is LIVE.** Deployed at `https://sendwyrd.com`. End-to-end publish / share / view / reply works on production. Architecture phase closed (ADRs 003–020). Build phases B–G complete with many fast-follow UX iterations from real-use feedback.
+**v1 LIVE at `https://sendwyrd.com`.** End-to-end publish / share / view / reply / burn working in production. Architecture phase closed (ADRs 003–021). Tier-1 and Tier-2 shipped; the post-Tier-2 UX polish, performance, and protocol-primitive cycle has shipped on top. CI auto-deploys on push to `main`. Sentry observed; custom `/ops/{secret}` dashboard live.
 
-Repo: `https://github.com/openwyrd/sendwyrd` (`main` clean, all pushed).
+Repo: `https://github.com/openwyrd/sendwyrd` (private, stays private through launch).
 
-Now in **post-MVP Tier-1 punch list** — three operational gaps to close before pre-launch hardening (Tier-2: Sentry, OG cards, CI auto-deploy).
+Now in **post-agora topology phase**: shipping the agent-routing surfaces (MCP first), hardening operations (rate-limiting, security headers), and queuing soft-launch.
 
 ## What's Banked
 
@@ -28,148 +28,181 @@ Now in **post-MVP Tier-1 punch list** — three operational gaps to close before
 4. **Brittleness as feature** (architecture refuses durable identity and durable archive)
 5. **Contact, not conversation** (interaction-minimalism; reply primitive is forensically necessary, not feature-welcome)
 
+Plus the **post-agora topology** section (banked 2026-04-26) — the consequence of the five: routing becomes personal infrastructure, not platform infrastructure. Per-user agents do the connective work the algorithmic agora used to. The MCP server is the first concrete realization.
+
 ### Architectural decisions (`what/decisions/`)
 
 | ADR | Title |
 |-----|-------|
 | 003 | Capability-based privacy posture: encryption mandatory, host-blind, no accounts |
-| 004 | Two-key model (K_read symmetric / K_origin asymmetric) with two-form addressing (private fragment / public path) |
+| 004 | Two-key model + two-form addressing — **superseded by ADR-021** |
 | 005 | Bitcoin cryptography stack: secp256k1 + BIP-32 hardened HD + BIP-39 |
 | 006 | Object lifecycle: per-object K_origin, immutable post-publish, default 90-day burn |
 | 007 | Body schema: text-with-embedded-URLs, transitive capability references |
 | 008 | Replies: one-shot encrypted blobs, off by default, opt-in |
 | 009 | Inbox aggregation: client-side via HD derivation, host stays per-object blind |
 | 010 | Notifications: zero protocol primitive; entirely a client/app concern |
-| 011 | Body is plain text; renderer aggressively auto-embeds non-MOP URLs (UX over recipient-side privacy) |
+| 011 | Body is plain text; renderer aggressively auto-embeds non-MOP URLs |
 | 012 | Object body size cap: 300 Unicode codepoints (Spartan reference) |
 | 013 | v1 abuse posture: edge + per-IP rate-limits + size caps; no PoW |
-| 014 | Single canonical renderer; first-party clients only across web + iOS + Android in v1 |
+| 014 | Single canonical renderer; first-party clients only across web + iOS + Android |
 | 015 | v1 is unopinionated about which use case leads (closes S1) |
-| 016 | Brand is SendWyrd; canonical domain is sendwyrd.com; protocol codename remains MOP; unit noun is wyrd (closes S2) |
-| 017 | HD path convention: BIP-43 flat purpose `300'`, hardened indices `m/300'/n'` (closes B6) |
-| 018 | TTL expiry response: 410 Gone with structured tombstone metadata, 30-day retention (closes B8) |
-| 019 | Renderer displays a symmetric privacy-posture indicator (Sealed / Open) on every wyrd view (closes B9) |
-| 020 | v1 stack: Next.js + Hono on Cloudflare + Neon + R2; Web Crypto + noble + scure; AES-GCM + Schnorr (closes S3) |
+| 016 | Brand SendWyrd / domain sendwyrd.com / protocol codename MOP / unit noun *wyrd* |
+| 017 | HD path: BIP-43 flat purpose `300'`, hardened `m/300'/n'` |
+| 018 | TTL expiry: 410 Gone with structured tombstone metadata, 30-day retention |
+| 019 | Renderer displays a symmetric privacy-posture indicator (Sealed / Open) — **amended by ADR-021** to monomorphic |
+| 020 | v1 stack: Next.js + Hono on Cloudflare + Neon + R2; Web Crypto + noble + scure |
+| 021 | Single canonical fragment URL form: collapses two-form addressing; OG previews refused on social platforms by design |
 
 ### Use cases identified (`who/governance/VISION.md`)
 
-1. Cross-post canonical URL on social media
-2. Intro / ask routing ("X looking for someone who can help with Y")
-3. Whisper-network dissemination (whitepapers, off-algo)
+1. Cross-post canonical URL (recipients see bare URL, must visit — no algorithmic preview surface, per ADR-021)
+2. Intro / ask routing
+3. Whisper-network dissemination
 4. Tweet-replacement / canonical authored thoughts
 
-### Inspiration archive (`what/context/inspiration/`)
+### Future horizons (`who/governance/future_horizons.md`)
 
-- `inspiration_weak_ties_game.md` — voice-relay percolation experiment
-- `inspiration_tweetjoin.md` — relational-first protocol; explicit conjecture about object-vs-relational architectures
-- `AGENTS.md` — usage rules: adjacent context only, NOT canonical design constraints
+- **H1** — PKM / personal-CRM integration (Roam, Obsidian, Logseq, Tana, Folk, etc.) via OG enrichment, webhooks, browser extensions, RSS-of-my-wyrds
+- **H2** — paid-tier client capabilities atop v1 protocol: audio-first compose, encrypted attachments, 3000-codepoint cap
+- **H3** — agent-routing surfaces atop the post-agora topology: MCP registry listings, routing-rules DSL, PKM/CRM bridging via agent loops, inter-agent capsule exchange, local-first SDKs
 
 ## What's Shipped
 
-All Phases B–G plus a long fast-follow UX iteration cycle from live testing.
+All Phases B–G plus Tier-1, Tier-2, ops surfaces, agent-API docs, a long UX-polish cycle, a performance pass, and a new protocol primitive (static authorship attestations).
 
-| Phase | Status |
-|-------|--------|
-| B Wire spec | ✅ `what/docs/spec/spec_mop_v1.md` (with three known drift points; see Tier-1) |
-| C Renderer contract | ✅ `what/docs/spec/renderer_contract_v1.md` |
-| D Visual direction | ✅ `what/docs/spec/visual_direction_v1.md` |
-| E Scaffolding + deploy | ✅ Monorepo + live at `sendwyrd.com` |
-| F Landing copy + sigil | ✅ Plus theme-aware favicon |
-| G Implementation | ✅ Full publish / fetch / burn handlers, ECIES replies, fragment + public views, inbox with auto-load + nicknames, account-less default, mnemonic persistence |
+| Phase / cycle | Status |
+|---------------|--------|
+| B Wire spec | shipped — `what/docs/spec/spec_mop_v1.md` (v1.0.4-draft, 8 drift points patched) |
+| C Renderer contract | shipped — `what/docs/spec/renderer_contract_v1.md` |
+| D Visual direction | shipped — `what/docs/spec/visual_direction_v1.md` |
+| E Scaffolding + deploy | shipped — monorepo + live at `sendwyrd.com` |
+| F Landing copy + sigil | shipped — plus theme-aware favicon, sigil-wordmark lockup |
+| G Implementation | shipped — full publish / fetch / burn / replies / inbox |
+| Tier-1 punch list | shipped — burn UI, HD recovery sweep, spec sync |
+| Tier-2 hardening | shipped — CI auto-deploy, Sentry+redaction+sourcemaps+release-tag, 263+ tests |
+| Architecture pivot | shipped — ADR-021 single-form addressing, legacy redirect for in-the-wild URLs |
+| /about manifesto | shipped — 6-point manifesto + architecture + crypto + brittleness + Why-not-Nostr + stack |
+| /build agent docs | shipped — wire spec + endpoints + agent notes + roadmap + anti-roadmap |
+| `/ops/{secret}` dashboard | shipped — Sentry issues, Postgres usage, Cloudflare edge metrics, secrets-entry page |
+| UX polish cycle | shipped — passphrase-cache lifetime, BIP-39 boxed input, mnemonic dropdown bg, sigil lockup, mobile bottom-bar Compose CTA, /about Nav tab, in-app attest-authorship affordance |
+| Performance | shipped — SSR-fetch + Suspense streaming on `/w/[handle]` (warm TTFB ~100-150ms) |
+| Authorship attestation primitive | shipped — sign + verify + body-shape parser + verification banner; in-app affordance landed via squash-PR |
+| Unfurl proxy + LinkEmbed | shipped — `/api/v1/unfurl` (HEAD-then-GET, OG/twitter scrape, 256 KiB cap, 1h CF cache, no URL logging) + image-extension fallback |
+| Quote affordance + bare-domain URLs | shipped — quote button on `/w/[handle]`; bare `example.com` detection with email/case heuristics |
+| MCP server (`packages/mcp/`) | **shipped on `feat/mcp-server`, PR #38** — stdio MCP wrapping SendWyrd as 13 verbs (status / init / unlock / lock / forget / compose / view / burn / reply / attest / history / inbox / recover); 20 mcp tests + 158 core + 105 web all green; e2e smoke against prod passed |
 
-## Tier-1 Punch List (next session)
+## Active Branches In Flight
 
-| # | Item | Status |
-|---|------|--------|
-| 1 | **Burn affordance UI** — `DELETE /api/v1/wyrds/{handle}` exists; need view-page + inbox burn buttons | Pending |
-| 2 | **HD recovery sweep** — implement `GET /api/v1/authors/{k_origin_pub}/handles` + client-side mnemonic-import flow | Pending |
-| 3 | **Spec doc sync** — `spec_mop_v1.md` is behind shipped reality (client-generated handles, ttl=0 permanent, reply cap=300) | Pending |
+| Branch | Worktree | Purpose | Status |
+|--------|----------|---------|--------|
+| `feat/mcp-server` | `sendwyrd-mcp-followup` | MCP server + post-agora topology vision banking + H3 horizon | PR #38 open, this branch |
+| `rate-limit-api` | parallel session | KV-backed per-IP rate limiting (closes ADR-013 operational gap) | in progress |
+| `security-headers` | parallel session | response-header hardening | in progress |
+
+Note: many recent UI/UX additions (sigil lockup, quote affordance, attestation banner, in-app attest-authorship affordance, /about Nav tab, landing compaction) have already merged via the squash-PR pattern — `git log --oneline` is the source of truth for what's on `main`.
 
 ## Active Blockers
 
-None. Product live at `https://sendwyrd.com`, verified end-to-end. Token stash at `~/.config/cloudflare/sendwyrd_api_token` (mode 600, owner-only, never committed). Neon CLI authed under `the Neon org (***)`. Wrangler authed under the operator's account (account ID `***`).
+None. Production live at `https://sendwyrd.com`, verified end-to-end, observed via Sentry + custom dashboard.
 
-**Tier-2 (post-Tier-1)**: Sentry with redaction; OG card auto-embed for non-sendwyrd HTTPS URLs; CI auto-deploy on push to `main`; test suite beyond e2e smoke scripts.
+**Operational provisioning** (unchanged):
+- Cloudflare API token: `~/.config/cloudflare/sendwyrd_api_token` (mode 600)
+- Sentry user auth token: `~/.config/sentry/auth_token` (mode 600)
+- Wrangler authed under `***` (account `***`)
+- Neon CLI authed under `the Neon org` (***)
+- Neon project `***`, R2 bucket `sendwyrd-blobs`, Workers `sendwyrd-api` + `sendwyrd-web`
 
-**Tier-3 (deferred)**: Native iOS / Android (ADR-014 post-v1); Söhne typography swap; federation; defensive domain registrations.
+## Rolling Backlog (next-up, ranked by leverage)
 
-**Future horizons** (aspirational, see `who/governance/future_horizons.md`): PKM (Roam / Obsidian / Logseq / Tana) and personal-CRM integration via OG metadata enrichment, webhook-on-publish, browser extensions, and an iCal/RSS feed of the user's wyrd history. Layered above the wire spec; no core protocol changes. Not v1. Trigger to revisit: when there are real users and at least one is manually pasting wyrds into a PKM.
+1. **`npm publish @sendwyrd/mcp`** — gated on user creating `@sendwyrd` npm org + `npm login`. Workspace install ships now; npm install ships agent-ecosystem reach.
+2. **MCP registry listings** — Anthropic MCP catalog, Smithery, open-MCP. Trivial once on npm; widens discovery for agent operators.
+3. **Soft-launch** — pick 5-10 humans, send sendwyrd.com URLs, watch `/ops/{secret}`. Bottleneck is no longer code.
+4. **Neon HTTP-fetch mode** — cuts cold-Postgres connection latency on cold-worker starts (currently ~600-1200ms cold).
+5. **Edge-cache `/api/v1/wyrds/{handle}` ~10s TTL** — cuts repeat-read latency. Risk: burns within TTL serve stale 200; needs cache-purge on `DELETE`.
+6. **Per-IP rate limiting via KV** — closes ADR-013 operational gap. **In flight on `rate-limit-api`.**
+7. **Security headers** — hardening pass. **In flight on `security-headers`.**
+8. **`@sendwyrd/core` npm publish** — same `@sendwyrd` org gate as MCP.
+9. **Deferred**: native iOS / Android (ADR-014 post-v1); Söhne typography swap; federation; Python SDK / OpenAPI; defensive domain registrations (declined this cycle).
 
 ## Recent Decisions Timeline
 
 | Date | Decision | Source |
 |------|----------|--------|
-| 2026-04-24 | ADR-003 to ADR-008 banked; VISION.md authored; MANIFEST.md rewritten from template | Founding session |
-| 2026-04-24 | ADR-009 banked: inbox aggregation client-side via HD derivation (B1 resolved) | Open-questions resume session |
-| 2026-04-24 | ADR-010 banked: zero notification primitive at protocol layer; client/app concern (B2 resolved) | Open-questions resume session |
-| 2026-04-24 | ADR-011 banked: body is plain text; renderer aggressively auto-embeds non-MOP URLs (B3 resolved; B7 settled collateral) | Open-questions resume session |
-| 2026-04-24 | ADR-012 banked: body size cap is 300 codepoints — Spartan reference (B4 resolved) | Open-questions resume session |
-| 2026-04-24 | ADR-013 banked: v1 abuse posture is edge + rate-limits + size caps; no PoW (B5 resolved) | Open-questions resume session |
-| 2026-04-25 | Working agreement reframed: CTO calls delegated to agent (technical + aesthetic); CEO calls reserved for user (scope + branding + trust posture) | Open-questions resume 2 |
-| 2026-04-25 | ADR-014 banked: single canonical renderer; first-party clients only across web + iOS + Android (S4 resolved) | Open-questions resume 2 |
-| 2026-04-25 | ADR-015 banked: v1 is unopinionated about which use case leads (S1 resolved) | Open-questions resume 2 |
-| 2026-04-25 | ADR-016 banked: Brand is SendWyrd at sendwyrd.com; protocol codename remains MOP; unit noun is *wyrd* (S2 resolved) | Open-questions resume 2 |
-| 2026-04-25 | ADR-017 banked: HD path is `m/300'/n'` — BIP-43 flat purpose, hardened indices (B6 resolved) | Open-questions resume 2 |
-| 2026-04-25 | ADR-018 banked: TTL expiry returns 410 Gone with tombstone metadata; 30-day retention (B8 resolved) | Open-questions resume 2 |
-| 2026-04-25 | ADR-019 banked: renderer displays symmetric Sealed/Open privacy-posture indicator (B9 resolved) | Open-questions resume 2 |
-| 2026-04-25 | ADR-020 banked: v1 stack is Next.js + Hono on Cloudflare + Neon + R2; Web Crypto + noble/scure; AES-GCM + Schnorr (S3 resolved) | Open-questions resume 2 |
+| 2026-04-24 | ADR-003 to ADR-008 banked; VISION.md authored | Founding session |
+| 2026-04-24 | ADR-009 through ADR-013 banked (inbox / notifications / body / size / abuse) | Open-questions resume |
+| 2026-04-25 | Working agreement: CTO-delegated to agent; CEO reserved for scope/branding/trust | Open-questions resume 2 |
+| 2026-04-25 | ADR-014 through ADR-020 banked (renderer / use-case / brand / HD path / TTL / indicator / stack) | Open-questions resume 2 |
+| 2026-04-26 | Tier-1 closed: burn UI, HD recovery, spec v1.0.1-draft sync | Overnight review + ship |
+| 2026-04-26 | **ADR-021 banked**: single canonical fragment URL form; supersedes ADR-004; OG previews refused on social platforms by design (CEO call) | Overnight review + ship |
+| 2026-04-26 | Tier-2 closed: CI auto-deploy, Sentry+redaction+sourcemaps, 245 tests | Overnight review + ship |
+| 2026-04-26 | `/ops/{secret}` dashboard + secrets-entry page shipped | Overnight review + ship |
+| 2026-04-26 | `/about` manifesto + `/build` agent docs published; repo stays private | Overnight review + ship |
+| 2026-04-26 | Authorship attestation primitive shipped (sign + verify + body-shape parser + verification banner). **ADR-pending** — primitive ships and is documented at `/about`; formal ADR write-up not yet filed. | UX/perf/attestation session |
+| 2026-04-26 | Unfurl proxy `/api/v1/unfurl` + LinkEmbed component (no URL logging, 1h CF cache) | UX/perf/attestation session |
+| 2026-04-26 | Performance pass: SSR + Suspense streaming on `/w/[handle]` | UX/perf/attestation session |
+| 2026-04-26 | H2 paid-tier horizon banked (audio + attachments + 3000 cap) | UX/perf/attestation session |
+| 2026-04-26 | **Post-agora topology section banked in VISION.md** — five principles' consequence: routing as personal infrastructure (CEO call) | MCP server session |
+| 2026-04-26 | **H3 horizon banked**: agent-routing surfaces atop the post-agora topology | MCP server session |
+| 2026-04-26 | **MCP server shipped** (`packages/mcp/`, PR #38) — first concrete realization of the post-agora topology; stdio default, 13 verbs, ADR-003-aligned (no remote MCP in v1) | MCP server session |
 
 ## Recent Upgrades
 
 | Date | Upgrade | Source |
 |------|---------|--------|
 | 2026-04-24 | Forked from aDNA template; MOP project identity established | Initial commit |
-| 2026-04-25 | Brand banked as SendWyrd; domains registered; ADR-016 amendment for repo + dir rename `MOP` → `sendwyrd` | Open-questions resume 2 |
-| 2026-04-25 | Phases B/C/D specs banked; bin-21 archived as inspiration reference | Open-questions resume 2 |
-| 2026-04-25 | Phase E shipped — monorepo scaffolding + live deploy on Cloudflare Workers (api + web) | Open-questions resume 2 |
-| 2026-04-25 | Phase F shipped — landing + wyrd sigil + privacy glyphs | Open-questions resume 2 |
-| 2026-04-25 | Phase G shipped — full implementation incl. ECIES replies; e2e verified live | Open-questions resume 2 |
-| 2026-04-25 | UX iteration cycle: lock-only privacy indicator, modernized Segmented form controls, top nav, account-less default flow, mnemonic persistence (format v2), inbox auto-load replies + nicknames, burn-on-public-form bug fix, reply 300-cap (anti-scope-creep), TTL never option, public-sharing copy, swung-open lock glyph | Open-questions resume 2 |
-| 2026-04-25 | Phase E (scaffolding) — monorepo + Drizzle migration applied to live Neon DB; pnpm typecheck 4/4 green; next build green | Open-questions resume 2 |
-| 2026-04-25 | Provisioned: Neon project `***`, R2 bucket `sendwyrd-blobs`, Cloudflare Workers `sendwyrd-api` and `sendwyrd-web`, custom AAAA record on apex | Open-questions resume 2 |
-| 2026-04-25 | Phase E deploy verified live: `GET https://sendwyrd.com/api/v1/health` → 200 with `mop-protocol-version: 1`; `GET https://sendwyrd.com/` → 200 Next.js HTML | Open-questions resume 2 |
-| 2026-04-25 | Phase F (landing copy, wyrd sigil, privacy indicator glyphs) shipped live at https://sendwyrd.com/ | Open-questions resume 2 |
-| 2026-04-25 | Phase G MVP shipped: real publish/fetch/burn handlers, client compose pipeline, fragment-form decrypt-on-view, public-form SSR with OG metadata, onboarding (3-step), compose UI, settings (theme + forget). E2E roundtrip verified on production. | Open-questions resume 2 |
+| 2026-04-25 | Phases B–G shipped; v1 deployed live; UX iteration cycle (lock-only indicator, segmented controls, account-less default, mnemonic v2, inbox auto-load) | Open-questions resume 2 |
+| 2026-04-26 | Tier-1 (burn UI / HD recovery / spec sync) + Tier-2 (CI / Sentry / 245 tests) shipped | Overnight review + ship |
+| 2026-04-26 | Single-form architecture pivot (ADR-021); legacy public-form redirect | Overnight review + ship |
+| 2026-04-26 | `/ops/{secret}` dashboard + secrets-entry page; Cloudflare GraphQL edge analytics; release-number on dashboard | Overnight review + ship |
+| 2026-04-26 | `/about` manifesto + `/build` agent docs; landing copy compaction; YC drop; Twitter attribution; about-Nav-tab | Overnight review + ship + post-ship cycle |
+| 2026-04-26 | SW landing-page hydration trap hotfix (network-first + cache version bump) | UX/perf session |
+| 2026-04-26 | Passphrase persists until tab close; BIP-39 boxed mnemonic input; mnemonic-dropdown bg fix | UX/perf session |
+| 2026-04-26 | Sigil + wordmark lockup on Nav and onboarding | UX/perf session |
+| 2026-04-26 | Authorship attestation primitive: `packages/core/src/attestation.ts` + `AttestationBanner.tsx` + `/about` documentation; in-app `/inbox` affordance follow-up landed | UX/perf session + post-ship squash-PR |
+| 2026-04-26 | Unfurl proxy + LinkEmbed; image-extension content-type fallback | UX/perf session |
+| 2026-04-26 | SSR + Suspense streaming on `/w/[handle]` — warm TTFB drops to ~100-150ms | UX/perf session |
+| 2026-04-26 | Quote affordance + bare-domain URL detection on compose/render | UX/perf session |
+| 2026-04-26 | H2 paid-tier horizon documented in `future_horizons.md` | UX/perf session |
+| 2026-04-26 | **`packages/mcp/` shipped — stdio MCP server, 13 verbs, 20 tests + e2e smoke green** | MCP server session |
+| 2026-04-26 | **VISION.md gains post-agora topology section; future_horizons.md gains H3** | MCP server session |
 
 ## Partial-Resume Detection
 
-Session history at `how/sessions/history/2026-04/` contains the completed founding + first open-questions sessions. The current open-questions-resume-2 session (2026-04-25) is in `how/sessions/active/` until close. MANIFEST.md does not carry `role: template`; `last_edited_by: agent_operator` (not `agent_init`). Onboarding does **not** need to run. Next session picks up directly from this STATE.md and the `Next Session Prompt` in the most recent session log.
+Session history at `how/sessions/history/2026-04/` contains all completed sessions through 2026-04-26 (founding, open-questions, open-questions-resume-2, overnight-review-ship, ux-perf-attestation). The current MCP-server session is in `how/sessions/active/` until close. MANIFEST.md does not carry `role: template`; `last_edited_by: agent_operator` (not `agent_init`). Onboarding does **not** need to run.
 
 ## Next Session Prompt
 
-SendWyrd v1 is **live and shipping**. Read order:
+SendWyrd v1 is **live, hardened, observed, and now agent-callable.** Read order:
 
 1. `CLAUDE.md` (auto-loaded — default Berthier identity uncustomized).
 2. `MANIFEST.md` — project identity.
-3. This `STATE.md` — Tier-1 punch list (you are here).
-4. `who/governance/future_horizons.md` — aspirational non-v1 ideas (e.g. H1 PKM / CRM integration). Read once for context; do not act unless explicitly asked.
-5. Memory pointers (auto-loaded via `MEMORY.md`):
+3. This `STATE.md` — you are here.
+4. `who/governance/VISION.md` — five principles + post-agora topology section (the latter is recent and load-bearing for any agent-routing work).
+5. `who/governance/future_horizons.md` — H1 PKM, H2 paid tier, H3 agent-routing surfaces (deliberate non-v1 ledger; read once for context).
+6. Memory pointers (auto-loaded via `MEMORY.md`):
    - `project_sendwyrd_v1_live.md` — current shipped state, infra pointers, e2e smoke scripts
-   - `feedback_anti_scope_creep_relay_layer.md` — guard against XKCD-927; SendWyrd is a relay primitive, never a chat app
+   - `feedback_anti_scope_creep_relay_layer.md` — relay primitive, never a chat app
    - `feedback_zero_friction_default.md` — account-less default; security opt-in
    - `feedback_decision_delegation.md` — CTO/CEO call boundaries
    - `feedback_pragmatic_privacy_posture.md`
+   - `feedback_ops_capability_url.md` — `/ops/{secret}` capability-URL gating, not auth flows
    - `user_profile.md`
-5. `how/sessions/history/2026-04/session_operator_20260425_mop_open_questions_resume_2.md` — full record of how we got here
-6. ADRs 003–020 only on demand. Banked is banked; do NOT re-debate.
+7. Most recent session log: `how/sessions/active/session_operator_20260426_mcp_server.md` (or its `history/` location after close).
+8. ADRs 003–021 only on demand. Banked is banked; do NOT re-debate.
 
-**Tier-1 work, in priority order**:
+**Highest-leverage next moves** (ranked):
 
-1. **Burn affordance UI**. The API supports `DELETE /api/v1/wyrds/{handle}` (Schnorr-signed by `K_origin_priv`). No UI yet. Add a small "burn" button on `/w/{handle}` view (visible to author when their `K_origin_pub` matches a wyrd in their local history) and a per-row burn in `/inbox`. Confirm dialog. After burn, route to `/inbox` or render tombstone state inline.
-
-2. **HD recovery sweep**. Currently if a user clears localStorage they cannot recover even with their mnemonic. Implement:
-   - API: replace 501 stub at `packages/api/src/routes/authors.ts` with real `GET /api/v1/authors/{k_origin_pub_b64u}/handles` per spec §15. Schnorr-signed query (presence-check signature). Returns list of handles + metadata for that K_origin_pub.
-   - Web: a `/recover` route or a settings action that takes a BIP-39 mnemonic input, derives `K_origin_pub` across `m/300'/n'` for `n=0..gap+20`, queries the presence-check endpoint, reconstructs `wyrdHistory`. Per spec §5.3 sweep convention.
-
-3. **Spec doc sync**. `what/docs/spec/spec_mop_v1.md` drift:
-   - §6, §9, §15: handle is **client-generated** (12 random bytes b64u), not server-generated. Server rejects collisions. `publish_message` SHA-256 includes the handle. Currently the spec says server-generated.
-   - §9.2: `ttl_seconds = 0` is **accepted** as permanent (sentinel `expires_at = 253_370_764_800_000` = year 9999). Currently the spec says rejected.
-   - §14.4: `REPLY_CODEPOINT_CAP = 300` (was 1000) and `REPLY_BLOB_BYTE_CEILING = 2500` (was 5000).
+1. **`npm publish @sendwyrd/mcp`** — needs user `npm login` against `@sendwyrd` org (CEO action). Once published, register listings on Anthropic MCP catalog + Smithery.
+2. **Soft-launch** — code is no longer the bottleneck. Pick 5-10 humans, send URLs, watch `/ops/{secret}`.
+3. **Neon HTTP-fetch mode** — cold-worker latency.
+4. **Edge-cache repeat-reads** — warm-worker latency for popular wyrds.
+5. **Coordinate with parallel sessions** on `rate-limit-api` and `security-headers`; review + merge when those branches surface PRs.
 
 **Operational notes**:
-- Token stash: `~/.config/cloudflare/sendwyrd_api_token` (chmod 600). Use as `$(cat ...)` in commands; never echo.
-- Wrangler authed; Neon CLI authed; everything provisioned.
-- Deploy commands: `cd packages/api && wrangler deploy`; `cd packages/web && pnpm exec opennextjs-cloudflare build && pnpm exec opennextjs-cloudflare deploy`.
-- Smoke tests: `pnpm exec tsx packages/core/scripts/<name>.ts` from repo root or core dir.
+- Token stash paths: `~/.config/cloudflare/sendwyrd_api_token`, `~/.config/sentry/auth_token` (chmod 600 each). Never echo.
+- Wrangler / Neon CLI authed; CI auto-deploys on push to `main`.
+- Repo stays private through launch; `/build` directs builders to `@deltaclimbs` on Twitter for spec/code requests.
+- Deploy is now CI-driven; manual deploy commands still work (`cd packages/api && wrangler deploy`; `cd packages/web && pnpm exec opennextjs-cloudflare build && pnpm exec opennextjs-cloudflare deploy`) but are off the hot path.
 
-User is in **CTO-delegated mode**. Don't interrogate on technical or aesthetic forks. Match the voice: cypherpunk-Nostr-adjacent, Nietzschean, terse declarative, no corporate-neutralization.
+User remains in **CTO-delegated mode**: own technical and aesthetic calls; only escalate scope / branding / trust-posture forks. Match the voice — cypherpunk-Nostr-adjacent, Nietzschean, terse declarative, no corporate-neutralization.
