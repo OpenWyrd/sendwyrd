@@ -85,10 +85,17 @@ export default function BuildPage() {
               .
             </li>
             <li>
-              <strong>Reference TS implementation</strong> — compose/decrypt
-              envelope, HD derivation, URL parsing, ECIES replies, Schnorr
-              sign/verify. ~1.6k LOC, 96% unit-test coverage. Available on
-              request alongside the spec.
+              <strong>Reference TS package</strong> <Code>@sendwyrd/core</Code>{" "}
+              — compose/decrypt envelope, HD derivation, URL parsing, ECIES
+              replies, Schnorr sign/verify. On npm. Install with{" "}
+              <Code>pnpm add @sendwyrd/core</Code>. v0.1.x unstable; semver
+              discipline from v1.0.0.
+            </li>
+            <li>
+              <strong>MCP server</strong> — <Code>@sendwyrd/mcp</Code> on npm,
+              stdio, exposes the wyrd verbs to MCP-capable clients (Claude
+              Code, Claude Desktop, Cursor, Zed). Install with{" "}
+              <Code>npx -y @sendwyrd/mcp</Code>.
             </li>
           </ul>
         </Section>
@@ -108,19 +115,12 @@ export default function BuildPage() {
             the full pipeline in ~50 lines.
           </p>
           <p style={pStyle}>
-            <strong>If you&apos;re in JS/TS</strong>: the reference
-            <Code>@sendwyrd/core</Code> module exports <Code>composeWyrd</Code>,{" "}
-            <Code>decryptFromBase64Url</Code>, <Code>deriveOriginKey</Code>,{" "}
-            <Code>buildFragmentUrl</Code>, and <Code>parseWyrdUrl</Code>. The
-            npm publish is on the roadmap; until then, request access through{" "}
-            <a
-              href="https://x.com/deltaclimbs"
-              style={linkStyle}
-              rel="noreferrer"
-            >
-              @deltaclimbs
-            </a>
-            .
+            <strong>If you&apos;re in JS/TS</strong>: install{" "}
+            <Code>@sendwyrd/core</Code> from npm. It exports{" "}
+            <Code>composeWyrd</Code>, <Code>decryptFromBase64Url</Code>,{" "}
+            <Code>deriveOriginKey</Code>, <Code>buildFragmentUrl</Code>, and{" "}
+            <Code>parseWyrdUrl</Code>. The package is unstable below v1.0.0;
+            pin if you depend on it.
           </p>
           <p style={pStyle}>
             <strong>If you&apos;re in another language</strong>: the spec is
@@ -138,6 +138,34 @@ export default function BuildPage() {
             their own per-wyrd <Code>K_origin</Code> keys, and are
             indistinguishable from any other composer at the wire. This is by
             design: identity is not the protocol&apos;s concern.
+          </p>
+          <p style={pStyle}>
+            If your agent runs in an MCP-capable client, the official server is
+            the path of least resistance. <Code>@sendwyrd/mcp</Code> ships 13
+            verbs over stdio: <Code>compose</Code> / <Code>view</Code> /{" "}
+            <Code>burn</Code> / <Code>reply</Code> / <Code>attest</Code> as the
+            wyrd verbs, <Code>init</Code> / <Code>unlock</Code> /{" "}
+            <Code>lock</Code> / <Code>forget</Code> / <Code>status</Code> for
+            seed lifecycle, <Code>history</Code> / <Code>inbox</Code> /{" "}
+            <Code>recover</Code> for local state. Drop the snippet below into{" "}
+            <Code>~/.claude.json</Code> (or the equivalent config for Claude
+            Desktop, Cursor, Zed) and the tools appear in the model&apos;s tool
+            list on restart.
+          </p>
+          <pre style={preStyle}>
+{`{
+  "mcpServers": {
+    "sendwyrd": {
+      "command": "npx",
+      "args": ["-y", "@sendwyrd/mcp"]
+    }
+  }
+}`}
+          </pre>
+          <p style={pStyle}>
+            Verbs only. No subscriptions, no polling tools, no auto-reply — that
+            would push SendWyrd toward the conversation-hosting layer it was
+            designed to refuse.
           </p>
           <p style={pStyle}>What&apos;s natively well-suited to agents:</p>
           <ul style={ulStyle}>
@@ -208,22 +236,11 @@ export default function BuildPage() {
           </p>
           <ul style={ulStyle}>
             <li>
-              <strong>
-                npm publish of <Code>@sendwyrd/core</Code>
-              </strong>{" "}
-              — currently a workspace-private package. Path: vendor from repo,
-              or wait for the publish.
-            </li>
-            <li>
               <strong>OpenAPI / JSON Schema</strong> generated from the wire
               spec for cross-language client codegen.
             </li>
             <li>
               <strong>Python client SDK</strong> for the AI/agent ecosystem.
-            </li>
-            <li>
-              <strong>MCP server</strong> exposing SendWyrd compose/share/burn
-              as first-class agent tools (via the Model Context Protocol).
             </li>
           </ul>
           <p style={pStyle}>
@@ -276,6 +293,16 @@ const linkStyle: React.CSSProperties = {
   color: "inherit",
   textDecoration: "underline",
   textUnderlineOffset: 2,
+};
+const preStyle: React.CSSProperties = {
+  margin: 0,
+  padding: "var(--spacing-4)",
+  border: "1px solid var(--color-hairline)",
+  fontFamily: "var(--font-mono)",
+  fontSize: "0.9em",
+  color: "var(--color-ink-muted)",
+  overflowX: "auto",
+  whiteSpace: "pre",
 };
 
 function Section({

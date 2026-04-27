@@ -796,6 +796,11 @@ export default function SettingsPage() {
         <p style={{ ...metaStyle, marginBottom: "var(--spacing-12)" }}>
           SendWyrd v0.1 · MOP protocol v1
           <br />
+          Build on this:{" "}
+          <a href="/build" style={linkStyle}>
+            /build
+          </a>
+          <br />
           By{" "}
           <a
             href="https://x.com/deltaclimbs"
