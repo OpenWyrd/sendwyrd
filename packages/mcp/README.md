@@ -12,31 +12,15 @@ The answer is that **routing becomes personal infrastructure, not platform infra
 
 It exposes only **verbs**. There are no subscriptions, no polling tools, no auto-reply, by design — that would push SendWyrd toward the conversation-hosting layer it was designed to refuse.
 
-## Install (workspace dev)
+## Install
 
-This package isn't on npm yet. To run from the workspace:
+Live on npm:
 
 ```bash
-cd packages/mcp
-pnpm install && pnpm build
+npx -y @sendwyrd/mcp
 ```
 
-Then point your MCP client at `node /absolute/path/to/packages/mcp/dist/index.js`.
-
-For Claude Code, `~/.claude.json`:
-
-```json
-{
-  "mcpServers": {
-    "sendwyrd": {
-      "command": "node",
-      "args": ["/home/you/lattice/sendwyrd/packages/mcp/dist/index.js"]
-    }
-  }
-}
-```
-
-After publish to npm:
+For Claude Code, add to `~/.claude.json`:
 
 ```json
 {
@@ -48,6 +32,21 @@ After publish to npm:
   }
 }
 ```
+
+Restart Claude Code. The 13 tools (`sendwyrd_compose`, `sendwyrd_view`, etc.) appear in the model's tool list. First call should be `sendwyrd_status`, then `sendwyrd_init` to generate a mnemonic.
+
+For Claude Desktop, Cursor, or Zed, the same JSON shape goes in their respective MCP-server config files.
+
+### Workspace dev
+
+To run from a clone of the SendWyrd monorepo (e.g. for development):
+
+```bash
+cd packages/mcp
+pnpm install && pnpm build
+```
+
+Then point your MCP client at `node /absolute/path/to/packages/mcp/dist/index.js`.
 
 ## Configuration
 

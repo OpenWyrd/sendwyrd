@@ -2,11 +2,13 @@
 type: session
 created: 2026-04-26
 updated: 2026-04-26
-status: active
+status: completed
 last_edited_by: agent_michael
-tags: [session, mcp, parallel-session, packages-mcp]
+tags: [session, mcp, parallel-session, packages-mcp, npm-published, vision-banked]
 tier: 2
 branch: feat/mcp-server
+pr: 38
+npm_package: "@sendwyrd/mcp@0.1.0"
 ---
 
 # Session — MCP server for SendWyrd
@@ -126,7 +128,69 @@ None — ready for PR.
 ### Blockers
 None.
 
+## Closing addendum (2026-04-26 evening)
+
+Three follow-on commits landed on the same branch / PR #38 after the initial MCP ship:
+
+1. **`4be7dd3` — Vision banked + npm publish prep.** Post-agora topology section added to `who/governance/VISION.md` (per-user agents do the routing the algorithmic agora used to; consequence of the five principles, not a sixth). H3 added to `who/governance/future_horizons.md` (agent-routing surfaces — registry listings, routing-rules DSL, PKM/CRM bridging, inter-agent capsule exchange, local-first SDKs). Package.json prepped: `private: false`, `publishConfig.access: "public"`, runtime deps moved to devDependencies (esbuild bundles them inline).
+
+2. **`a65ed34` — Resources + ergonomic attest + integration tests + STATE refresh.**
+   - **MCP Resources:** `sendwyrd-mcp://wyrd/{handle}` exposed via standard `resources/list` + `resources/read` handlers. Live wyrds in local history surface in Claude Code's resource sidebar; reads fetch+decrypt with the locally-stored K_read.
+   - **Ergonomic attest:** `target_handle` is now optional on `sendwyrd_attest`. When omitted, picks the most-recent non-attestation, non-burned wyrd from history. New `is_attestation` flag on HistoryEntry distinguishes own-attestation entries from ordinary wyrds.
+   - **Integration tests:** 16 tests at `packages/mcp/test/integration/server.integration.test.ts`. Spawns the actual `dist/index.js` bundle, drives JSON-RPC over stdio against a Node-built-in mock HTTP API on port 0. All 13 tools exercised end-to-end. Catches stdio framing / schema validation / error propagation regressions.
+   - **STATE.md refreshed:** brought current to 2026-04-26 reality — Tier-1+2 closed, post-agora topology phase, ADR-021, attestation primitive, MCP, active branches in flight (rate-limit-api, security-headers).
+
+3. **`<pending-this-commit>` — README polish + session close.** `packages/mcp/README.md` rewritten with `npx -y @sendwyrd/mcp` as the primary install path (workspace dev demoted to a section below). This session file moved from active/ to history/.
+
+## npm publish
+
+`@sendwyrd/mcp@0.1.0` published to https://registry.npmjs.org/@sendwyrd/mcp on 2026-04-26 23:55 UTC by `deltaclimbs <michael@machcap.com>`.
+
+- License: MIT
+- Bundle: 192.7 KB tarball, 927.2 KB unpacked (single ESM file targeting node20)
+- Bin: `sendwyrd-mcp`
+- Deps (runtime): none — esbuild inlines `@sendwyrd/core` + `@modelcontextprotocol/sdk` + `zod` + `@noble/*` + `@scure/*`
+
+Verified end-to-end: `npx -y @sendwyrd/mcp@0.1.0` fetches from the registry, runs, completes the MCP `initialize` handshake, and registers all 13 tools.
+
+Auth method used: granular access token with bypass-2FA (`sendwyrd-publish`, 7-day expiry). User flagged for rotation post-publish; future publishes will need a fresh token (or transition to GitHub Actions Trusted Publishing via OIDC).
+
+## Final SITREP
+
+### Completed
+- `@sendwyrd/mcp@0.1.0` published to npm and verified working via `npx`.
+- Post-agora topology canonized in VISION.md.
+- H3 (agent-routing surfaces) banked in future_horizons.md.
+- MCP Resources support added (browsable wyrds in Claude Code sidebar).
+- Ergonomic `sendwyrd_attest` with optional target_handle.
+- 16-test integration suite spawning the real bundle.
+- STATE.md refreshed.
+- README rewritten for the npm-first install path.
+- All four commits on `feat/mcp-server` (PR #38). Awaiting user merge.
+
+### In progress
+None.
+
+### Next up
+- **User**: revoke the publish token at https://www.npmjs.com/settings/deltaclimbs/tokens (security hygiene).
+- **User**: merge PR #38 (squash recommended — orphan `c431f9f` commit elides automatically).
+- `/build` page mention of the MCP — deferred follow-up (the parallel UI/UX session is still touching `packages/web/`).
+- MCP registry listings (Anthropic, Smithery) — once the npm package settles.
+- Soft-launch — pick 5-10 humans, send wyrd URLs, watch `/ops/{secret}`.
+- Future publishes (0.1.1+) need a fresh granular token at publish time, OR a GitHub Actions Trusted Publishing setup.
+
+### Blockers
+None.
+
+### Files touched (full session, all four commits)
+- `packages/mcp/` — net new package: package.json, tsconfig.json, README.md, vitest.config.ts, src/{index,server,config,store,api}.ts, test/{store,config}.test.ts, test/integration/server.integration.test.ts, scripts/smoke.mjs
+- `pnpm-lock.yaml`
+- `who/governance/VISION.md` — post-agora topology section
+- `who/governance/future_horizons.md` — H3 entry
+- `STATE.md` — refresh
+- `how/sessions/active/ → history/2026-04/` — this file moves on close
+
 ## Next Session Prompt
 
-`packages/mcp/` shipped — stdio MCP server wrapping SendWyrd as 13 verbs. Pending: npm publish (CEO-call: requires `npm login` to `@sendwyrd` org), `/build` page mention (deferred to avoid stomping the parallel UI/UX session). Read `packages/mcp/README.md` for the install/usage shape, and the session file at `how/sessions/history/2026-04/session_michael_20260426_mcp_server.md` for the design decisions banked. The agora-replacement vision articulated in the lead-in conversation (per-user agents replace the algorithmic agora; SendWyrd is the capsule layer; routing becomes personal infrastructure) is currently captured only in this session log and the README's Why section — if the user wants it canonized, the next CEO call is to add a "post-agora topology" section to `who/governance/VISION.md` and an H3 entry in `who/governance/future_horizons.md`.
+`@sendwyrd/mcp@0.1.0` is live on npm. PR #38 is open with all the work; merge when ready (squash recommended). Three follow-ups are queued in `STATE.md`'s rolling backlog: revoke the publish token, mention the MCP on the `/build` page, list it in MCP registries (Anthropic + Smithery). Read `packages/mcp/README.md` for the now-current install path and `who/governance/VISION.md` § Post-Agora Topology for the strategic frame the MCP exists to serve. The next concrete H3 surface candidate is an agent-callable routing-rules DSL — defer until at least one user is improvising routing logic on top of the bare verbs.
 
