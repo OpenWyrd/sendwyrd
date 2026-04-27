@@ -12,7 +12,6 @@
 import Link from "next/link";
 import { WyrdSigil } from "@/components/WyrdSigil";
 import { PrivacyIndicator } from "@/components/PrivacyIndicator";
-import { InstallAffordance } from "@/components/InstallAffordance";
 
 function SpecimenWyrd({ body, count }: { body: string; count: number }) {
   return (
@@ -85,8 +84,8 @@ export default function LandingPage() {
         />
       </span>
 
-      {/* Specimens — two real-feeling rendered wyrds, demonstrating the form
-          across distinct use cases (per ADR-015, use-case agnostic). */}
+      {/* Specimen — one real-feeling rendered wyrd demonstrating the form
+          (per ADR-015, use-case agnostic). */}
       <div
         className="landing-specimens"
         style={{
@@ -97,10 +96,6 @@ export default function LandingPage() {
           gap: "var(--spacing-5)",
         }}
       >
-        <SpecimenWyrd
-          body="Anyone worked through a SAFE conversion with bridge notes outstanding? Pass to anyone who might know."
-          count={101}
-        />
         <SpecimenWyrd
           body="I have 100 cows to sell at XYZ location. Any buyers in the area?"
           count={64}
@@ -148,7 +143,6 @@ export default function LandingPage() {
         Compose a wyrd
       </Link>
 
-      <InstallAffordance variant="homepage" />
       <p
         style={{
           margin: 0,

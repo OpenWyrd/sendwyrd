@@ -160,7 +160,7 @@ export default function AboutPage() {
           lineHeight: 1.7,
         }}
       >
-        <CollapsibleSection title="Example Wyrds" defaultOpen>
+        <CollapsibleSection title="Example Wyrds">
           <p style={pStyle}>
             A wyrd is a tweet-length introduction for whatever the sender wants
             to pass forward — a question, an artifact, a signal, a connection.
@@ -311,8 +311,8 @@ export default function AboutPage() {
           <ul style={ulStyle}>
             <li>
               <strong>Body envelope</strong>: AES-256-GCM via the Web Crypto
-              API. <Code>K_read</Code> is 32 bytes of CSPRNG, generated per-wyrd
-              at compose time.
+              API. <Code>K_read</Code> is 32 bytes derived from your seed via
+              HKDF-SHA256 at compose time, one fresh subkey per wyrd index.
             </li>
             <li>
               <strong>Author keys</strong>: secp256k1; signatures via BIP-340
@@ -341,7 +341,7 @@ export default function AboutPage() {
           </ul>
         </CollapsibleSection>
 
-        <CollapsibleSection title="Mosaic Quality">
+        <CollapsibleSection title="Mosaic Mesh Quality">
           <p style={pStyle}>
             SendWyrd is a <strong>mosaic mesh network</strong>. Mesh: each wyrd
             hops across whatever platforms people already use — iMessage to
@@ -353,21 +353,16 @@ export default function AboutPage() {
             itself.
           </p>
           <p style={pStyle}>
-            <Code>K_read</Code> is per-wyrd random, not derived from your seed.
-            If you lose the URL, the body becomes unreadable — even if you still
-            hold your mnemonic.
+            <Code>K_read</Code> is HKDF-derived from your seed at the wyrd&apos;s
+            index. The URL fragment still carries it — recipients don&apos;t
+            need your seed — but mnemonic recovery reconstructs full share URLs
+            for every wyrd you&apos;ve authored, not just the metadata.
           </p>
           <p style={pStyle}>
-            Mnemonic recovery rebuilds your wyrd-handle list and your author
-            keys (you can decrypt replies, burn old wyrds, prove authorship) but
-            cannot reconstruct <Code>K_read</Code> for sealed wyrds whose URLs
-            you&apos;ve lost. The protocol refuses durable archive on purpose.
-          </p>
-          <p style={pStyle}>
-            Default TTL is 90 days. Local storage may evict. Mnemonic backup is
-            the only recovery path the protocol offers — and even that recovers
-            identity, not content. Nietzschean: content fits a moment, then is
-            gone.
+            Forward secrecy is enforced by deletion, not by key loss: the
+            default TTL is 90 days, and burn drops the ciphertext from the
+            relay. Once the relay no longer holds the bytes, no key can decrypt
+            them. The mosaic stays mosaic — wyrds fit a moment, then are gone.
           </p>
         </CollapsibleSection>
 
@@ -380,8 +375,8 @@ export default function AboutPage() {
           </p>
           <p style={pStyle}>
             To prove authorship after the fact, open{" "}
-            <a href="/inbox" style={linkStyle}>
-              /inbox
+            <a href="/wyrds" style={linkStyle}>
+              /wyrds
             </a>
             , find the wyrd, and tap <strong>attest authorship</strong>.
             SendWyrd re-derives that wyrd&apos;s <Code>K_origin_priv</Code> from
