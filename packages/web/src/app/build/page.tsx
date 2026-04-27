@@ -266,20 +266,29 @@ export default function BuildPage() {
         </Section>
       </article>
 
-      <Link
-        href="/compose"
+      <div
         style={{
-          padding: "var(--spacing-3) var(--spacing-6)",
-          border: "1px solid var(--color-hairline-strong)",
-          color: "var(--color-ink)",
-          textDecoration: "none",
-          fontFamily: "var(--font-mono)",
-          fontSize: "var(--text-body)",
-          letterSpacing: "0.02em",
+          width: "100%",
+          maxWidth: "var(--max-content)",
+          display: "flex",
+          justifyContent: "flex-end",
         }}
       >
-        Compose a wyrd
-      </Link>
+        <Link
+          href="/compose"
+          style={{
+            padding: "var(--spacing-4) var(--spacing-8)",
+            border: "1px solid var(--color-hairline-strong)",
+            color: "var(--color-ink)",
+            textDecoration: "none",
+            fontFamily: "var(--font-mono)",
+            fontSize: "var(--text-body)",
+            letterSpacing: "0.02em",
+          }}
+        >
+          Compose a wyrd
+        </Link>
+      </div>
     </main>
   );
 }

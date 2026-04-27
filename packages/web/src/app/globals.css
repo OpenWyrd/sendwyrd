@@ -39,8 +39,8 @@
   --text-h2: 1.5rem;
   --text-h3: 1.125rem;
   --text-body: 1rem;
-  --text-caption: 0.875rem;
-  --text-microcaption: 0.75rem;
+  --text-caption: 0.9375rem;
+  --text-microcaption: 0.8125rem;
 
   /* Type families. */
   --font-mono: "Berkeley Mono", "Geist Mono", "Söhne Mono", "JetBrains Mono", ui-monospace, monospace;
