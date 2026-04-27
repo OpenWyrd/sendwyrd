@@ -155,6 +155,10 @@ None. Production live at `https://sendwyrd.com`, verified end-to-end, observed v
 | 2026-04-26 | **ADR-012 enforcement amended**: composer is send-disable + red counter, not input hard-block (lets users paste long Lightning invoices that the parser excludes from the cap). | Wrap-up session |
 | 2026-04-26 | `/inbox` route renamed to `/wyrds` (label "my wyrds") — page lists author-side wyrds, not received messages. ADR-024 frames the structural reason. | Wrap-up session |
 | 2026-04-26 | **Open-source decision**: stay private through launch; spec stays private with implementation; revisit after PMF validates usage. Source-available trajectory (BSL/FSL) deferred. | Wrap-up session |
+| 2026-04-26 | **Inbox-as-second-view shipped** (ADR-024 follow-on): `wyrdInbox.ts` localStorage lib + auto-record on view-page decrypt + Segmented `outbox \| inbox` toggle on `/wyrds` + Settings opt-out toggle + clear-inbox button. Browser-local, never relay-queried, not seed-recoverable. 10 unit tests. | Follow-on session |
+| 2026-04-26 | **BIP-21 chip preview** (ADR-023 follow-on): bitcoin: URI parser surfaces `?amount=&label=&message=` query params; chip label reads "0.001 BTC to bc1qar0s…5mdq" instead of bare "BTC address" when amount is present. | Follow-on session |
+| 2026-04-26 | **CSP flipped to enforce mode**: `Content-Security-Policy-Report-Only` → `Content-Security-Policy` in next.config.ts. Real-traffic Sentry telemetry was clean over the post-launch observe window. | Follow-on session |
+| 2026-04-26 | **PWA install affordance moved to top of wyrd-view page**: was buried mid-article (after Sent date); now appears above the article when state.kind === "ready". Compose-page placement (already top) and landing (no widget) unchanged. | Follow-on session |
 
 ## Recent Upgrades
 
