@@ -501,6 +501,23 @@ sig=<base64url-signature>`}
       >
         Compose a wyrd
       </Link>
+
+      <p
+        style={{
+          margin: 0,
+          fontFamily: "var(--font-mono)",
+          fontSize: "var(--text-microcaption)",
+          color: "var(--color-ink-subtle)",
+          letterSpacing: "0.02em",
+        }}
+      >
+        <Link
+          href="/terms"
+          style={{ color: "inherit", textDecoration: "none" }}
+        >
+          terms
+        </Link>
+      </p>
     </main>
   );
 }
