@@ -228,10 +228,10 @@ function PaymentChip({ seg }: { seg: PaymentSegment }) {
 }
 
 const inlineChipBtn: React.CSSProperties = {
-  background: "transparent",
-  border: "1px solid var(--color-hairline)",
+  background: "var(--color-ground)",
+  border: "1px solid var(--color-hairline-strong)",
   padding: "var(--spacing-1) var(--spacing-2)",
-  color: "var(--color-ink-muted)",
+  color: "var(--color-ink)",
   fontFamily: "var(--font-mono)",
   fontSize: "var(--text-caption)",
   cursor: "pointer",
