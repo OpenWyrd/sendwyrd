@@ -480,6 +480,15 @@ sig=<base64url-signature>`}
             </li>
           </ul>
         </CollapsibleSection>
+
+        <CollapsibleSection title="Reading & Music Recs">
+          <ul style={ulStyle}>
+            <li>
+              <em>The Dawn of Day</em> — Friedrich Nietzsche.
+            </li>
+            <li>Symphony No. 8 — Anton Bruckner.</li>
+          </ul>
+        </CollapsibleSection>
       </div>
 
       <Link
