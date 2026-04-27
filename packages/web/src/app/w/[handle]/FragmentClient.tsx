@@ -558,8 +558,8 @@ const goneStyle: React.CSSProperties = {
   color: "var(--color-ink-muted)",
 };
 const shareRowStyle: React.CSSProperties = {
-  marginTop: "var(--spacing-6)",
-  paddingTop: "var(--spacing-4)",
+  marginTop: "var(--spacing-3)",
+  paddingTop: "var(--spacing-2)",
   borderTop: "1px solid var(--color-hairline)",
   display: "flex",
   justifyContent: "flex-end",

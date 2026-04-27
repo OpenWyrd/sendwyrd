@@ -77,8 +77,8 @@ export function ReplyForm({ handle, k_origin_pub_b64u }: Props) {
   return (
     <section
       style={{
-        marginTop: "var(--spacing-12)",
-        paddingTop: "var(--spacing-6)",
+        marginTop: "var(--spacing-6)",
+        paddingTop: "var(--spacing-3)",
         borderTop: "1px solid var(--color-hairline-strong)",
       }}
     >
@@ -96,7 +96,7 @@ export function ReplyForm({ handle, k_origin_pub_b64u }: Props) {
             fontFamily: "var(--font-mono)",
             fontSize: "var(--text-h3)",
             fontWeight: 500,
-            color: "var(--color-ink)",
+            color: "var(--color-ink-muted)",
             letterSpacing: "-0.01em",
           }}
         >
