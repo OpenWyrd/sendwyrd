@@ -31,6 +31,7 @@ import { addHistoryEntry } from "@/lib/wyrdHistory";
 import { b64uEncode } from "@sendwyrd/core";
 import { Segmented, Toggle } from "@/components/Segmented";
 import { Nav } from "@/components/Nav";
+import { InstallAffordance } from "@/components/InstallAffordance";
 import { requestPersistence } from "@/lib/persistentStorage";
 
 const TTL_PRESETS: Array<{ label: string; seconds: number }> = [
@@ -299,6 +300,7 @@ export default function ComposePage() {
   return (
     <main style={pageStyle}>
       <Nav />
+      <InstallAffordance variant="wyrd" />
       <form onSubmit={handleSend} style={panelStyle}>
         <textarea
           value={body}
