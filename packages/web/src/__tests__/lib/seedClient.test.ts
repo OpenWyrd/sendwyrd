@@ -13,12 +13,14 @@ import {
   consumeNextIndex,
   forgetSeed,
   getMnemonic,
+  getPassphraseGate,
   getSeed,
   getSeedMode,
   hasSeed,
   isUnlocked,
   lockSeed,
   protectWithPassphrase,
+  setPassphraseGate,
   storeOpenSeed,
   storeProtectedSeed,
   unlockSeed,
@@ -115,18 +117,35 @@ describe("seedClient — protected mode", () => {
 });
 
 describe("seedClient — protectWithPassphrase (open → protected)", () => {
-  it("encrypts an existing open-mode seed under a passphrase", async () => {
+  it("default gate is relaxed: encrypted blob alongside the plain seed", async () => {
     const seed = makeSeed(0x44);
     storeOpenSeed({ seed, counter: 5, mnemonic: "m1 m2 m3" });
     await protectWithPassphrase("a-good-pp");
 
     expect(getSeedMode()).toBe("protected");
-    expect(localStorage.getItem("sendwyrd:open_seed:v1")).toBeNull();
+    expect(getPassphraseGate()).toBe("relaxed");
+    // Plain record stays so the app doesn't prompt during normal use.
+    expect(localStorage.getItem("sendwyrd:open_seed:v1")).not.toBeNull();
+    // Encrypted blob also exists.
+    expect(localStorage.getItem("sendwyrd:seed:v1")).not.toBeNull();
+    // isUnlocked is true without an explicit unlockSeed call.
+    expect(isUnlocked()).toBe(true);
 
-    // Round-trip through unlock.
+    // Round-trip through unlock against the encrypted blob.
     const recovered = await unlockSeed("a-good-pp");
     expect(recovered.counter).toBe(5);
     expect(recovered.mnemonic).toBe("m1 m2 m3");
+  });
+
+  it("explicit strict gate clears the plain record", async () => {
+    const seed = makeSeed(0x44);
+    storeOpenSeed({ seed, counter: 5, mnemonic: "m1 m2 m3" });
+    await protectWithPassphrase("a-good-pp", "strict");
+
+    expect(getSeedMode()).toBe("protected");
+    expect(getPassphraseGate()).toBe("strict");
+    expect(localStorage.getItem("sendwyrd:open_seed:v1")).toBeNull();
+    expect(localStorage.getItem("sendwyrd:seed:v1")).not.toBeNull();
   });
 
   it("rejects passphrases shorter than 8 chars", async () => {
@@ -138,6 +157,73 @@ describe("seedClient — protectWithPassphrase (open → protected)", () => {
 
   it("throws when no seed exists", async () => {
     await expect(protectWithPassphrase("a-good-pp")).rejects.toThrow(/no_seed/);
+  });
+});
+
+describe("seedClient — passphrase gate", () => {
+  it("getPassphraseGate is null when no passphrase is set", () => {
+    expect(getPassphraseGate()).toBeNull();
+    storeOpenSeed({ seed: makeSeed(), counter: 0 });
+    expect(getPassphraseGate()).toBeNull();
+  });
+
+  it("setPassphraseGate flips relaxed → strict and clears the plain record", async () => {
+    storeOpenSeed({ seed: makeSeed(0x55), counter: 3, mnemonic: "m1 m2" });
+    await protectWithPassphrase("a-good-pp"); // default relaxed
+    expect(getPassphraseGate()).toBe("relaxed");
+
+    await setPassphraseGate("strict", "a-good-pp");
+    expect(getPassphraseGate()).toBe("strict");
+    expect(localStorage.getItem("sendwyrd:open_seed:v1")).toBeNull();
+    // Strict mode no longer auto-unlocked from disk.
+    lockSeed();
+    expect(isUnlocked()).toBe(false);
+  });
+
+  it("setPassphraseGate flips strict → relaxed and writes a plain record", async () => {
+    await storeProtectedSeed({
+      seed: makeSeed(0x66),
+      counter: 9,
+      passphrase: "a-good-pp",
+    });
+    expect(getPassphraseGate()).toBe("strict");
+
+    await setPassphraseGate("relaxed", "a-good-pp");
+    expect(getPassphraseGate()).toBe("relaxed");
+    expect(localStorage.getItem("sendwyrd:open_seed:v1")).not.toBeNull();
+    // Now no unlock needed.
+    lockSeed();
+    expect(isUnlocked()).toBe(true);
+    expect(getSeed()?.counter).toBe(9);
+  });
+
+  it("setPassphraseGate rejects a wrong passphrase without changing storage", async () => {
+    await storeProtectedSeed({
+      seed: makeSeed(),
+      counter: 0,
+      passphrase: "right-pp",
+    });
+    await expect(setPassphraseGate("relaxed", "wrong-pp")).rejects.toThrow();
+    expect(getPassphraseGate()).toBe("strict");
+    expect(localStorage.getItem("sendwyrd:open_seed:v1")).toBeNull();
+  });
+
+  it("relaxed mode: consumeNextIndex updates plain record only; encrypted blob is a snapshot", async () => {
+    storeOpenSeed({ seed: makeSeed(), counter: 0 });
+    await protectWithPassphrase("a-good-pp"); // relaxed default
+    const blobBefore = localStorage.getItem("sendwyrd:seed:v1");
+    expect(blobBefore).not.toBeNull();
+
+    await consumeNextIndex();
+    await consumeNextIndex();
+
+    // Plain record reflects the new counter.
+    expect(getSeed()?.counter).toBe(2);
+    // Encrypted snapshot is untouched (still encrypts the toggle-time counter).
+    expect(localStorage.getItem("sendwyrd:seed:v1")).toBe(blobBefore);
+    // Decrypting the snapshot returns the OLD counter.
+    const fromBlob = await unlockSeed("a-good-pp");
+    expect(fromBlob.counter).toBe(0);
   });
 });
 

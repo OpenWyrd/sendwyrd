@@ -27,7 +27,10 @@ import {
   unprotectSeed,
   regenerateSeed,
   installRecoveredSeed,
+  getPassphraseGate,
+  setPassphraseGate,
   type SeedMode,
+  type PassphraseGate,
 } from "@/lib/seedClient";
 import { generateSeed, isValidMnemonic, mnemonicToSeed } from "@sendwyrd/core";
 import { mergeHistoryEntries } from "@/lib/wyrdHistory";
@@ -56,12 +59,15 @@ export default function SettingsPage() {
   const router = useRouter();
   const [theme, setTheme] = useState<Theme>("system");
   const [seedMode, setSeedModeState] = useState<SeedMode>(null);
+  const [gate, setGateState] = useState<PassphraseGate | null>(null);
   const [, setUnlockedState] = useState(false);
 
   // Passphrase form state
   const [pp, setPp] = useState("");
   const [ppConfirm, setPpConfirm] = useState("");
   const [unlockPp, setUnlockPp] = useState("");
+  const [gatePp, setGatePp] = useState("");
+  const [pendingGate, setPendingGate] = useState<PassphraseGate | null>(null);
   const [ppMessage, setPpMessage] = useState<{
     kind: "ok" | "err";
     text: string;
@@ -74,7 +80,6 @@ export default function SettingsPage() {
   // Recovery state
   const [recoveryOpen, setRecoveryOpen] = useState(false);
   const [recoveryMnemonic, setRecoveryMnemonic] = useState("");
-  const [recoveryWordCount, setRecoveryWordCount] = useState<12 | 24>(12);
   const [recoveryStoragePassphrase, setRecoveryStoragePassphrase] =
     useState("");
   const [
@@ -110,6 +115,7 @@ export default function SettingsPage() {
     setTheme(stored);
     applyTheme(stored);
     setSeedModeState(getSeedMode());
+    setGateState(getPassphraseGate());
     setUnlockedState(isUnlocked());
     setMnemonic(getMnemonic());
     void (async () => {
@@ -131,8 +137,30 @@ export default function SettingsPage() {
 
   function refreshState() {
     setSeedModeState(getSeedMode());
+    setGateState(getPassphraseGate());
     setUnlockedState(isUnlocked());
     setMnemonic(getMnemonic());
+  }
+
+  async function handleApplyGate(e: React.FormEvent) {
+    e.preventDefault();
+    if (!pendingGate) return;
+    setPpMessage(null);
+    try {
+      await setPassphraseGate(pendingGate, gatePp);
+      setGatePp("");
+      setPendingGate(null);
+      setPpMessage({
+        kind: "ok",
+        text:
+          pendingGate === "strict"
+            ? "Passphrase will now be required at the start of every session."
+            : "Passphrase no longer prompts during use; it still encrypts the backup blob.",
+      });
+      refreshState();
+    } catch {
+      setPpMessage({ kind: "err", text: "Wrong passphrase." });
+    }
   }
 
   async function handleAddPassphrase(e: React.FormEvent) {
@@ -208,7 +236,7 @@ export default function SettingsPage() {
     if (!isValidMnemonic(phrase)) {
       setRecoveryMessage({
         kind: "err",
-        text: "Invalid mnemonic — check spelling and word count (12 or 24).",
+        text: "Invalid mnemonic — check spelling (12 words).",
       });
       return;
     }
@@ -372,7 +400,9 @@ export default function SettingsPage() {
             <p style={{ ...metaStyle, marginBottom: "var(--spacing-4)" }}>
               Your seed is currently stored in plain localStorage on this
               device. Add a passphrase to encrypt it at rest
-              (PBKDF2-AES-256-GCM, 600k iterations).
+              (PBKDF2-AES-256-GCM, 600k iterations). The app stays unlocked
+              during use; you can opt into per-session unlock prompts after the
+              passphrase is set.
             </p>
             <form onSubmit={handleAddPassphrase}>
               <input
@@ -403,8 +433,94 @@ export default function SettingsPage() {
         {seedMode === "protected" && (
           <>
             <p style={{ ...metaStyle, marginBottom: "var(--spacing-4)" }}>
-              Your seed is encrypted with a passphrase. To remove it (and store
-              the seed in plain localStorage), enter your current passphrase.
+              Your seed is encrypted with a passphrase. By default the app stays
+              unlocked during use — the passphrase only encrypts a backup blob
+              for migration or recovery. Switch the toggle below to require it
+              at the start of every session instead.
+            </p>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "var(--spacing-3)",
+                flexWrap: "wrap",
+                marginBottom: "var(--spacing-3)",
+              }}
+            >
+              <p style={{ ...metaStyle, margin: 0 }}>
+                Require passphrase each session
+              </p>
+              <Segmented
+                name="passphrase-gate"
+                value={gate ?? "relaxed"}
+                onChange={(v) => {
+                  const target = v as PassphraseGate;
+                  if (target === gate) return;
+                  setPendingGate(target);
+                  setPpMessage(null);
+                }}
+                size="sm"
+                ariaLabel="Passphrase gate"
+                options={[
+                  { value: "relaxed", label: "off" },
+                  { value: "strict", label: "on" },
+                ]}
+              />
+            </div>
+            {pendingGate && (
+              <form
+                onSubmit={handleApplyGate}
+                style={{ marginBottom: "var(--spacing-6)" }}
+              >
+                <p
+                  style={{
+                    ...metaStyle,
+                    marginBottom: "var(--spacing-3)",
+                    color: "var(--color-ink-subtle)",
+                  }}
+                >
+                  Confirm with your current passphrase to{" "}
+                  {pendingGate === "strict"
+                    ? "turn on per-session unlock"
+                    : "turn off per-session unlock"}
+                  .
+                </p>
+                <input
+                  type="password"
+                  autoComplete="current-password"
+                  value={gatePp}
+                  onChange={(e) => setGatePp(e.target.value)}
+                  placeholder="current passphrase"
+                  autoFocus
+                  style={inputStyle}
+                />
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "var(--spacing-3)",
+                    marginTop: "var(--spacing-3)",
+                  }}
+                >
+                  <button type="submit" style={btnStyle}>
+                    Apply
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPendingGate(null);
+                      setGatePp("");
+                      setPpMessage(null);
+                    }}
+                    style={btnStyle}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            )}
+            <p style={{ ...metaStyle, marginBottom: "var(--spacing-4)" }}>
+              To remove the passphrase entirely (and store the seed in plain
+              localStorage), enter your current passphrase.
             </p>
             <form onSubmit={handleRemovePassphrase}>
               <input
@@ -442,18 +558,19 @@ export default function SettingsPage() {
         )}
         <div style={{ marginBottom: "var(--spacing-12)" }} />
 
-        <h2 style={sectionStyle}>Backup mnemonic</h2>
+        <h2 style={sectionStyle}>Backup seed</h2>
         {!seedMode && <p style={metaStyle}>No seed yet.</p>}
         {seedMode && !mnemonicShown && (
           <>
             <p style={{ ...metaStyle, marginBottom: "var(--spacing-4)" }}>
-              Your 12-word recovery phrase. Write it down somewhere offline.
-              SendWyrd stores your seed locally — back up your mnemonic. If
-              local storage clears or this device fails, your sealed wyrds
-              vanish; the mnemonic is the only path back to your authorship.
+              Your 12-word recovery phrase, plus the raw seed as a copyable
+              string. Write one down somewhere offline. SendWyrd stores your
+              seed locally — back it up. If local storage clears or this device
+              fails, your sealed wyrds vanish; the seed is the only path back to
+              your authorship.
             </p>
             <button onClick={handleRevealMnemonic} style={btnStyle}>
-              Reveal mnemonic
+              Reveal seed
             </button>
           </>
         )}
@@ -485,9 +602,46 @@ export default function SettingsPage() {
                 </div>
               ))}
             </div>
-            <button onClick={() => setMnemonicShown(false)} style={btnStyle}>
-              Hide
-            </button>
+            <p
+              style={{
+                ...metaStyle,
+                marginBottom: "var(--spacing-3)",
+                color: "var(--color-ink-subtle)",
+              }}
+            >
+              Or copy the raw seed as a single string. Equivalent to the 12
+              words but easier to paste; not a standard BIP-39 phrase, so no
+              other wallet will recognize it.
+            </p>
+            <div
+              style={{
+                display: "flex",
+                gap: "var(--spacing-3)",
+                flexWrap: "wrap",
+              }}
+            >
+              <button
+                onClick={async () => {
+                  const raw = getSeedBackupString();
+                  if (!raw) return;
+                  try {
+                    await navigator.clipboard.writeText(raw);
+                    setPpMessage({
+                      kind: "ok",
+                      text: "Raw seed copied to clipboard.",
+                    });
+                  } catch {
+                    window.prompt("Raw seed (base64url) — copy manually:", raw);
+                  }
+                }}
+                style={btnStyle}
+              >
+                Copy raw seed
+              </button>
+              <button onClick={() => setMnemonicShown(false)} style={btnStyle}>
+                Hide
+              </button>
+            </div>
           </>
         )}
         {seedMode && mnemonicShown && !mnemonic && (
@@ -539,10 +693,10 @@ export default function SettingsPage() {
 
         <h2 style={sectionStyle}>Recover from mnemonic</h2>
         <p style={{ ...metaStyle, marginBottom: "var(--spacing-4)" }}>
-          Have a 12- or 24-word phrase from another device? Sweep the host for
-          wyrds derived from this seed. Burn / fetch-replies will work on
-          recovered wyrds; body decryption requires the original share URLs
-          (read keys aren&apos;t derived from the seed).
+          Have a 12-word phrase from another device? Sweep the host for wyrds
+          derived from this seed. Burn / fetch-replies will work on recovered
+          wyrds; body decryption requires the original share URLs (read keys
+          aren&apos;t derived from the seed).
         </p>
         {!recoveryOpen && (
           <button
@@ -557,23 +711,10 @@ export default function SettingsPage() {
         )}
         {recoveryOpen && (
           <form onSubmit={handleRecoverFromMnemonic}>
-            <div style={{ marginBottom: "var(--spacing-4)" }}>
-              <Segmented
-                name="recovery-word-count"
-                value={String(recoveryWordCount)}
-                onChange={(v) => setRecoveryWordCount(Number(v) as 12 | 24)}
-                size="sm"
-                ariaLabel="Word count"
-                options={[
-                  { value: "12", label: "12 words" },
-                  { value: "24", label: "24 words" },
-                ]}
-              />
-            </div>
             <MnemonicInput
               value={recoveryMnemonic}
               onChange={setRecoveryMnemonic}
-              wordCount={recoveryWordCount}
+              wordCount={12}
               disabled={recoveryRunning}
             />
             <p
