@@ -57,8 +57,8 @@ export default function LandingPage() {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        padding: "var(--spacing-20) var(--spacing-6) var(--spacing-24)",
-        gap: "var(--spacing-16)",
+        padding: "var(--spacing-12) var(--spacing-6) var(--spacing-16)",
+        gap: "var(--spacing-12)",
       }}
     >
       {/* Wordmark */}
@@ -98,8 +98,8 @@ export default function LandingPage() {
         }}
       >
         <SpecimenWyrd
-          body="Anyone worked through a SAFE conversion with bridge notes outstanding? Pass forward if so."
-          count={90}
+          body="Anyone worked through a SAFE conversion with bridge notes outstanding? Pass to anyone who might know."
+          count={101}
         />
         <SpecimenWyrd
           body="I have 100 cows to sell at XYZ location. Any buyers in the area?"
