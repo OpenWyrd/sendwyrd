@@ -71,9 +71,13 @@ app.notFound((c) => c.json({ error: "not_found" }, 404));
 
 // Error handler.
 app.onError((err, c) => {
-  console.error("api_error", err);
-  // Forward to Sentry if configured. Sentry.captureException is a no-op
-  // when DSN is unset.
+  // Worker observability captures console output. Drizzle/Postgres errors
+  // can embed query values in `err.message` (e.g. unique-constraint
+  // violations include the violating key). Log only the class + a static
+  // marker so CF tail logs never see plaintext field values; the full
+  // error still flows to Sentry where redactBeforeSend scrubs it.
+  const errName = err?.name ?? "Error";
+  console.error("api_error", errName);
   try {
     Sentry.captureException(err);
   } catch {

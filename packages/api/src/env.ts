@@ -32,6 +32,7 @@ export interface Env {
   RL_REPLY_HANDLE?: RateLimit;
   RL_READ?: RateLimit;
   RL_UNFURL?: RateLimit;
+  RL_ADMIN?: RateLimit;
 
   // Secrets (from `wrangler secret put`).
   DATABASE_URL: string;

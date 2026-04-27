@@ -21,7 +21,8 @@ type BucketName =
   | "RL_REPLY_IP"
   | "RL_REPLY_HANDLE"
   | "RL_READ"
-  | "RL_UNFURL";
+  | "RL_UNFURL"
+  | "RL_ADMIN";
 
 /**
  * Cloudflare sets CF-Connecting-IP on every inbound request and strips

@@ -61,5 +61,17 @@ type = "ratelimit"
 namespace_id = "1005"
 simple = { limit = 60, period = 60 }
 
+# Admin/ops dashboard. Generous bucket: the /ops page polls multiple
+# admin sub-fetches per render, so 5/min would be painful for an
+# operator while doing little against an attacker who already needs
+# the constant-time-compared OPS_DASH_SECRET to get past the auth gate.
+# 30/min absorbs ~3-5 dashboard refreshes/min and still meaningfully
+# brakes any blind-fuzz attempt.
+[[unsafe.bindings]]
+name = "RL_ADMIN"
+type = "ratelimit"
+namespace_id = "1006"
+simple = { limit = 30, period = 60 }
+
 [observability]
 enabled = true
