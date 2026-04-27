@@ -142,6 +142,26 @@ describe("compose — input validation", () => {
     ).rejects.toThrow(/codepoints/);
   });
 
+  it("excludes Lightning invoices from the codepoint cap (matches UI counter)", async () => {
+    // Synthetic BOLT11-shape invoice padded over the prose cap. The body
+    // parser only requires the prefix + 50+ bech32 chars, so we extend it
+    // here to exercise the "raw count > cap, countable count ≤ cap" path.
+    const invoice = "lnbc1500n1" + "ac".repeat(200);
+    const plaintext = `tip me: ${invoice}`;
+    expect(plaintext.length).toBeGreaterThan(BODY_CODEPOINT_CAP);
+    // Prose + invoice — raw codepoint count exceeds the cap, but the prose
+    // alone fits, so this must not throw.
+    await expect(
+      composeWyrd({
+        plaintext,
+        seed,
+        n: 0,
+        ttl_seconds: 60,
+        replies_enabled: false,
+      }),
+    ).resolves.toBeTruthy();
+  });
+
   it("rejects negative ttl", async () => {
     await expect(
       composeWyrd({

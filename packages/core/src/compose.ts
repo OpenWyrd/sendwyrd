@@ -23,6 +23,7 @@ import { b64uEncode, b64uDecode } from "./encoding.js";
 import { encryptEnvelope } from "./envelope.js";
 import { deriveOriginKey, deriveReadKey, type OriginKeyPair } from "./hd.js";
 import { publishMessage, schnorrSign } from "./sign.js";
+import { countCountableCodepoints } from "./body.js";
 
 export interface ComposeArgs {
   /** UTF-8 plaintext body, codepoint count enforced by this function. */
@@ -62,18 +63,23 @@ export interface PublishPayload {
 /**
  * Compose, encrypt, sign, and produce the publish payload for a wyrd.
  *
- * Counts codepoints (not bytes), enforces ≤ BODY_CODEPOINT_CAP. The caller
- * persists `next_n = n + 1` regardless of publish success/failure (per spec
- * §5.2 — index is consumed even on failure).
+ * Cap is measured by `countCountableCodepoints` so URL / Lightning / Bitcoin
+ * payloads don't count against the prose budget — matches the live counter in
+ * the compose UI per the spec amendment to §8.2 / ADR-012 / ADR-023.
+ *
+ * The caller persists `next_n = n + 1` regardless of publish success/failure
+ * (per spec §5.2 — index is consumed even on failure).
  */
 export async function composeWyrd(args: ComposeArgs): Promise<ComposeResult> {
-  const codepointCount = countCodepoints(args.plaintext);
-  if (codepointCount > BODY_CODEPOINT_CAP) {
+  const countableCount = countCountableCodepoints(args.plaintext);
+  if (countableCount > BODY_CODEPOINT_CAP) {
     throw new Error(
-      `body exceeds ${BODY_CODEPOINT_CAP} codepoints (${codepointCount})`,
+      `body exceeds ${BODY_CODEPOINT_CAP} codepoints (${countableCount})`,
     );
   }
-  if (codepointCount === 0) {
+  // Empty check uses raw codepoints — a body that's *only* a Lightning invoice
+  // or URL is still a meaningful wyrd, even though its countable count is 0.
+  if (countCodepoints(args.plaintext) === 0) {
     throw new Error("body is empty");
   }
   if (args.ttl_seconds < 0 || args.ttl_seconds > 31_536_000) {
