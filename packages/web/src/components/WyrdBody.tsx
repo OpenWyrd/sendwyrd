@@ -145,18 +145,18 @@ function PaymentChip({ seg }: { seg: PaymentSegment }) {
     window.setTimeout(() => setCopied(false), 1200);
   }
   return (
-    <span style={{ display: "inline-block" }}>
+    <>
       <span
         style={{
           display: "inline-flex",
           alignItems: "center",
           gap: "var(--spacing-2)",
-          padding: "0 var(--spacing-2)",
+          padding: "var(--spacing-4) var(--spacing-3)",
           margin: "0 2px",
           border: "1px solid var(--color-hairline-strong)",
           background: "var(--color-surface)",
           fontFamily: "var(--font-mono)",
-          fontSize: "var(--text-microcaption)",
+          fontSize: "var(--text-body)",
           color: "var(--color-ink)",
           verticalAlign: "baseline",
         }}
@@ -191,6 +191,8 @@ function PaymentChip({ seg }: { seg: PaymentSegment }) {
             display: "block",
             marginTop: "var(--spacing-3)",
             marginBottom: "var(--spacing-3)",
+            marginLeft: "auto",
+            marginRight: "auto",
             padding: "var(--spacing-3)",
             border: "1px solid var(--color-hairline)",
             background: "var(--color-surface)",
@@ -221,7 +223,7 @@ function PaymentChip({ seg }: { seg: PaymentSegment }) {
           </span>
         </span>
       )}
-    </span>
+    </>
   );
 }
 
@@ -231,7 +233,7 @@ const inlineChipBtn: React.CSSProperties = {
   padding: 0,
   color: "var(--color-ink-muted)",
   fontFamily: "var(--font-mono)",
-  fontSize: "var(--text-microcaption)",
+  fontSize: "var(--text-body)",
   cursor: "pointer",
   textDecoration: "underline",
   textUnderlineOffset: 2,
