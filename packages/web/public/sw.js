@@ -26,10 +26,15 @@
 // Bump these when changing cache semantics so old caches get evicted on
 // activate. v1 served the landing page stale-while-revalidate, which trapped
 // returning visitors on HTML referencing chunk hashes that no longer existed
-// after a deploy → "Application error" on hydration. v2 fetches the landing
-// HTML network-first and only falls back to the precached shell offline.
-const SHELL_CACHE = "sendwyrd-shell-v2";
-const RUNTIME_CACHE = "sendwyrd-runtime-v2";
+// after a deploy → "Application error" on hydration. v2 fetched the landing
+// HTML network-first but still SWR'd /_next/static/chunks: a returning client
+// could be served stale chunks from the previous deploy whose entrypoints
+// were removed, producing the same hydration error. v3 (a) never falls back
+// to stale chunk JS — a chunk miss returns 503 so Next's chunk loader can
+// recover instead of executing a wrong-graph module, (b) signals clients on
+// activate so they reload once when a new SW takes control.
+const SHELL_CACHE = "sendwyrd-shell-v3";
+const RUNTIME_CACHE = "sendwyrd-runtime-v3";
 
 // Minimal precache list — landing only. Next.js chunks have hashed names so
 // we can't enumerate them here; they'll be picked up by stale-while-revalidate
@@ -81,6 +86,15 @@ self.addEventListener("activate", (event) => {
           .map((n) => caches.delete(n)),
       );
       await self.clients.claim();
+      // Tell already-open clients we just took control. The page-side
+      // listener does a one-time reload so the running document drops its
+      // old chunk graph and picks up the new HTML + chunks coherently.
+      // First-install clients (no prior controller) ignore this on the
+      // page side via a guard, so we don't reload on the very first visit.
+      const clients = await self.clients.matchAll({ type: "window" });
+      for (const client of clients) {
+        client.postMessage({ type: "sw-activated", cache: SHELL_CACHE });
+      }
     })(),
   );
 });
@@ -112,7 +126,24 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Static assets under /_next/static, /icons, /favicon, etc — SWR.
+  // Next.js JS/CSS chunks under /_next/static/chunks and /_next/static/css.
+  // These are content-hashed and tied to a specific build's module graph.
+  // Serving a stale chunk after a deploy executes a module from a different
+  // graph and detonates hydration. Cache-first on hit (hashed = immutable),
+  // network on miss; on network failure return 503 — never a cross-graph
+  // fallback. Next's chunk loader treats this as a recoverable error and a
+  // full navigation reload picks up the new graph cleanly.
+  if (
+    url.pathname.startsWith("/_next/static/chunks/") ||
+    url.pathname.startsWith("/_next/static/css/")
+  ) {
+    event.respondWith(cacheFirstNoStaleFallback(req, RUNTIME_CACHE));
+    return;
+  }
+
+  // Other static (icons, fonts, /_next/static/media, manifest) — SWR is
+  // safe: these are content-addressed or version-stable and don't carry
+  // runtime-graph coupling.
   if (
     url.pathname.startsWith("/_next/static/") ||
     url.pathname.startsWith("/icons/") ||
@@ -161,6 +192,26 @@ async function networkFirstUpdateCache(req, cacheName) {
     const cached = await caches.match(req);
     if (cached) return cached;
     return offlineFallback();
+  }
+}
+
+async function cacheFirstNoStaleFallback(req, cacheName) {
+  const cache = await caches.open(cacheName);
+  const cached = await cache.match(req);
+  if (cached) return cached;
+  try {
+    const res = await fetch(req);
+    if (res && res.status === 200 && res.type === "basic") {
+      cache.put(req, res.clone());
+    }
+    return res;
+  } catch {
+    // Deliberately no fallback. A stale chunk from the previous build is
+    // poison for the current document's module graph.
+    return new Response("chunk unavailable", {
+      status: 503,
+      headers: { "Content-Type": "text/plain" },
+    });
   }
 }
 
