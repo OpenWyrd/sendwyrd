@@ -109,7 +109,7 @@ None. Production live at `https://sendwyrd.com`, verified end-to-end, observed v
 **Operational provisioning** (unchanged):
 - Cloudflare API token: `~/.config/cloudflare/sendwyrd_api_token` (mode 600)
 - Sentry user auth token: `~/.config/sentry/auth_token` (mode 600)
-- Wrangler authed under `***` (account `***`)
+- Wrangler authed under the operator's account (`***`)
 - Neon CLI authed under `the Neon org` (***)
 - Neon project `***`, R2 bucket `sendwyrd-blobs`, Workers `sendwyrd-api` + `sendwyrd-web`
 

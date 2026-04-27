@@ -144,7 +144,7 @@ Three follow-on commits landed on the same branch / PR #38 after the initial MCP
 
 ## npm publish
 
-`@sendwyrd/mcp@0.1.0` published to https://registry.npmjs.org/@sendwyrd/mcp on 2026-04-26 23:55 UTC by `deltaclimbs <***>`.
+`@sendwyrd/mcp@0.1.0` published to https://registry.npmjs.org/@sendwyrd/mcp on 2026-04-26 23:55 UTC by the `deltaclimbs` npm account.
 
 - License: MIT
 - Bundle: 192.7 KB tarball, 927.2 KB unpacked (single ESM file targeting node20)
