@@ -34,10 +34,14 @@ import {
 } from "@sendwyrd/core";
 import type { Env } from "../env.js";
 import { makeDb, schema } from "../db.js";
+import { rateLimit, clientIp } from "../rateLimit.js";
 
 export const authorsRoutes = new Hono<{ Bindings: Env }>().get(
   "/:k_origin_pub/handles",
   async (c) => {
+    const rl = await rateLimit(c, "RL_READ", clientIp(c));
+    if (rl) return rl;
+
     const k_origin_pub_b64u = c.req.param("k_origin_pub");
 
     // Decode + shape-check the pubkey from the path.

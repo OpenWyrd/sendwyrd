@@ -30,6 +30,7 @@
 
 import { Hono } from "hono";
 import type { Env } from "../env.js";
+import { rateLimit, clientIp } from "../rateLimit.js";
 
 type App = Hono<{ Bindings: Env }>;
 
@@ -57,6 +58,9 @@ interface UnfurlError {
 }
 
 unfurlRoutes.get("/", async (c) => {
+  const rl = await rateLimit(c, "RL_UNFURL", clientIp(c));
+  if (rl) return rl;
+
   const raw = c.req.query("url");
   if (!raw || raw.length > URL_MAX) {
     return c.json<UnfurlError>({ ok: false, reason: "invalid_url" }, 400);

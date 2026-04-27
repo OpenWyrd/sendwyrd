@@ -22,12 +22,16 @@ import {
 } from "@sendwyrd/core";
 import type { Env } from "../env.js";
 import { makeDb, schema } from "../db.js";
+import { rateLimit, clientIp } from "../rateLimit.js";
 
 const HANDLE_PATTERN = new RegExp(`^[A-Za-z0-9_-]{${HANDLE_CHARS}}$`);
 
 export const wyrdsRoutes = new Hono<{ Bindings: Env }>()
   /* POST /api/v1/wyrds — publish */
   .post("/", async (c) => {
+    const rl = await rateLimit(c, "RL_WRITE", clientIp(c));
+    if (rl) return rl;
+
     let body: any;
     try {
       body = await c.req.json();
@@ -148,6 +152,9 @@ export const wyrdsRoutes = new Hono<{ Bindings: Env }>()
 
   /* GET /api/v1/wyrds/:handle — fetch envelope (fragment-form access) */
   .get("/:handle", async (c) => {
+    const rlGet = await rateLimit(c, "RL_READ", clientIp(c));
+    if (rlGet) return rlGet;
+
     const handle = c.req.param("handle");
     if (!HANDLE_PATTERN.test(handle)) {
       return c.json({ error: "not_found" }, 404);
@@ -206,6 +213,9 @@ export const wyrdsRoutes = new Hono<{ Bindings: Env }>()
 
   /* DELETE /api/v1/wyrds/:handle — burn (K_origin-signed) */
   .delete("/:handle", async (c) => {
+    const rl = await rateLimit(c, "RL_WRITE", clientIp(c));
+    if (rl) return rl;
+
     const handle = c.req.param("handle");
     if (!HANDLE_PATTERN.test(handle)) {
       return c.json({ error: "not_found" }, 404);

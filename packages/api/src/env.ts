@@ -6,11 +6,32 @@
 
 import type { R2Bucket } from "@cloudflare/workers-types";
 
+/**
+ * Cloudflare Workers Rate Limiting binding. Sliding window per-colo;
+ * `success: false` means the caller exceeded the configured limit for the
+ * given key in the most recent period.
+ */
+export interface RateLimit {
+  limit(opts: { key: string }): Promise<{ success: boolean }>;
+}
+
 export interface Env {
   // Bindings (from wrangler.toml).
   BLOBS: R2Bucket;
   PROTOCOL_VERSION: string;
   WEB_ORIGIN: string;
+
+  /**
+   * Per-IP / per-object rate-limit bindings (ADR-013). Configured as
+   * `[[unsafe.bindings]] type = "ratelimit"` in wrangler.toml. Optional in
+   * the type so unit tests and local dev (no binding) compile; the
+   * rateLimit helper fails open when a binding is absent.
+   */
+  RL_WRITE?: RateLimit;
+  RL_REPLY_IP?: RateLimit;
+  RL_REPLY_HANDLE?: RateLimit;
+  RL_READ?: RateLimit;
+  RL_UNFURL?: RateLimit;
 
   // Secrets (from `wrangler secret put`).
   DATABASE_URL: string;

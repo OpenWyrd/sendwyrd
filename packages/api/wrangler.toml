@@ -24,5 +24,42 @@ WEB_ORIGIN = "https://sendwyrd.com"
 #   wrangler secret put DATABASE_URL
 # and live only in the Worker runtime — never in this file.
 
+# Per-IP / per-object rate limits (ADR-013 abuse posture). Cloudflare Workers
+# Rate Limiting API — sliding window, per-colo (regional, not global). An
+# attacker rotating across PoPs gets ~N× limit; honest users see no friction.
+# Period must be 10 or 60 seconds.
+#
+# Namespace IDs are unique-per-account integers; they don't have to be
+# sequential, only stable. Changing an ID resets the bucket.
+[[unsafe.bindings]]
+name = "RL_WRITE"
+type = "ratelimit"
+namespace_id = "1001"
+simple = { limit = 20, period = 60 }
+
+[[unsafe.bindings]]
+name = "RL_REPLY_IP"
+type = "ratelimit"
+namespace_id = "1002"
+simple = { limit = 20, period = 60 }
+
+[[unsafe.bindings]]
+name = "RL_REPLY_HANDLE"
+type = "ratelimit"
+namespace_id = "1003"
+simple = { limit = 60, period = 60 }
+
+[[unsafe.bindings]]
+name = "RL_READ"
+type = "ratelimit"
+namespace_id = "1004"
+simple = { limit = 120, period = 60 }
+
+[[unsafe.bindings]]
+name = "RL_UNFURL"
+type = "ratelimit"
+namespace_id = "1005"
+simple = { limit = 60, period = 60 }
+
 [observability]
 enabled = true
