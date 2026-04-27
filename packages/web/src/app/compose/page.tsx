@@ -53,6 +53,7 @@ export default function ComposePage() {
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [repliesHelpOpen, setRepliesHelpOpen] = useState(false);
 
   // First-mount: ensure a seed exists. If not, auto-generate in open mode.
   // Also accept Web Share Target prefill (?text=, ?title=, ?url=) — when the
@@ -251,17 +252,23 @@ export default function ComposePage() {
               maxWidth: "100%",
             }}
           >
-            <span
+            <a
+              href={shareUrl}
+              target="_blank"
+              rel="noopener noreferrer"
               style={{
                 flex: "1 1 0",
                 minWidth: 0,
                 overflowWrap: "anywhere",
                 wordBreak: "break-word",
                 fontFamily: "var(--font-mono)",
+                color: "var(--color-accent)",
+                textDecoration: "underline",
+                textUnderlineOffset: "2px",
               }}
             >
               {shareUrl}
-            </span>
+            </a>
             <button
               onClick={handleCopy}
               aria-label="Copy share URL"
@@ -306,7 +313,7 @@ export default function ComposePage() {
           value={body}
           onChange={(e) => setBody(e.target.value)}
           placeholder="A wyrd…"
-          rows={6}
+          rows={5}
           autoFocus
           style={{
             width: "100%",
@@ -316,9 +323,9 @@ export default function ComposePage() {
             color: "var(--color-ink)",
             fontFamily: "var(--font-mono)",
             fontSize: "var(--text-body)",
-            lineHeight: 1.6,
+            lineHeight: 1.5,
             resize: "vertical",
-            padding: "var(--spacing-3) 0",
+            padding: "var(--spacing-2) 0",
             outline: "none",
           }}
         />
@@ -326,7 +333,7 @@ export default function ComposePage() {
         <p
           style={{
             margin: 0,
-            marginTop: "var(--spacing-2)",
+            marginTop: "var(--spacing-1)",
             textAlign: "right",
             fontFamily: "var(--font-mono)",
             fontSize: "var(--text-caption)",
@@ -337,7 +344,7 @@ export default function ComposePage() {
           {count} / {BODY_CODEPOINT_CAP}
         </p>
 
-        <div style={{ marginTop: "var(--spacing-6)" }}>
+        <div style={{ marginTop: "var(--spacing-3)" }}>
           <p style={fieldLabelStyle}>Expires in</p>
           <Segmented
             name="ttl"
@@ -353,12 +360,12 @@ export default function ComposePage() {
           />
         </div>
 
-        <div style={{ marginTop: "var(--spacing-6)" }}>
+        <div style={{ marginTop: "var(--spacing-3)" }}>
           <div
             style={{
               display: "flex",
               alignItems: "center",
-              gap: "var(--spacing-4)",
+              gap: "var(--spacing-3)",
               flexWrap: "wrap",
             }}
           >
@@ -369,18 +376,29 @@ export default function ComposePage() {
               onChange={setRepliesEnabled}
               ariaLabel="Allow replies"
             />
+            <button
+              type="button"
+              onClick={() => setRepliesHelpOpen((v) => !v)}
+              aria-label="What does the replies toggle do?"
+              aria-expanded={repliesHelpOpen}
+              style={helpToggleStyle}
+            >
+              ?
+            </button>
           </div>
-          <p
-            style={{
-              ...hintStyle,
-              marginTop: "var(--spacing-2)",
-              marginBottom: 0,
-            }}
-          >
-            {repliesEnabled
-              ? "Useful when this wyrd is relayed person-to-person. The nth recipient can reach you privately — only you can read replies, not the host or anyone in the chain."
-              : "One-way only — recipients cannot reply through this wyrd."}
-          </p>
+          {repliesHelpOpen && (
+            <p
+              style={{
+                ...hintStyle,
+                marginTop: "var(--spacing-2)",
+                marginBottom: 0,
+              }}
+            >
+              {repliesEnabled
+                ? "Useful when this wyrd is relayed person-to-person. The nth recipient can reach you privately — only you can read replies, not the host or anyone in the chain."
+                : "One-way only — recipients cannot reply through this wyrd."}
+            </p>
+          )}
         </div>
 
         {error && <p style={errorStyle}>{error}</p>}
@@ -390,7 +408,7 @@ export default function ComposePage() {
           disabled={overCap || count === 0 || sending}
           style={{
             ...btnStyle,
-            marginTop: "var(--spacing-8)",
+            marginTop: "var(--spacing-5)",
             opacity: overCap || count === 0 || sending ? 0.4 : 1,
             cursor:
               overCap || count === 0 || sending ? "not-allowed" : "pointer",
@@ -408,8 +426,8 @@ const pageStyle: React.CSSProperties = {
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
-  padding: "var(--spacing-12) var(--spacing-6)",
-  gap: "var(--spacing-12)",
+  padding: "var(--spacing-4) var(--spacing-6) var(--spacing-6)",
+  gap: "var(--spacing-4)",
 };
 const panelStyle: React.CSSProperties = {
   width: "100%",
@@ -451,6 +469,19 @@ const hintStyle: React.CSSProperties = {
   color: "var(--color-ink-subtle)",
   fontSize: "var(--text-microcaption)",
   fontFamily: "var(--font-mono)",
+};
+const helpToggleStyle: React.CSSProperties = {
+  width: 18,
+  height: 18,
+  padding: 0,
+  background: "transparent",
+  border: "1px solid var(--color-hairline)",
+  borderRadius: "50%",
+  color: "var(--color-ink-muted)",
+  fontFamily: "var(--font-mono)",
+  fontSize: "var(--text-microcaption)",
+  lineHeight: "16px",
+  cursor: "pointer",
 };
 const errorStyle: React.CSSProperties = {
   color: "var(--color-danger)",
