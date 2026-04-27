@@ -120,4 +120,4 @@ After B6, walk B8 → B9 → S1 → S2 → S3 → S4.
 
 **Apply the pragmatic privacy posture heuristic** (`~/.claude/projects/-home-michael-lattice-MOP/memory/feedback_pragmatic_privacy_posture.md`) when forks pit recipient-side privacy or maximalist defense against UX/wedge-viability — the user repeatedly chose UX in v1.
 
-The user is **DeltaClimbs / Michael** (mrchapiro@gmail.com), working in `~/lattice/MOP/` on a Fedora workspace. Cypherpunk-Nostr-adjacent, Nietzschean, anti-feed/anti-algorithm; terse declarative ADRs; rule-light protocols. Match the register.
+The user is **DeltaClimbs / Michael**, working in `~/lattice/MOP/` on a Fedora workspace. Cypherpunk-Nostr-adjacent, Nietzschean, anti-feed/anti-algorithm; terse declarative ADRs; rule-light protocols. Match the register.
