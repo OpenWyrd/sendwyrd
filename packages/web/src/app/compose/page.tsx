@@ -9,7 +9,7 @@
  *   - If seed is in protected mode, prompt for passphrase to unlock.
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   composeWyrd,
   countCodepoints,
@@ -55,6 +55,17 @@ export default function ComposePage() {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [repliesHelpOpen, setRepliesHelpOpen] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-expand the textarea so its height always matches the content —
+  // a wyrd with a long URL or a few paragraphs should never produce an
+  // inner scrollbar; the page scrolls instead.
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [body, ready, unlocked, shareUrl]);
 
   // First-mount: ensure a seed exists. If not, auto-generate in open mode.
   // Also accept Web Share Target prefill (?text=, ?title=, ?url=) — when the
@@ -313,10 +324,11 @@ export default function ComposePage() {
       <InstallAffordance variant="wyrd" />
       <form onSubmit={handleSend} style={panelStyle}>
         <textarea
+          ref={textareaRef}
           value={body}
           onChange={(e) => setBody(e.target.value)}
           placeholder="A wyrd…"
-          rows={5}
+          rows={8}
           autoFocus
           style={{
             width: "100%",
@@ -327,7 +339,8 @@ export default function ComposePage() {
             fontFamily: "var(--font-mono)",
             fontSize: "var(--text-body)",
             lineHeight: 1.5,
-            resize: "vertical",
+            resize: "none",
+            overflow: "hidden",
             padding: "var(--spacing-2) 0",
             outline: "none",
           }}
