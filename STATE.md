@@ -87,7 +87,7 @@ All Phases B–G plus a long fast-follow UX iteration cycle from live testing.
 
 ## Active Blockers
 
-None. Product live at `https://sendwyrd.com`, verified end-to-end. Token stash at `~/.config/cloudflare/sendwyrd_api_token` (mode 600, owner-only, never committed). Neon CLI authed under `the Neon org (***)`. Wrangler authed under email `***` (account ID `***`).
+None. Product live at `https://sendwyrd.com`, verified end-to-end. Token stash at `~/.config/cloudflare/sendwyrd_api_token` (mode 600, owner-only, never committed). Neon CLI authed under `the Neon org (***)`. Wrangler authed under the operator's account (account ID `***`).
 
 **Tier-2 (post-Tier-1)**: Sentry with redaction; OG card auto-embed for non-sendwyrd HTTPS URLs; CI auto-deploy on push to `main`; test suite beyond e2e smoke scripts.
 

@@ -14,7 +14,7 @@ tags: [inspiration, context, weak-ties, network-percolation, not-canonical]
 
 ## Source
 
-Shared by user (DeltaClimbs / ***) on 2026-04-24, in conversation with the agent during MOP architecture resolution.
+Shared by the operator on 2026-04-24, in conversation with the agent during MOP architecture resolution.
 
 ## Summary
 
