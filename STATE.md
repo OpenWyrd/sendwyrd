@@ -5,7 +5,7 @@ updated: 2026-04-26
 last_session_decisions: [adr_022, adr_023, adr_024, adr_012_amend, inbox_to_wyrds_rename, stay_private]
 status: active
 last_edited_by: agent_operator
-last_session: session_operator_20260426_mcp_server
+last_session: session_operator_20260426_ci_hardening_nip_c6_ref
 tags: [state, governance, mop, sendwyrd]
 ---
 
@@ -194,7 +194,7 @@ None. Production live at `https://sendwyrd.com`, verified end-to-end, observed v
 
 ## Partial-Resume Detection
 
-Session history at `how/sessions/history/2026-04/` contains all completed sessions through 2026-04-26 (founding, open-questions, open-questions-resume-2, overnight-review-ship, ux-perf-attestation). The current MCP-server session is in `how/sessions/active/` until close. MANIFEST.md does not carry `role: template`; `last_edited_by: agent_operator` (not `agent_init`). Onboarding does **not** need to run.
+Session history at `how/sessions/history/2026-04/` contains all completed sessions through 2026-04-26 (founding, open-questions, open-questions-resume-2, overnight-review-ship, ux-perf-attestation, mcp-server, ci-hardening + NIP-C6 about-page reference). No active session. MANIFEST.md does not carry `role: template`; `last_edited_by: agent_operator` (not `agent_init`). Onboarding does **not** need to run.
 
 ## Next Session Prompt
 
@@ -229,5 +229,7 @@ SendWyrd v1 is **live, hardened, observed, and now agent-callable.** Read order:
 - Wrangler / Neon CLI authed; CI auto-deploys on push to `main`.
 - Repo stays private through launch; `/build` directs builders to `@deltaclimbs` on Twitter for spec/code requests.
 - Deploy is now CI-driven; manual deploy commands still work (`cd packages/api && wrangler deploy`; `cd packages/web && pnpm exec opennextjs-cloudflare build && pnpm exec opennextjs-cloudflare deploy`) but are off the hot path.
+- **Pre-commit prettier hook live** (husky v9 + lint-staged, added 2026-04-26 commit `16086f7`). Format drift can no longer accumulate — staged `*.{ts,tsx,md,json,yaml,yml}` are auto-formatted on commit. CI `format:check` should stay green. If a fresh clone, `pnpm install` bootstraps the hooks via the `prepare` script.
+- **NIP-C6 PR #2327** out for review on `nostr-protocol/nips`. About page links to PR; swap for stable spec link when merged (search `"currently an open PR"`).
 
 User remains in **CTO-delegated mode**: own technical and aesthetic calls; only escalate scope / branding / trust-posture forks. Match the voice — cypherpunk-Nostr-adjacent, Nietzschean, terse declarative, no corporate-neutralization.
