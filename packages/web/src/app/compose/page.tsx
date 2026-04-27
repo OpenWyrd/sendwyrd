@@ -406,18 +406,28 @@ export default function ComposePage() {
 
         {error && <p style={errorStyle}>{error}</p>}
 
-        <button
-          type="submit"
-          disabled={overCap || isEmpty || sending}
+        <div
           style={{
-            ...btnStyle,
+            display: "flex",
+            justifyContent: "flex-end",
             marginTop: "var(--spacing-5)",
-            opacity: overCap || isEmpty || sending ? 0.4 : 1,
-            cursor: overCap || isEmpty || sending ? "not-allowed" : "pointer",
           }}
         >
-          {sending ? "Composing…" : "Compose"}
-        </button>
+          <button
+            type="submit"
+            disabled={overCap || isEmpty || sending}
+            style={{
+              ...btnStyle,
+              padding: "var(--spacing-4) var(--spacing-8)",
+              letterSpacing: "0.02em",
+              color: "#ffffff",
+              opacity: overCap || isEmpty || sending ? 0.4 : 1,
+              cursor: overCap || isEmpty || sending ? "not-allowed" : "pointer",
+            }}
+          >
+            {sending ? "Composing…" : "Compose"}
+          </button>
+        </div>
       </form>
     </main>
   );

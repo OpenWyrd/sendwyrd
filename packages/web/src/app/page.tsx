@@ -141,14 +141,14 @@ export default function LandingPage() {
           style={{
             padding: "var(--spacing-4) var(--spacing-8)",
             border: "1px solid var(--color-hairline-strong)",
-            color: "var(--color-ink)",
+            color: "#ffffff",
             textDecoration: "none",
             fontFamily: "var(--font-mono)",
             fontSize: "var(--text-body)",
             letterSpacing: "0.02em",
           }}
         >
-          Compose a wyrd
+          Compose wyrd
         </Link>
       </div>
 
