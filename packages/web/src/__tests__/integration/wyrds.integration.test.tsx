@@ -285,18 +285,14 @@ describe("My Wyrds — outbox|inbox toggle", () => {
       expect(screen.getByText(/wyrds? on this device/i)).toBeInTheDocument();
     });
     // Inbox toggle is present
-    expect(
-      screen.getByRole("radio", { name: /inbox/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /inbox/i })).toBeInTheDocument();
   });
 
   it("inbox view shows empty state when no inbox entries exist", async () => {
     const user = userEvent.setup();
     render(<WyrdsPage />);
     await waitFor(() => {
-      expect(
-        screen.getByRole("radio", { name: /inbox/i }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole("radio", { name: /inbox/i })).toBeInTheDocument();
     });
     await user.click(screen.getByRole("radio", { name: /inbox/i }));
     await waitFor(() => {
@@ -353,9 +349,7 @@ describe("My Wyrds — outbox|inbox toggle", () => {
 
     render(<WyrdsPage />);
     await waitFor(() => {
-      expect(
-        screen.getByRole("radio", { name: /inbox/i }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole("radio", { name: /inbox/i })).toBeInTheDocument();
     });
     await user.click(screen.getByRole("radio", { name: /inbox/i }));
 
@@ -402,9 +396,7 @@ describe("My Wyrds — outbox|inbox toggle", () => {
 
     render(<WyrdsPage />);
     await waitFor(() => {
-      expect(
-        screen.getByRole("radio", { name: /inbox/i }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole("radio", { name: /inbox/i })).toBeInTheDocument();
     });
     await user.click(screen.getByRole("radio", { name: /inbox/i }));
 
@@ -428,16 +420,16 @@ describe("My Wyrds — outbox|inbox toggle", () => {
     );
     render(<WyrdsPage />);
     await waitFor(() => {
-      expect(
-        screen.getByRole("radio", { name: /inbox/i }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole("radio", { name: /inbox/i })).toBeInTheDocument();
     });
     await user.click(screen.getByRole("radio", { name: /inbox/i }));
     await waitFor(() => {
       expect(screen.getByText("removable00aaaaa")).toBeInTheDocument();
     });
     await user.click(
-      screen.getByRole("button", { name: /Remove removable00aaaaa from inbox/i }),
+      screen.getByRole("button", {
+        name: /Remove removable00aaaaa from inbox/i,
+      }),
     );
     await waitFor(() => {
       expect(screen.queryByText("removable00aaaaa")).not.toBeInTheDocument();

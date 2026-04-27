@@ -12,6 +12,7 @@
 import { useState, useEffect } from "react";
 import {
   composeWyrd,
+  countCodepoints,
   countCountableCodepoints,
   buildFragmentUrl,
   generateSeed,
@@ -96,6 +97,8 @@ export default function ComposePage() {
 
   const count = countCountableCodepoints(body);
   const overCap = count > BODY_CODEPOINT_CAP;
+  // Empty gate uses raw codepoints so a pure-invoice / pure-URL wyrd can post.
+  const isEmpty = countCodepoints(body) === 0;
 
   async function handleUnlock(e: React.FormEvent) {
     e.preventDefault();
@@ -111,7 +114,7 @@ export default function ComposePage() {
 
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
-    if (overCap || count === 0 || sending) return;
+    if (overCap || isEmpty || sending) return;
     setError(null);
     setSending(true);
     try {
@@ -405,13 +408,12 @@ export default function ComposePage() {
 
         <button
           type="submit"
-          disabled={overCap || count === 0 || sending}
+          disabled={overCap || isEmpty || sending}
           style={{
             ...btnStyle,
             marginTop: "var(--spacing-5)",
-            opacity: overCap || count === 0 || sending ? 0.4 : 1,
-            cursor:
-              overCap || count === 0 || sending ? "not-allowed" : "pointer",
+            opacity: overCap || isEmpty || sending ? 0.4 : 1,
+            cursor: overCap || isEmpty || sending ? "not-allowed" : "pointer",
           }}
         >
           {sending ? "Composing…" : "Compose"}

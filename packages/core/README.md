@@ -57,19 +57,19 @@ if (parsed.kind === "fragment") {
 
 ## Public API
 
-| Export | Purpose |
-|--------|---------|
-| `composeWyrd` | Derive K_origin, encrypt body, sign publish payload |
-| `decryptFromBase64Url` / `decryptEnvelope` | Decrypt a wyrd envelope with K_read |
-| `deriveOriginKey` / `deriveReadKey` | HD derivation at index `n` (BIP-32 hardened, purpose `300'`) |
-| `generateSeed` / `mnemonicToSeed` / `isValidMnemonic` | BIP-39 seed lifecycle |
-| `encryptSeedRecord` / `decryptSeedRecord` | Passphrase-protected seed storage (PBKDF2-AES-GCM) |
-| `parseWyrdUrl` / `buildFragmentUrl` | Canonical fragment-URL parsing and construction |
-| `encryptReply` / `decryptReply` | ECIES one-shot replies to `K_origin_pub` |
-| `signAuthorshipAttestation` / `verifyAuthorshipAttestation` | Static authorship attestations |
-| `parseBody` | Body segmentation (sendwyrd / link / lightning / bitcoin) |
-| `schnorrSign` / `schnorrVerify` | BIP-340 Schnorr primitives |
-| `b64uEncode` / `b64uDecode` | Base64url without padding |
+| Export                                                      | Purpose                                                      |
+| ----------------------------------------------------------- | ------------------------------------------------------------ |
+| `composeWyrd`                                               | Derive K_origin, encrypt body, sign publish payload          |
+| `decryptFromBase64Url` / `decryptEnvelope`                  | Decrypt a wyrd envelope with K_read                          |
+| `deriveOriginKey` / `deriveReadKey`                         | HD derivation at index `n` (BIP-32 hardened, purpose `300'`) |
+| `generateSeed` / `mnemonicToSeed` / `isValidMnemonic`       | BIP-39 seed lifecycle                                        |
+| `encryptSeedRecord` / `decryptSeedRecord`                   | Passphrase-protected seed storage (PBKDF2-AES-GCM)           |
+| `parseWyrdUrl` / `buildFragmentUrl`                         | Canonical fragment-URL parsing and construction              |
+| `encryptReply` / `decryptReply`                             | ECIES one-shot replies to `K_origin_pub`                     |
+| `signAuthorshipAttestation` / `verifyAuthorshipAttestation` | Static authorship attestations                               |
+| `parseBody`                                                 | Body segmentation (sendwyrd / link / lightning / bitcoin)    |
+| `schnorrSign` / `schnorrVerify`                             | BIP-340 Schnorr primitives                                   |
+| `b64uEncode` / `b64uDecode`                                 | Base64url without padding                                    |
 
 Wire constants (`BODY_CODEPOINT_CAP`, `TTL_SECONDS_DEFAULT`, `HANDLE_BYTES`, `K_READ_BYTES`, etc.) are exported from `./types`.
 

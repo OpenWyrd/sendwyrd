@@ -31,8 +31,7 @@ vi.mock("next/navigation", () => ({
 // override per-case.
 const publishMock = vi.fn();
 vi.mock("@/lib/api", async () => {
-  const actual =
-    await vi.importActual<typeof import("@/lib/api")>("@/lib/api");
+  const actual = await vi.importActual<typeof import("@/lib/api")>("@/lib/api");
   return {
     ...actual,
     publishWyrd: (...args: unknown[]) => publishMock(...args),
@@ -210,13 +209,17 @@ describe("My Wyrds — attest authorship (happy path)", () => {
       target_handle: b64uDecode(TARGET_HANDLE),
     });
     const sigBytes = b64uDecode(parts!.sig_b64u);
-    expect(schnorrVerify(sigBytes, expectedMessage, targetKey.k_origin_xpub)).toBe(true);
+    expect(
+      schnorrVerify(sigBytes, expectedMessage, targetKey.k_origin_xpub),
+    ).toBe(true);
     // Sanity: the same sig MUST NOT verify against a different message
     // (e.g., the publish_message would have a different hash).
     const wrongMessage = authorshipAttestationMessage({
       target_handle: b64uDecode("BBBBBBBBBBBBBBBB"),
     });
-    expect(schnorrVerify(sigBytes, wrongMessage, targetKey.k_origin_xpub)).toBe(false);
+    expect(schnorrVerify(sigBytes, wrongMessage, targetKey.k_origin_xpub)).toBe(
+      false,
+    );
   });
 
   it("surfaces the new wyrd's share URL with copy/done affordances on success", async () => {
@@ -240,7 +243,9 @@ describe("My Wyrds — attest authorship (happy path)", () => {
     // Success copy surfaces.
     await waitFor(() => {
       expect(
-        screen.getByText(/Attestation published\. Share alongside the original:/i),
+        screen.getByText(
+          /Attestation published\. Share alongside the original:/i,
+        ),
       ).toBeInTheDocument();
     });
 
@@ -249,9 +254,11 @@ describe("My Wyrds — attest authorship (happy path)", () => {
     // than an exact URL.
     const shareLink = screen
       .getAllByRole("link")
-      .find((a) => /\/w\/[A-Za-z0-9_-]{16}#[A-Za-z0-9_-]{43}$/.test(
-        (a as HTMLAnchorElement).href,
-      )) as HTMLAnchorElement | undefined;
+      .find((a) =>
+        /\/w\/[A-Za-z0-9_-]{16}#[A-Za-z0-9_-]{43}$/.test(
+          (a as HTMLAnchorElement).href,
+        ),
+      ) as HTMLAnchorElement | undefined;
     expect(shareLink).toBeDefined();
 
     // Copy + done buttons rendered in the success panel.
@@ -289,7 +296,9 @@ describe("My Wyrds — attest authorship (error path)", () => {
       ).toBeInTheDocument();
     });
     expect(
-      screen.queryByText(/Attestation published\. Share alongside the original:/i),
+      screen.queryByText(
+        /Attestation published\. Share alongside the original:/i,
+      ),
     ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: /^copy URL$/ }),

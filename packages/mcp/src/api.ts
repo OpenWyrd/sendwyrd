@@ -181,7 +181,9 @@ export async function fetchReplies(
   if (res.status === 404) return [];
   if (res.status === 410) return [];
   const body = await safeBody(res);
-  throw new Error(`fetch_replies failed: HTTP ${res.status} — ${stringify(body)}`);
+  throw new Error(
+    `fetch_replies failed: HTTP ${res.status} — ${stringify(body)}`,
+  );
 }
 
 export async function submitReply(

@@ -6,7 +6,7 @@ The web app is for humans. This is the surface for agents.
 
 ## Why
 
-SendWyrd is an identity-less, ephemeral, capability-URL relay primitive. It refuses to be a feed, a platform, or an algorithmic public square. What's left is a substrate of capsules with no native discovery layer — and the natural follow-up question is *then how does anyone find anything?*
+SendWyrd is an identity-less, ephemeral, capability-URL relay primitive. It refuses to be a feed, a platform, or an algorithmic public square. What's left is a substrate of capsules with no native discovery layer — and the natural follow-up question is _then how does anyone find anything?_
 
 The answer is that **routing becomes personal infrastructure, not platform infrastructure**: per-user agents do the connective work that an algorithmic agora used to. This MCP server is the binding that lets every Claude Code, Claude Desktop, Cursor, or Zed user's agent speak SendWyrd by default.
 
@@ -52,12 +52,12 @@ Then point your MCP client at `node /absolute/path/to/packages/mcp/dist/index.js
 
 Environment variables:
 
-| Var | Default | Purpose |
-|-----|---------|---------|
-| `SENDWYRD_ORIGIN` | `https://sendwyrd.com` | Override origin (dev / staging) |
-| `SENDWYRD_PASSPHRASE` | _(unset)_ | Direct passphrase for protected-mode seed |
-| `SENDWYRD_PASSPHRASE_CMD` | _(unset)_ | Command whose stdout is the passphrase. No shell expansion. Example: `pass sendwyrd` |
-| `XDG_CONFIG_HOME` | `~/.config` | Config root; the server uses `$XDG_CONFIG_HOME/sendwyrd/` |
+| Var                       | Default                | Purpose                                                                              |
+| ------------------------- | ---------------------- | ------------------------------------------------------------------------------------ |
+| `SENDWYRD_ORIGIN`         | `https://sendwyrd.com` | Override origin (dev / staging)                                                      |
+| `SENDWYRD_PASSPHRASE`     | _(unset)_              | Direct passphrase for protected-mode seed                                            |
+| `SENDWYRD_PASSPHRASE_CMD` | _(unset)_              | Command whose stdout is the passphrase. No shell expansion. Example: `pass sendwyrd` |
+| `XDG_CONFIG_HOME`         | `~/.config`            | Config root; the server uses `$XDG_CONFIG_HOME/sendwyrd/`                            |
 
 If both `SENDWYRD_PASSPHRASE` and `SENDWYRD_PASSPHRASE_CMD` are set, `_CMD` wins.
 
@@ -73,21 +73,21 @@ Open mode is the default to match the web app's zero-friction flow. Promote to p
 
 ## Tools
 
-| Tool | Purpose |
-|------|---------|
-| `sendwyrd_status` | Report origin, seed mode, unlocked-or-not, history count |
-| `sendwyrd_init` | Generate or import a BIP-39 mnemonic |
-| `sendwyrd_unlock` | Decrypt a protected seed and cache for the process |
-| `sendwyrd_lock` | Clear cached seed |
-| `sendwyrd_forget` | Wipe all on-disk state (destructive; requires confirm token) |
-| `sendwyrd_compose` | Publish a wyrd; returns the canonical fragment URL |
-| `sendwyrd_view` | Fetch + decrypt a wyrd by URL; verifies attestations |
-| `sendwyrd_burn` | Schnorr-signed DELETE for a wyrd you authored |
-| `sendwyrd_reply` | Send an ECIES one-shot reply to a wyrd's author |
-| `sendwyrd_attest` | Re-derive K_origin_priv at index n, sign target_handle, publish a 3-line attestation wyrd |
-| `sendwyrd_history` | List local wyrd history (no network) |
-| `sendwyrd_inbox` | Fetch + decrypt replies for own wyrds (one-shot read) |
-| `sendwyrd_recover` | HD sweep via presence-check; rebuild history from a mnemonic |
+| Tool               | Purpose                                                                                   |
+| ------------------ | ----------------------------------------------------------------------------------------- |
+| `sendwyrd_status`  | Report origin, seed mode, unlocked-or-not, history count                                  |
+| `sendwyrd_init`    | Generate or import a BIP-39 mnemonic                                                      |
+| `sendwyrd_unlock`  | Decrypt a protected seed and cache for the process                                        |
+| `sendwyrd_lock`    | Clear cached seed                                                                         |
+| `sendwyrd_forget`  | Wipe all on-disk state (destructive; requires confirm token)                              |
+| `sendwyrd_compose` | Publish a wyrd; returns the canonical fragment URL                                        |
+| `sendwyrd_view`    | Fetch + decrypt a wyrd by URL; verifies attestations                                      |
+| `sendwyrd_burn`    | Schnorr-signed DELETE for a wyrd you authored                                             |
+| `sendwyrd_reply`   | Send an ECIES one-shot reply to a wyrd's author                                           |
+| `sendwyrd_attest`  | Re-derive K_origin_priv at index n, sign target_handle, publish a 3-line attestation wyrd |
+| `sendwyrd_history` | List local wyrd history (no network)                                                      |
+| `sendwyrd_inbox`   | Fetch + decrypt replies for own wyrds (one-shot read)                                     |
+| `sendwyrd_recover` | HD sweep via presence-check; rebuild history from a mnemonic                              |
 
 ## Smoke test
 

@@ -17,7 +17,12 @@
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
-import { createServer, type Server, type IncomingMessage, type ServerResponse } from "node:http";
+import {
+  createServer,
+  type Server,
+  type IncomingMessage,
+  type ServerResponse,
+} from "node:http";
 import { mkdtempSync, rmSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -51,14 +56,17 @@ interface MockApi {
   /** Map of handle -> list of submitted reply blobs. */
   replies: Map<string, Array<{ reply_blob: string; received_at: number }>>;
   /** Map of k_origin_pub_b64u -> presence handles to return. */
-  presenceFixtures: Map<string, Array<{
-    handle: string;
-    published_at: number;
-    expires_at: number;
-    gone_at: number | null;
-    gone_reason: "expired" | "burned" | "key_mismatch" | null;
-    replies_enabled: boolean;
-  }>>;
+  presenceFixtures: Map<
+    string,
+    Array<{
+      handle: string;
+      published_at: number;
+      expires_at: number;
+      gone_at: number | null;
+      gone_reason: "expired" | "burned" | "key_mismatch" | null;
+      replies_enabled: boolean;
+    }>
+  >;
   /** Recorded request log for assertions. */
   requests: Array<{ method: string; path: string }>;
   close: () => Promise<void>;
@@ -66,164 +74,172 @@ interface MockApi {
 
 async function startMockApi(): Promise<MockApi> {
   const wyrds = new Map<string, StoredWyrd>();
-  const replies = new Map<string, Array<{ reply_blob: string; received_at: number }>>();
-  const presenceFixtures = new Map<string, Array<{
-    handle: string;
-    published_at: number;
-    expires_at: number;
-    gone_at: number | null;
-    gone_reason: "expired" | "burned" | "key_mismatch" | null;
-    replies_enabled: boolean;
-  }>>();
+  const replies = new Map<
+    string,
+    Array<{ reply_blob: string; received_at: number }>
+  >();
+  const presenceFixtures = new Map<
+    string,
+    Array<{
+      handle: string;
+      published_at: number;
+      expires_at: number;
+      gone_at: number | null;
+      gone_reason: "expired" | "burned" | "key_mismatch" | null;
+      replies_enabled: boolean;
+    }>
+  >();
   const requests: Array<{ method: string; path: string }> = [];
 
-  const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
-    const method = req.method ?? "GET";
-    const path = req.url ?? "/";
-    requests.push({ method, path });
+  const server = createServer(
+    async (req: IncomingMessage, res: ServerResponse) => {
+      const method = req.method ?? "GET";
+      const path = req.url ?? "/";
+      requests.push({ method, path });
 
-    const json = (status: number, body: unknown): void => {
-      res.writeHead(status, { "Content-Type": "application/json" });
-      res.end(JSON.stringify(body));
-    };
-    const empty = (status: number): void => {
-      res.writeHead(status);
-      res.end();
-    };
-
-    let body = "";
-    for await (const chunk of req) body += chunk;
-    let parsed: any = null;
-    if (body.length > 0) {
-      try {
-        parsed = JSON.parse(body);
-      } catch {
-        // ignore — some endpoints do not send a body
-      }
-    }
-
-    // POST /api/v1/wyrds  — publish
-    //
-    // CRITICAL: The MCP encrypts the body with AAD = ver || handle ||
-    // expires_at_be || replies_enabled, where expires_at = publish_timestamp_ms
-    // + ttl_seconds * 1000. The decryption on view uses the expires_at this
-    // server returns. So the mock MUST derive expires_at from the client's
-    // publish_timestamp_ms (NOT a fresh `Date.now()`), or the AAD won't match
-    // and decrypt will fail. This mirrors the real api worker's behavior.
-    if (method === "POST" && path === "/api/v1/wyrds") {
-      // Matches core/src/types.ts PERMANENT_EXPIRES_AT_MS (year ~9999).
-      const PERMANENT_EXPIRES_AT_MS = 253_370_764_800_000;
-      const ttl: number = parsed.ttl_seconds;
-      const ts: number = parsed.publish_timestamp_ms;
-      const expires_at =
-        ttl === 0 ? PERMANENT_EXPIRES_AT_MS : ts + ttl * 1000;
-      const record: StoredWyrd = {
-        handle: parsed.handle,
-        envelope: parsed.envelope,
-        k_origin_pub: parsed.k_origin_pub,
-        ttl_seconds: ttl,
-        replies_enabled: parsed.replies_enabled,
-        published_at: ts,
-        expires_at,
-        publish_signature: parsed.publish_signature,
-        publish_timestamp_ms: ts,
-        burned: false,
+      const json = (status: number, body: unknown): void => {
+        res.writeHead(status, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(body));
       };
-      wyrds.set(record.handle, record);
-      json(201, {
-        handle: record.handle,
-        published_at: record.published_at,
-        expires_at: record.expires_at,
-      });
-      return;
-    }
+      const empty = (status: number): void => {
+        res.writeHead(status);
+        res.end();
+      };
 
-    // GET /api/v1/wyrds/{handle}
-    const getMatch = path.match(/^\/api\/v1\/wyrds\/([A-Za-z0-9_-]{16})$/);
-    if (method === "GET" && getMatch) {
-      const handle = getMatch[1]!;
-      const w = wyrds.get(handle);
-      if (!w) {
-        json(404, { error: "not_found" });
-        return;
+      let body = "";
+      for await (const chunk of req) body += chunk;
+      let parsed: any = null;
+      if (body.length > 0) {
+        try {
+          parsed = JSON.parse(body);
+        } catch {
+          // ignore — some endpoints do not send a body
+        }
       }
-      if (w.burned) {
-        json(410, {
-          status: "gone",
-          reason: "burned",
-          gone_at: w.gone_at ?? Date.now(),
+
+      // POST /api/v1/wyrds  — publish
+      //
+      // CRITICAL: The MCP encrypts the body with AAD = ver || handle ||
+      // expires_at_be || replies_enabled, where expires_at = publish_timestamp_ms
+      // + ttl_seconds * 1000. The decryption on view uses the expires_at this
+      // server returns. So the mock MUST derive expires_at from the client's
+      // publish_timestamp_ms (NOT a fresh `Date.now()`), or the AAD won't match
+      // and decrypt will fail. This mirrors the real api worker's behavior.
+      if (method === "POST" && path === "/api/v1/wyrds") {
+        // Matches core/src/types.ts PERMANENT_EXPIRES_AT_MS (year ~9999).
+        const PERMANENT_EXPIRES_AT_MS = 253_370_764_800_000;
+        const ttl: number = parsed.ttl_seconds;
+        const ts: number = parsed.publish_timestamp_ms;
+        const expires_at =
+          ttl === 0 ? PERMANENT_EXPIRES_AT_MS : ts + ttl * 1000;
+        const record: StoredWyrd = {
+          handle: parsed.handle,
+          envelope: parsed.envelope,
+          k_origin_pub: parsed.k_origin_pub,
+          ttl_seconds: ttl,
+          replies_enabled: parsed.replies_enabled,
+          published_at: ts,
+          expires_at,
+          publish_signature: parsed.publish_signature,
+          publish_timestamp_ms: ts,
+          burned: false,
+        };
+        wyrds.set(record.handle, record);
+        json(201, {
+          handle: record.handle,
+          published_at: record.published_at,
+          expires_at: record.expires_at,
         });
         return;
       }
-      json(200, {
-        handle: w.handle,
-        envelope: w.envelope,
-        k_origin_pub: w.k_origin_pub,
-        published_at: w.published_at,
-        expires_at: w.expires_at,
-        replies_enabled: w.replies_enabled,
-      });
-      return;
-    }
 
-    // DELETE /api/v1/wyrds/{handle}
-    if (method === "DELETE" && getMatch) {
-      const handle = getMatch[1]!;
-      const w = wyrds.get(handle);
-      if (!w) {
-        json(404, { error: "not_found" });
-        return;
-      }
-      if (w.burned) {
-        json(410, {
-          status: "gone",
-          reason: "burned",
-          gone_at: w.gone_at ?? Date.now(),
+      // GET /api/v1/wyrds/{handle}
+      const getMatch = path.match(/^\/api\/v1\/wyrds\/([A-Za-z0-9_-]{16})$/);
+      if (method === "GET" && getMatch) {
+        const handle = getMatch[1]!;
+        const w = wyrds.get(handle);
+        if (!w) {
+          json(404, { error: "not_found" });
+          return;
+        }
+        if (w.burned) {
+          json(410, {
+            status: "gone",
+            reason: "burned",
+            gone_at: w.gone_at ?? Date.now(),
+          });
+          return;
+        }
+        json(200, {
+          handle: w.handle,
+          envelope: w.envelope,
+          k_origin_pub: w.k_origin_pub,
+          published_at: w.published_at,
+          expires_at: w.expires_at,
+          replies_enabled: w.replies_enabled,
         });
         return;
       }
-      const gone_at = Date.now();
-      w.burned = true;
-      w.gone_at = gone_at;
-      json(200, { handle: w.handle, gone_at, gone_reason: "burned" });
-      return;
-    }
 
-    // POST /api/v1/wyrds/{handle}/replies
-    const replyMatch = path.match(
-      /^\/api\/v1\/wyrds\/([A-Za-z0-9_-]{16})\/replies$/,
-    );
-    if (method === "POST" && replyMatch) {
-      const handle = replyMatch[1]!;
-      const received_at = Date.now();
-      const list = replies.get(handle) ?? [];
-      list.push({ reply_blob: parsed.reply_blob, received_at });
-      replies.set(handle, list);
-      json(202, { received_at });
-      return;
-    }
+      // DELETE /api/v1/wyrds/{handle}
+      if (method === "DELETE" && getMatch) {
+        const handle = getMatch[1]!;
+        const w = wyrds.get(handle);
+        if (!w) {
+          json(404, { error: "not_found" });
+          return;
+        }
+        if (w.burned) {
+          json(410, {
+            status: "gone",
+            reason: "burned",
+            gone_at: w.gone_at ?? Date.now(),
+          });
+          return;
+        }
+        const gone_at = Date.now();
+        w.burned = true;
+        w.gone_at = gone_at;
+        json(200, { handle: w.handle, gone_at, gone_reason: "burned" });
+        return;
+      }
 
-    // GET /api/v1/wyrds/{handle}/replies
-    if (method === "GET" && replyMatch) {
-      const handle = replyMatch[1]!;
-      const list = replies.get(handle) ?? [];
-      json(200, { handle, replies: list });
-      return;
-    }
+      // POST /api/v1/wyrds/{handle}/replies
+      const replyMatch = path.match(
+        /^\/api\/v1\/wyrds\/([A-Za-z0-9_-]{16})\/replies$/,
+      );
+      if (method === "POST" && replyMatch) {
+        const handle = replyMatch[1]!;
+        const received_at = Date.now();
+        const list = replies.get(handle) ?? [];
+        list.push({ reply_blob: parsed.reply_blob, received_at });
+        replies.set(handle, list);
+        json(202, { received_at });
+        return;
+      }
 
-    // GET /api/v1/authors/{k_pub}/handles
-    const authorMatch = path.match(
-      /^\/api\/v1\/authors\/([A-Za-z0-9_-]+)\/handles$/,
-    );
-    if (method === "GET" && authorMatch) {
-      const k_pub = authorMatch[1]!;
-      const handles = presenceFixtures.get(k_pub) ?? [];
-      json(200, { k_origin_pub: k_pub, handles });
-      return;
-    }
+      // GET /api/v1/wyrds/{handle}/replies
+      if (method === "GET" && replyMatch) {
+        const handle = replyMatch[1]!;
+        const list = replies.get(handle) ?? [];
+        json(200, { handle, replies: list });
+        return;
+      }
 
-    empty(404);
-  });
+      // GET /api/v1/authors/{k_pub}/handles
+      const authorMatch = path.match(
+        /^\/api\/v1\/authors\/([A-Za-z0-9_-]+)\/handles$/,
+      );
+      if (method === "GET" && authorMatch) {
+        const k_pub = authorMatch[1]!;
+        const handles = presenceFixtures.get(k_pub) ?? [];
+        json(200, { k_origin_pub: k_pub, handles });
+        return;
+      }
+
+      empty(404);
+    },
+  );
 
   await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
   const addr = server.address() as AddressInfo;
@@ -264,7 +280,10 @@ function startMcp(env: Record<string, string>): McpClient {
     },
   }) as ChildProcessWithoutNullStreams;
 
-  const pending = new Map<number, { resolve: (m: any) => void; reject: (e: Error) => void }>();
+  const pending = new Map<
+    number,
+    { resolve: (m: any) => void; reject: (e: Error) => void }
+  >();
   let nextId = 1;
   let buffer = "";
   let stderr = "";
@@ -298,7 +317,11 @@ function startMcp(env: Record<string, string>): McpClient {
 
   child.on("exit", (code) => {
     for (const [, { reject }] of pending) {
-      reject(new Error(`mcp exited (code=${code}) before reply. stderr=${stderr.slice(-300)}`));
+      reject(
+        new Error(
+          `mcp exited (code=${code}) before reply. stderr=${stderr.slice(-300)}`,
+        ),
+      );
     }
     pending.clear();
   });
@@ -313,7 +336,9 @@ function startMcp(env: Record<string, string>): McpClient {
   }
 
   function notify(method: string, params?: unknown): void {
-    child.stdin.write(JSON.stringify({ jsonrpc: "2.0", method, params }) + "\n");
+    child.stdin.write(
+      JSON.stringify({ jsonrpc: "2.0", method, params }) + "\n",
+    );
   }
 
   async function call(
@@ -334,7 +359,9 @@ function startMcp(env: Record<string, string>): McpClient {
     }
     if (res.result?.isError) {
       // Surface as a structured error so tests can assert on substrings.
-      const e: Error & { isToolError?: boolean; toolText?: string } = new Error(text);
+      const e: Error & { isToolError?: boolean; toolText?: string } = new Error(
+        text,
+      );
       e.isToolError = true;
       e.toolText = text;
       throw e;
@@ -461,7 +488,7 @@ describe.skipIf(!HAS_DIST)(
 
     it("sendwyrd_init twice rejects with a 'seed already exists' error", async () => {
       await client.call("sendwyrd_init", {});
-      let captured: Error & { toolText?: string } | null = null;
+      let captured: (Error & { toolText?: string }) | null = null;
       try {
         await client.call("sendwyrd_init", {});
       } catch (e) {
@@ -481,11 +508,17 @@ describe.skipIf(!HAS_DIST)(
         replies_enabled: false,
       });
       expect(composed.handle).toMatch(/^[A-Za-z0-9_-]{16}$/);
-      expect(composed.url).toBe(`${api.url}/w/${composed.handle}#${composed.url.split("#")[1]}`);
+      expect(composed.url).toBe(
+        `${api.url}/w/${composed.handle}#${composed.url.split("#")[1]}`,
+      );
       // Mock should have stored the wyrd
       expect(api.wyrds.has(composed.handle)).toBe(true);
       // POST should have been recorded
-      expect(api.requests.some((r) => r.method === "POST" && r.path === "/api/v1/wyrds")).toBe(true);
+      expect(
+        api.requests.some(
+          (r) => r.method === "POST" && r.path === "/api/v1/wyrds",
+        ),
+      ).toBe(true);
     });
 
     // -- 5. view (round-trip) ---------------------------------------------
@@ -508,7 +541,9 @@ describe.skipIf(!HAS_DIST)(
 
     it("sendwyrd_burn DELETEs and reports burned: true", async () => {
       await client.call("sendwyrd_init", {});
-      const composed = await client.call("sendwyrd_compose", { body: "to burn" });
+      const composed = await client.call("sendwyrd_compose", {
+        body: "to burn",
+      });
       const burnt = await client.call("sendwyrd_burn", {
         handle: composed.handle,
       });
@@ -522,7 +557,9 @@ describe.skipIf(!HAS_DIST)(
 
     it("sendwyrd_view on a burned wyrd returns status=gone", async () => {
       await client.call("sendwyrd_init", {});
-      const composed = await client.call("sendwyrd_compose", { body: "tombstone target" });
+      const composed = await client.call("sendwyrd_compose", {
+        body: "tombstone target",
+      });
       await client.call("sendwyrd_burn", { handle: composed.handle });
       const after = await client.call("sendwyrd_view", { url: composed.url });
       expect(after.status).toBe("gone");
@@ -546,7 +583,9 @@ describe.skipIf(!HAS_DIST)(
       const locked = await client.call("sendwyrd_lock", {});
       expect(locked.locked).toBe(true);
       // Still able to compose because open mode does not require a cached seed
-      const composed = await client.call("sendwyrd_compose", { body: "after lock" });
+      const composed = await client.call("sendwyrd_compose", {
+        body: "after lock",
+      });
       expect(composed.handle).toMatch(/^[A-Za-z0-9_-]{16}$/);
     });
 
@@ -584,7 +623,9 @@ describe.skipIf(!HAS_DIST)(
       expect(attest.attestation_handle).toMatch(/^[A-Za-z0-9_-]{16}$/);
       // Now view the attestation: this exercises the cross-verify path inside
       // sendwyrd_view (which fetches the target's K_origin_pub from the mock).
-      const viewed = await client.call("sendwyrd_view", { url: attest.attestation_url });
+      const viewed = await client.call("sendwyrd_view", {
+        url: attest.attestation_url,
+      });
       expect(viewed.status).toBe("live");
       expect(viewed.kind).toBe("attestation");
       expect(viewed.target_handle).toBe(composed.handle);
@@ -626,8 +667,7 @@ describe.skipIf(!HAS_DIST)(
       expect(rec.scanned_to).toBe(2);
       // Confirm the MCP actually hit the presence-check endpoint.
       const presenceCalls = api.requests.filter(
-        (r) =>
-          r.method === "GET" && r.path.startsWith("/api/v1/authors/"),
+        (r) => r.method === "GET" && r.path.startsWith("/api/v1/authors/"),
       );
       expect(presenceCalls.length).toBeGreaterThanOrEqual(3);
     });

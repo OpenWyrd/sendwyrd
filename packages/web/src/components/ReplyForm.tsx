@@ -151,8 +151,8 @@ export function ReplyForm({ handle, k_origin_pub_b64u }: Props) {
               }}
             >
               One-shot. The author can read your DM but can&apos;t reply to it
-              through SendWyrd. If you want a back-and-forth, put a way to
-              reach you inside the message itself.
+              through SendWyrd. If you want a back-and-forth, put a way to reach
+              you inside the message itself.
             </p>
             <p
               style={{

@@ -159,9 +159,7 @@ function registerWyrdResource(server: McpServer, cfg: McpConfig): void {
       }),
     }),
     async (uri, vars) => {
-      const handle = Array.isArray(vars.handle)
-        ? vars.handle[0]
-        : vars.handle;
+      const handle = Array.isArray(vars.handle) ? vars.handle[0] : vars.handle;
       if (!handle) {
         return {
           contents: [
@@ -253,9 +251,7 @@ function registerWyrdResource(server: McpServer, cfg: McpConfig): void {
           replies_enabled: env.replies_enabled,
         });
         return {
-          contents: [
-            { uri: uri.href, mimeType: "text/plain", text: body },
-          ],
+          contents: [{ uri: uri.href, mimeType: "text/plain", text: body }],
         };
       } catch (e) {
         return {
@@ -364,9 +360,7 @@ function registerUnlock(server: McpServer, cfg: McpConfig): void {
     "sendwyrd_unlock",
     "Decrypt the on-disk passphrase-protected seed and cache it for the lifetime of this MCP process. Only meaningful in protected mode.",
     {
-      passphrase: z
-        .string()
-        .describe("The passphrase that protects the seed."),
+      passphrase: z.string().describe("The passphrase that protects the seed."),
     },
     async ({ passphrase }) => {
       try {
@@ -456,7 +450,11 @@ function registerCompose(server: McpServer, cfg: McpConfig): void {
         });
 
         const pub = await publish(cfg.origin, result.publish_payload);
-        const url = buildFragmentUrl(cfg.origin, pub.handle, result.k_read_b64u);
+        const url = buildFragmentUrl(
+          cfg.origin,
+          pub.handle,
+          result.k_read_b64u,
+        );
 
         const entry: HistoryEntry = {
           handle: pub.handle,
@@ -504,9 +502,7 @@ function registerView(server: McpServer, cfg: McpConfig): void {
           return ok(asJson({ status: "not_found", handle: parsed.handle }));
         }
         if (result.kind === "gone") {
-          return ok(
-            asJson({ handle: parsed.handle, ...result.data }),
-          );
+          return ok(asJson({ handle: parsed.handle, ...result.data }));
         }
         if (result.kind === "error") {
           return err(`fetch failed: HTTP ${result.status}`);
@@ -625,10 +621,7 @@ function registerReply(server: McpServer, cfg: McpConfig): void {
     "Send an ECIES-encrypted one-shot reply to the author of `target_url`. Reply cap: 300 codepoints. The author can read the reply via sendwyrd_inbox; you cannot read your own reply once sent.",
     {
       target_url: z.string().describe("URL of the wyrd you are replying to."),
-      body: z
-        .string()
-        .min(1)
-        .describe("Reply body, ≤300 codepoints."),
+      body: z.string().min(1).describe("Reply body, ≤300 codepoints."),
     },
     async ({ target_url, body }) => {
       try {
@@ -740,7 +733,11 @@ function registerAttest(server: McpServer, cfg: McpConfig): void {
           replies_enabled: false,
         });
         const pub = await publish(cfg.origin, result.publish_payload);
-        const url = buildFragmentUrl(cfg.origin, pub.handle, result.k_read_b64u);
+        const url = buildFragmentUrl(
+          cfg.origin,
+          pub.handle,
+          result.k_read_b64u,
+        );
 
         upsertHistory(cfg, {
           handle: pub.handle,
@@ -783,7 +780,8 @@ function registerHistory(server: McpServer, cfg: McpConfig): void {
     },
     async ({ include_gone }) => {
       const all = listHistory(cfg);
-      const filtered = include_gone === false ? all.filter((e) => !e.gone_at) : all;
+      const filtered =
+        include_gone === false ? all.filter((e) => !e.gone_at) : all;
       return ok(asJson({ count: filtered.length, entries: filtered }));
     },
   );

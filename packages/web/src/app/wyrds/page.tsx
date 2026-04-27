@@ -569,379 +569,282 @@ export default function WyrdsPage() {
           />
         ) : (
           <>
-        <p
-          style={{
-            margin: 0,
-            marginBottom: "var(--spacing-6)",
-            color: "var(--color-ink-muted)",
-            fontSize: "var(--text-caption)",
-          }}
-        >
-          {history.length} wyrd{history.length === 1 ? "" : "s"} on this device{" "}
-          <span style={{ color: "var(--color-ink-subtle)" }}>
-            (local to this browser — clearing site data wipes the list; relay
-            wyrds still age out on their own TTL, and your seed is what
-            recovers handles from elsewhere)
-          </span>
-        </p>
-
-        <div style={{ marginBottom: "var(--spacing-6)" }}>
-          <Segmented
-            name="filter"
-            value={filter}
-            onChange={(v) => setFilter(v as Filter)}
-            size="sm"
-            ariaLabel="Filter"
-            options={[
-              { value: "all", label: "all" },
-              { value: "live", label: "live" },
-              { value: "gone", label: "gone" },
-            ]}
-          />
-        </div>
-
-        {filtered.length === 0 && (
-          <p
-            style={{
-              margin: 0,
-              color: "var(--color-ink-muted)",
-              fontSize: "var(--text-caption)",
-            }}
-          >
-            {history.length === 0
-              ? "No wyrds yet. Compose one to begin."
-              : "No wyrds match this filter."}
-          </p>
-        )}
-
-        {filtered.map((entry) => {
-          const isExpired = entry.expires_at <= now && !entry.gone_at;
-          const isBurned =
-            entry.gone_reason === "burned" ||
-            (!!entry.gone_at && entry.gone_reason !== "expired");
-          const isGone = isExpired || !!entry.gone_at;
-          const replyState = repliesByHandle[entry.handle];
-          const burnUi = burnByHandle[entry.handle];
-          const attestUi = attestByHandle[entry.handle];
-          // Recovered-from-mnemonic entries lack k_read_b64u (read key isn't
-          // seed-derivable). Fall through to a non-link rendering in that case.
-          const url = entry.k_read_b64u
-            ? buildFragmentUrl(
-                window.location.origin,
-                entry.handle,
-                entry.k_read_b64u,
-              )
-            : null;
-          const statusLabel = isBurned
-            ? "burned"
-            : isExpired
-              ? "expired"
-              : "live";
-          const statusColor = isGone
-            ? "var(--color-ink-subtle)"
-            : "var(--color-mark-sealed)";
-          return (
-            <article
-              key={entry.handle}
+            <p
               style={{
-                paddingTop: "var(--spacing-4)",
-                paddingBottom: "var(--spacing-4)",
-                borderTop: "1px solid var(--color-hairline)",
-                opacity: isGone ? 0.7 : 1,
+                margin: 0,
+                marginBottom: "var(--spacing-6)",
+                color: "var(--color-ink-muted)",
+                fontSize: "var(--text-caption)",
               }}
             >
-              <div
+              {history.length} wyrd{history.length === 1 ? "" : "s"} on this
+              device{" "}
+              <span style={{ color: "var(--color-ink-subtle)" }}>
+                (local to this browser — clearing site data wipes the list;
+                relay wyrds still age out on their own TTL, and your seed is
+                what recovers handles from elsewhere)
+              </span>
+            </p>
+
+            <div style={{ marginBottom: "var(--spacing-6)" }}>
+              <Segmented
+                name="filter"
+                value={filter}
+                onChange={(v) => setFilter(v as Filter)}
+                size="sm"
+                ariaLabel="Filter"
+                options={[
+                  { value: "all", label: "all" },
+                  { value: "live", label: "live" },
+                  { value: "gone", label: "gone" },
+                ]}
+              />
+            </div>
+
+            {filtered.length === 0 && (
+              <p
                 style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  gap: "var(--spacing-3)",
-                  flexWrap: "wrap",
-                  alignItems: "flex-start",
+                  margin: 0,
+                  color: "var(--color-ink-muted)",
+                  fontSize: "var(--text-caption)",
                 }}
               >
-                <div style={{ flex: "1 1 0", minWidth: 0 }}>
-                  {renamingHandle === entry.handle ? (
-                    <form
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        commitRename(entry.handle);
-                      }}
-                      style={{
-                        display: "flex",
-                        gap: "var(--spacing-2)",
-                        alignItems: "center",
-                      }}
-                    >
-                      <input
-                        type="text"
-                        value={renameDraft}
-                        onChange={(e) => setRenameDraft(e.target.value)}
-                        autoFocus
-                        placeholder="add a name…"
-                        maxLength={80}
-                        style={{
-                          flex: "1 1 0",
-                          minWidth: 0,
-                          background: "transparent",
-                          border: "none",
-                          borderBottom:
-                            "1px solid var(--color-hairline-strong)",
-                          color: "var(--color-ink)",
-                          fontFamily: "var(--font-mono)",
-                          fontSize: "var(--text-caption)",
-                          outline: "none",
-                          padding: "var(--spacing-1) 0",
-                        }}
-                      />
-                      <button type="submit" style={inlineBtn}>
-                        save
-                      </button>
-                      <button
-                        type="button"
-                        onClick={cancelRename}
-                        style={inlineBtn}
-                      >
-                        cancel
-                      </button>
-                    </form>
-                  ) : url ? (
-                    <a
-                      href={url}
-                      style={{
-                        color: "var(--color-ink)",
-                        textDecoration: isBurned ? "line-through" : "none",
-                        fontFamily: "var(--font-mono)",
-                        fontSize: "var(--text-caption)",
-                        overflowWrap: "anywhere",
-                        display: "block",
-                      }}
-                    >
-                      {entry.nickname || entry.handle}
-                    </a>
-                  ) : (
-                    <span
-                      style={{
-                        color: "var(--color-ink)",
-                        fontFamily: "var(--font-mono)",
-                        fontSize: "var(--text-caption)",
-                        overflowWrap: "anywhere",
-                        display: "block",
-                      }}
-                    >
-                      {entry.nickname || entry.handle}
-                    </span>
-                  )}
-                  {entry.nickname && renamingHandle !== entry.handle && (
-                    <span
-                      style={{
-                        display: "block",
-                        fontFamily: "var(--font-mono)",
-                        fontSize: "var(--text-microcaption)",
-                        color: "var(--color-ink-subtle)",
-                        marginTop: "var(--spacing-1)",
-                        overflowWrap: "anywhere",
-                        textDecoration: isBurned ? "line-through" : "none",
-                      }}
-                    >
-                      {entry.handle}
-                    </span>
-                  )}
-                </div>
-                <div
+                {history.length === 0
+                  ? "No wyrds yet. Compose one to begin."
+                  : "No wyrds match this filter."}
+              </p>
+            )}
+
+            {filtered.map((entry) => {
+              const isExpired = entry.expires_at <= now && !entry.gone_at;
+              const isBurned =
+                entry.gone_reason === "burned" ||
+                (!!entry.gone_at && entry.gone_reason !== "expired");
+              const isGone = isExpired || !!entry.gone_at;
+              const replyState = repliesByHandle[entry.handle];
+              const burnUi = burnByHandle[entry.handle];
+              const attestUi = attestByHandle[entry.handle];
+              // Recovered-from-mnemonic entries lack k_read_b64u (read key isn't
+              // seed-derivable). Fall through to a non-link rendering in that case.
+              const url = entry.k_read_b64u
+                ? buildFragmentUrl(
+                    window.location.origin,
+                    entry.handle,
+                    entry.k_read_b64u,
+                  )
+                : null;
+              const statusLabel = isBurned
+                ? "burned"
+                : isExpired
+                  ? "expired"
+                  : "live";
+              const statusColor = isGone
+                ? "var(--color-ink-subtle)"
+                : "var(--color-mark-sealed)";
+              return (
+                <article
+                  key={entry.handle}
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "var(--spacing-3)",
-                    flexShrink: 0,
+                    paddingTop: "var(--spacing-4)",
+                    paddingBottom: "var(--spacing-4)",
+                    borderTop: "1px solid var(--color-hairline)",
+                    opacity: isGone ? 0.7 : 1,
                   }}
                 >
-                  {entry.replies_enabled &&
-                    !isGone &&
-                    replyState?.replies &&
-                    replyState.replies.length > 0 && (
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      gap: "var(--spacing-3)",
+                      flexWrap: "wrap",
+                      alignItems: "flex-start",
+                    }}
+                  >
+                    <div style={{ flex: "1 1 0", minWidth: 0 }}>
+                      {renamingHandle === entry.handle ? (
+                        <form
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            commitRename(entry.handle);
+                          }}
+                          style={{
+                            display: "flex",
+                            gap: "var(--spacing-2)",
+                            alignItems: "center",
+                          }}
+                        >
+                          <input
+                            type="text"
+                            value={renameDraft}
+                            onChange={(e) => setRenameDraft(e.target.value)}
+                            autoFocus
+                            placeholder="add a name…"
+                            maxLength={80}
+                            style={{
+                              flex: "1 1 0",
+                              minWidth: 0,
+                              background: "transparent",
+                              border: "none",
+                              borderBottom:
+                                "1px solid var(--color-hairline-strong)",
+                              color: "var(--color-ink)",
+                              fontFamily: "var(--font-mono)",
+                              fontSize: "var(--text-caption)",
+                              outline: "none",
+                              padding: "var(--spacing-1) 0",
+                            }}
+                          />
+                          <button type="submit" style={inlineBtn}>
+                            save
+                          </button>
+                          <button
+                            type="button"
+                            onClick={cancelRename}
+                            style={inlineBtn}
+                          >
+                            cancel
+                          </button>
+                        </form>
+                      ) : url ? (
+                        <a
+                          href={url}
+                          style={{
+                            color: "var(--color-ink)",
+                            textDecoration: isBurned ? "line-through" : "none",
+                            fontFamily: "var(--font-mono)",
+                            fontSize: "var(--text-caption)",
+                            overflowWrap: "anywhere",
+                            display: "block",
+                          }}
+                        >
+                          {entry.nickname || entry.handle}
+                        </a>
+                      ) : (
+                        <span
+                          style={{
+                            color: "var(--color-ink)",
+                            fontFamily: "var(--font-mono)",
+                            fontSize: "var(--text-caption)",
+                            overflowWrap: "anywhere",
+                            display: "block",
+                          }}
+                        >
+                          {entry.nickname || entry.handle}
+                        </span>
+                      )}
+                      {entry.nickname && renamingHandle !== entry.handle && (
+                        <span
+                          style={{
+                            display: "block",
+                            fontFamily: "var(--font-mono)",
+                            fontSize: "var(--text-microcaption)",
+                            color: "var(--color-ink-subtle)",
+                            marginTop: "var(--spacing-1)",
+                            overflowWrap: "anywhere",
+                            textDecoration: isBurned ? "line-through" : "none",
+                          }}
+                        >
+                          {entry.handle}
+                        </span>
+                      )}
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "var(--spacing-3)",
+                        flexShrink: 0,
+                      }}
+                    >
+                      {entry.replies_enabled &&
+                        !isGone &&
+                        replyState?.replies &&
+                        replyState.replies.length > 0 && (
+                          <span
+                            style={{
+                              fontFamily: "var(--font-mono)",
+                              fontSize: "var(--text-microcaption)",
+                              color: "var(--color-accent)",
+                              padding: "2px 6px",
+                              border: "1px solid var(--color-hairline-strong)",
+                            }}
+                          >
+                            {replyState.replies.length}{" "}
+                            {replyState.replies.length === 1
+                              ? "reply"
+                              : "replies"}
+                          </span>
+                        )}
                       <span
                         style={{
                           fontFamily: "var(--font-mono)",
                           fontSize: "var(--text-microcaption)",
-                          color: "var(--color-accent)",
-                          padding: "2px 6px",
-                          border: "1px solid var(--color-hairline-strong)",
+                          color: statusColor,
                         }}
                       >
-                        {replyState.replies.length}{" "}
-                        {replyState.replies.length === 1 ? "reply" : "replies"}
+                        {statusLabel}
                       </span>
-                    )}
-                  <span
-                    style={{
-                      fontFamily: "var(--font-mono)",
-                      fontSize: "var(--text-microcaption)",
-                      color: statusColor,
-                    }}
-                  >
-                    {statusLabel}
-                  </span>
-                </div>
-              </div>
-              <p
-                style={{
-                  margin: 0,
-                  marginTop: "var(--spacing-2)",
-                  color: "var(--color-ink-subtle)",
-                  fontSize: "var(--text-microcaption)",
-                  fontFamily: "var(--font-mono)",
-                  display: "flex",
-                  gap: "var(--spacing-3)",
-                  flexWrap: "wrap",
-                  alignItems: "center",
-                }}
-              >
-                <span>
-                  Sent {formatDate(entry.published_at)}
-                  {entry.expires_at >= PERMANENT_EXPIRES_AT_MS - 1000
-                    ? " · never expires"
-                    : ` · expires ${formatDate(entry.expires_at)}`}
-                  {entry.replies_enabled && " · replies on"}
-                  {entry.recovered && " · recovered (no read key)"}
-                </span>
-                {renamingHandle !== entry.handle && (
-                  <button onClick={() => startRename(entry)} style={inlineBtn}>
-                    {entry.nickname ? "rename" : "add name"}
-                  </button>
-                )}
-                {!isGone && !burnUi && (
-                  <button
-                    onClick={() => startBurn(entry)}
-                    style={burnInlineBtn}
-                    aria-label={`Burn ${entry.nickname || entry.handle}`}
-                  >
-                    burn
-                  </button>
-                )}
-                {!isGone && !attestUi && (
-                  <button
-                    onClick={() => startAttest(entry)}
-                    style={inlineBtn}
-                    aria-label={`Attest authorship of ${entry.nickname || entry.handle}`}
-                  >
-                    attest authorship
-                  </button>
-                )}
-              </p>
-              {burnUi && (
-                <div
-                  style={{
-                    marginTop: "var(--spacing-3)",
-                    padding: "var(--spacing-3)",
-                    border: "1px solid var(--color-hairline-strong)",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "var(--spacing-3)",
-                  }}
-                >
+                    </div>
+                  </div>
                   <p
                     style={{
                       margin: 0,
-                      fontFamily: "var(--font-mono)",
+                      marginTop: "var(--spacing-2)",
+                      color: "var(--color-ink-subtle)",
                       fontSize: "var(--text-microcaption)",
-                      color: "var(--color-ink-muted)",
-                      lineHeight: 1.5,
-                    }}
-                  >
-                    Burn this wyrd? This cannot be undone. The host will return
-                    410 Gone with a tombstone for 30 days, then nothing.
-                  </p>
-                  <div
-                    style={{
+                      fontFamily: "var(--font-mono)",
                       display: "flex",
                       gap: "var(--spacing-3)",
                       flexWrap: "wrap",
+                      alignItems: "center",
                     }}
                   >
-                    <button
-                      onClick={() => void confirmBurn(entry)}
-                      disabled={burnUi.stage === "burning"}
-                      style={burnConfirmBtn}
-                    >
-                      {burnUi.stage === "burning" ? "burning…" : "burn"}
-                    </button>
-                    <button
-                      onClick={() => cancelBurn(entry.handle)}
-                      disabled={burnUi.stage === "burning"}
-                      style={burnCancelBtn}
-                    >
-                      cancel
-                    </button>
-                  </div>
-                  {burnUi.stage === "error" && burnUi.error && (
-                    <span
-                      style={{
-                        fontFamily: "var(--font-mono)",
-                        fontSize: "var(--text-microcaption)",
-                        color: "var(--color-danger)",
-                      }}
-                    >
-                      {burnUi.error}
+                    <span>
+                      Sent {formatDate(entry.published_at)}
+                      {entry.expires_at >= PERMANENT_EXPIRES_AT_MS - 1000
+                        ? " · never expires"
+                        : ` · expires ${formatDate(entry.expires_at)}`}
+                      {entry.replies_enabled && " · replies on"}
+                      {entry.recovered && " · recovered (no read key)"}
                     </span>
-                  )}
-                </div>
-              )}
-              {attestUi && (
-                <div
-                  style={{
-                    marginTop: "var(--spacing-3)",
-                    padding: "var(--spacing-3)",
-                    border: "1px solid var(--color-hairline-strong)",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "var(--spacing-3)",
-                  }}
-                >
-                  {attestUi.stage !== "success" && (
-                    <p
-                      style={{
-                        margin: 0,
-                        fontFamily: "var(--font-mono)",
-                        fontSize: "var(--text-microcaption)",
-                        color: "var(--color-ink-muted)",
-                        lineHeight: 1.5,
-                      }}
-                    >
-                      Publish a permanent wyrd that proves you authored this
-                      one. The attestation contains only the target handle and a
-                      signature — never the original body. Share the new URL
-                      alongside the original; a renderer fetching both shows a
-                      verification banner.
-                    </p>
-                  )}
-                  {attestUi.stage !== "success" && (
+                    {renamingHandle !== entry.handle && (
+                      <button
+                        onClick={() => startRename(entry)}
+                        style={inlineBtn}
+                      >
+                        {entry.nickname ? "rename" : "add name"}
+                      </button>
+                    )}
+                    {!isGone && !burnUi && (
+                      <button
+                        onClick={() => startBurn(entry)}
+                        style={burnInlineBtn}
+                        aria-label={`Burn ${entry.nickname || entry.handle}`}
+                      >
+                        burn
+                      </button>
+                    )}
+                    {!isGone && !attestUi && (
+                      <button
+                        onClick={() => startAttest(entry)}
+                        style={inlineBtn}
+                        aria-label={`Attest authorship of ${entry.nickname || entry.handle}`}
+                      >
+                        attest authorship
+                      </button>
+                    )}
+                  </p>
+                  {burnUi && (
                     <div
                       style={{
+                        marginTop: "var(--spacing-3)",
+                        padding: "var(--spacing-3)",
+                        border: "1px solid var(--color-hairline-strong)",
                         display: "flex",
+                        flexDirection: "column",
                         gap: "var(--spacing-3)",
-                        flexWrap: "wrap",
                       }}
                     >
-                      <button
-                        onClick={() => void confirmAttest(entry)}
-                        disabled={attestUi.stage === "publishing"}
-                        style={inlineBtn}
-                      >
-                        {attestUi.stage === "publishing"
-                          ? "publishing…"
-                          : "publish attestation"}
-                      </button>
-                      <button
-                        onClick={() => cancelAttest(entry.handle)}
-                        disabled={attestUi.stage === "publishing"}
-                        style={inlineBtn}
-                      >
-                        cancel
-                      </button>
-                    </div>
-                  )}
-                  {attestUi.stage === "success" && attestUi.url && (
-                    <>
                       <p
                         style={{
                           margin: 0,
@@ -951,19 +854,10 @@ export default function WyrdsPage() {
                           lineHeight: 1.5,
                         }}
                       >
-                        Attestation published. Share alongside the original:
+                        Burn this wyrd? This cannot be undone. The host will
+                        return 410 Gone with a tombstone for 30 days, then
+                        nothing.
                       </p>
-                      <a
-                        href={attestUi.url}
-                        style={{
-                          fontFamily: "var(--font-mono)",
-                          fontSize: "var(--text-microcaption)",
-                          color: "var(--color-ink)",
-                          overflowWrap: "anywhere",
-                        }}
-                      >
-                        {attestUi.url}
-                      </a>
                       <div
                         style={{
                           display: "flex",
@@ -972,107 +866,225 @@ export default function WyrdsPage() {
                         }}
                       >
                         <button
-                          onClick={() =>
-                            void navigator.clipboard.writeText(attestUi.url!)
-                          }
-                          style={inlineBtn}
+                          onClick={() => void confirmBurn(entry)}
+                          disabled={burnUi.stage === "burning"}
+                          style={burnConfirmBtn}
                         >
-                          copy URL
+                          {burnUi.stage === "burning" ? "burning…" : "burn"}
                         </button>
                         <button
-                          onClick={() => cancelAttest(entry.handle)}
-                          style={inlineBtn}
+                          onClick={() => cancelBurn(entry.handle)}
+                          disabled={burnUi.stage === "burning"}
+                          style={burnCancelBtn}
                         >
-                          done
+                          cancel
                         </button>
                       </div>
-                    </>
-                  )}
-                  {attestUi.stage === "error" && attestUi.error && (
-                    <span
-                      style={{
-                        fontFamily: "var(--font-mono)",
-                        fontSize: "var(--text-microcaption)",
-                        color: "var(--color-danger)",
-                      }}
-                    >
-                      {attestUi.error}
-                    </span>
-                  )}
-                </div>
-              )}
-              {entry.replies_enabled && !isGone && (
-                <div style={{ marginTop: "var(--spacing-3)" }}>
-                  {replyState?.loading && (
-                    <span
-                      style={{
-                        color: "var(--color-ink-subtle)",
-                        fontSize: "var(--text-microcaption)",
-                      }}
-                    >
-                      loading replies…
-                    </span>
-                  )}
-                  {replyState?.error && (
-                    <span
-                      style={{
-                        color: "var(--color-danger)",
-                        fontSize: "var(--text-microcaption)",
-                      }}
-                    >
-                      {replyState.error}
-                    </span>
-                  )}
-                  {replyState?.replies && replyState.replies.length === 0 && (
-                    <p
-                      style={{
-                        margin: 0,
-                        color: "var(--color-ink-subtle)",
-                        fontSize: "var(--text-microcaption)",
-                      }}
-                    >
-                      no replies yet
-                    </p>
-                  )}
-                  {replyState?.replies && replyState.replies.length > 0 && (
-                    <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                      {replyState.replies.map((r, i) => (
-                        <li
-                          key={i}
+                      {burnUi.stage === "error" && burnUi.error && (
+                        <span
                           style={{
-                            paddingTop: "var(--spacing-3)",
-                            paddingBottom: "var(--spacing-3)",
-                            paddingLeft: "var(--spacing-4)",
-                            borderLeft:
-                              "1px solid var(--color-hairline-strong)",
-                            marginTop: "var(--spacing-2)",
                             fontFamily: "var(--font-mono)",
-                            fontSize: "var(--text-caption)",
-                            whiteSpace: "pre-wrap",
-                            color: "var(--color-ink)",
-                            overflowWrap: "anywhere",
+                            fontSize: "var(--text-microcaption)",
+                            color: "var(--color-danger)",
                           }}
                         >
-                          {r.text}
-                          <span
+                          {burnUi.error}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {attestUi && (
+                    <div
+                      style={{
+                        marginTop: "var(--spacing-3)",
+                        padding: "var(--spacing-3)",
+                        border: "1px solid var(--color-hairline-strong)",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "var(--spacing-3)",
+                      }}
+                    >
+                      {attestUi.stage !== "success" && (
+                        <p
+                          style={{
+                            margin: 0,
+                            fontFamily: "var(--font-mono)",
+                            fontSize: "var(--text-microcaption)",
+                            color: "var(--color-ink-muted)",
+                            lineHeight: 1.5,
+                          }}
+                        >
+                          Publish a permanent wyrd that proves you authored this
+                          one. The attestation contains only the target handle
+                          and a signature — never the original body. Share the
+                          new URL alongside the original; a renderer fetching
+                          both shows a verification banner.
+                        </p>
+                      )}
+                      {attestUi.stage !== "success" && (
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: "var(--spacing-3)",
+                            flexWrap: "wrap",
+                          }}
+                        >
+                          <button
+                            onClick={() => void confirmAttest(entry)}
+                            disabled={attestUi.stage === "publishing"}
+                            style={inlineBtn}
+                          >
+                            {attestUi.stage === "publishing"
+                              ? "publishing…"
+                              : "publish attestation"}
+                          </button>
+                          <button
+                            onClick={() => cancelAttest(entry.handle)}
+                            disabled={attestUi.stage === "publishing"}
+                            style={inlineBtn}
+                          >
+                            cancel
+                          </button>
+                        </div>
+                      )}
+                      {attestUi.stage === "success" && attestUi.url && (
+                        <>
+                          <p
                             style={{
-                              display: "block",
-                              marginTop: "var(--spacing-2)",
+                              margin: 0,
+                              fontFamily: "var(--font-mono)",
                               fontSize: "var(--text-microcaption)",
-                              color: "var(--color-ink-subtle)",
+                              color: "var(--color-ink-muted)",
+                              lineHeight: 1.5,
                             }}
                           >
-                            {formatDate(r.received_at)}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
+                            Attestation published. Share alongside the original:
+                          </p>
+                          <a
+                            href={attestUi.url}
+                            style={{
+                              fontFamily: "var(--font-mono)",
+                              fontSize: "var(--text-microcaption)",
+                              color: "var(--color-ink)",
+                              overflowWrap: "anywhere",
+                            }}
+                          >
+                            {attestUi.url}
+                          </a>
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: "var(--spacing-3)",
+                              flexWrap: "wrap",
+                            }}
+                          >
+                            <button
+                              onClick={() =>
+                                void navigator.clipboard.writeText(
+                                  attestUi.url!,
+                                )
+                              }
+                              style={inlineBtn}
+                            >
+                              copy URL
+                            </button>
+                            <button
+                              onClick={() => cancelAttest(entry.handle)}
+                              style={inlineBtn}
+                            >
+                              done
+                            </button>
+                          </div>
+                        </>
+                      )}
+                      {attestUi.stage === "error" && attestUi.error && (
+                        <span
+                          style={{
+                            fontFamily: "var(--font-mono)",
+                            fontSize: "var(--text-microcaption)",
+                            color: "var(--color-danger)",
+                          }}
+                        >
+                          {attestUi.error}
+                        </span>
+                      )}
+                    </div>
                   )}
-                </div>
-              )}
-            </article>
-          );
-        })}
+                  {entry.replies_enabled && !isGone && (
+                    <div style={{ marginTop: "var(--spacing-3)" }}>
+                      {replyState?.loading && (
+                        <span
+                          style={{
+                            color: "var(--color-ink-subtle)",
+                            fontSize: "var(--text-microcaption)",
+                          }}
+                        >
+                          loading replies…
+                        </span>
+                      )}
+                      {replyState?.error && (
+                        <span
+                          style={{
+                            color: "var(--color-danger)",
+                            fontSize: "var(--text-microcaption)",
+                          }}
+                        >
+                          {replyState.error}
+                        </span>
+                      )}
+                      {replyState?.replies &&
+                        replyState.replies.length === 0 && (
+                          <p
+                            style={{
+                              margin: 0,
+                              color: "var(--color-ink-subtle)",
+                              fontSize: "var(--text-microcaption)",
+                            }}
+                          >
+                            no replies yet
+                          </p>
+                        )}
+                      {replyState?.replies && replyState.replies.length > 0 && (
+                        <ul
+                          style={{ listStyle: "none", padding: 0, margin: 0 }}
+                        >
+                          {replyState.replies.map((r, i) => (
+                            <li
+                              key={i}
+                              style={{
+                                paddingTop: "var(--spacing-3)",
+                                paddingBottom: "var(--spacing-3)",
+                                paddingLeft: "var(--spacing-4)",
+                                borderLeft:
+                                  "1px solid var(--color-hairline-strong)",
+                                marginTop: "var(--spacing-2)",
+                                fontFamily: "var(--font-mono)",
+                                fontSize: "var(--text-caption)",
+                                whiteSpace: "pre-wrap",
+                                color: "var(--color-ink)",
+                                overflowWrap: "anywhere",
+                              }}
+                            >
+                              {r.text}
+                              <span
+                                style={{
+                                  display: "block",
+                                  marginTop: "var(--spacing-2)",
+                                  fontSize: "var(--text-microcaption)",
+                                  color: "var(--color-ink-subtle)",
+                                }}
+                              >
+                                {formatDate(r.received_at)}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  )}
+                </article>
+              );
+            })}
           </>
         )}
       </section>
@@ -1215,8 +1227,7 @@ function InboxView({
                         minWidth: 0,
                         background: "transparent",
                         border: "none",
-                        borderBottom:
-                          "1px solid var(--color-hairline-strong)",
+                        borderBottom: "1px solid var(--color-hairline-strong)",
                         color: "var(--color-ink)",
                         fontFamily: "var(--font-mono)",
                         fontSize: "var(--text-caption)",
@@ -1305,9 +1316,7 @@ function InboxView({
               </span>
               {renamingHandle !== entry.handle && (
                 <button
-                  onClick={() =>
-                    onStartRename(entry.handle, entry.nickname)
-                  }
+                  onClick={() => onStartRename(entry.handle, entry.nickname)}
                   style={inboxInlineBtn}
                 >
                   {entry.nickname ? "rename" : "add name"}

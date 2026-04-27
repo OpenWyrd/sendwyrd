@@ -690,8 +690,8 @@ export default function SettingsPage() {
         <p style={{ ...metaStyle, marginBottom: "var(--spacing-4)" }}>
           The inbox is a local viewing log of wyrd URLs you&apos;ve opened in
           this browser. There is no relay-side record of received wyrds — by
-          design (ADR-024). The list lives in localStorage and is wiped when
-          you clear site data; clearing your seed does not affect it.
+          design (ADR-024). The list lives in localStorage and is wiped when you
+          clear site data; clearing your seed does not affect it.
         </p>
         <div
           style={{

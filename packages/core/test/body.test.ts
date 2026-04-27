@@ -262,7 +262,9 @@ describe("body — countCountableCodepoints", () => {
     const offer =
       "lno1qcp4256ypqpq86q2pucnq42ngssx2an9wfujqerp0yg069nfm2zlqqqsyqcyq5rqwzqfqqq";
     const body = `pay this offer ${offer} please`;
-    expect(countCountableCodepoints(body)).toBe("pay this offer  please".length);
+    expect(countCountableCodepoints(body)).toBe(
+      "pay this offer  please".length,
+    );
     const segs = parseBody(body);
     const ln = segs.find((s) => s.kind === "lightning");
     expect(ln).toBeDefined();
@@ -401,7 +403,8 @@ describe("body — Bitcoin detection", () => {
   });
 
   it("detects the bitcoin: URI scheme with BIP-21 query params", () => {
-    const uri = "bitcoin:bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq?amount=0.001&label=tip";
+    const uri =
+      "bitcoin:bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq?amount=0.001&label=tip";
     const segs = parseBody(`pay ${uri}`);
     const btc = segs.find((s) => s.kind === "bitcoin");
     expect(btc && btc.kind === "bitcoin" && btc.type).toBe("uri");
@@ -414,7 +417,8 @@ describe("body — Bitcoin detection", () => {
   });
 
   it("parses BIP-21 message param (URL-decoded)", () => {
-    const uri = "bitcoin:bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq?amount=0.5&message=coffee%20fund";
+    const uri =
+      "bitcoin:bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq?amount=0.5&message=coffee%20fund";
     const segs = parseBody(uri);
     const btc = segs.find((s) => s.kind === "bitcoin");
     if (btc && btc.kind === "bitcoin") {

@@ -22,10 +22,9 @@ export interface McpConfig {
 }
 
 export function loadConfig(): McpConfig {
-  const origin = (process.env.SENDWYRD_ORIGIN ?? "https://sendwyrd.com").replace(
-    /\/+$/,
-    "",
-  );
+  const origin = (
+    process.env.SENDWYRD_ORIGIN ?? "https://sendwyrd.com"
+  ).replace(/\/+$/, "");
 
   const xdg = process.env.XDG_CONFIG_HOME;
   const configDir = xdg

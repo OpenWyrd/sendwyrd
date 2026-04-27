@@ -85,49 +85,47 @@ export default function TermsPage() {
 
         <h2 style={headingStyle}>1. Lawful use</h2>
         <p style={pStyle}>
-          You will not use SendWyrd to publish, transmit, or attempt to
-          transmit content that is illegal where you reside or where the
-          recipient resides. This includes, without limitation: child sexual
-          abuse material; content that incites or facilitates violence or
-          terrorism; content covered by export-control or sanctions law; and
-          content that violates a third party&apos;s intellectual property
-          rights.
+          You will not use SendWyrd to publish, transmit, or attempt to transmit
+          content that is illegal where you reside or where the recipient
+          resides. This includes, without limitation: child sexual abuse
+          material; content that incites or facilitates violence or terrorism;
+          content covered by export-control or sanctions law; and content that
+          violates a third party&apos;s intellectual property rights.
         </p>
 
         <h2 style={headingStyle}>2. No accounts</h2>
         <p style={pStyle}>
           SendWyrd does not maintain user accounts. You alone hold the seed
-          material that authenticates you as the author of any wyrd you
-          publish. Lost seed material cannot be recovered, and the operator
-          cannot recover, reissue, or transfer your wyrds for you.
+          material that authenticates you as the author of any wyrd you publish.
+          Lost seed material cannot be recovered, and the operator cannot
+          recover, reissue, or transfer your wyrds for you.
         </p>
 
         <h2 style={headingStyle}>3. Encrypted by design</h2>
         <p style={pStyle}>
           Message bodies are end-to-end encrypted in your browser before they
-          leave your device. The operator does not have access to plaintext
-          and cannot read the contents of any wyrd. The operator can, in
-          response to credible legal process or operational necessity, remove
-          a wyrd&apos;s encrypted envelope from storage; doing so renders the
-          wyrd permanently unrecoverable.
+          leave your device. The operator does not have access to plaintext and
+          cannot read the contents of any wyrd. The operator can, in response to
+          credible legal process or operational necessity, remove a wyrd&apos;s
+          encrypted envelope from storage; doing so renders the wyrd permanently
+          unrecoverable.
         </p>
 
         <h2 style={headingStyle}>4. No expectation of permanence</h2>
         <p style={pStyle}>
-          The default time-to-live for a wyrd is finite. Permanent
-          (<code>ttl=0</code>) wyrds are best-effort and are not guaranteed
+          The default time-to-live for a wyrd is finite. Permanent (
+          <code>ttl=0</code>) wyrds are best-effort and are not guaranteed
           against operational removal, infrastructure migration, or service
           shutdown. Treat SendWyrd as transport, not as durable storage.
         </p>
 
         <h2 style={headingStyle}>5. Limitation of liability</h2>
         <p style={pStyle}>
-          To the fullest extent permitted by law, the operator&apos;s
-          aggregate liability arising from your use of SendWyrd is limited to
-          the amount you have paid to use the service, which is zero. The
-          service is provided without any express or implied warranty of
-          merchantability, fitness for a particular purpose, or
-          non-infringement.
+          To the fullest extent permitted by law, the operator&apos;s aggregate
+          liability arising from your use of SendWyrd is limited to the amount
+          you have paid to use the service, which is zero. The service is
+          provided without any express or implied warranty of merchantability,
+          fitness for a particular purpose, or non-infringement.
         </p>
 
         <h2 style={headingStyle}>6. Reports and contact</h2>
@@ -141,8 +139,8 @@ export default function TermsPage() {
           >
             @deltaclimbs
           </a>
-          . Credible reports will be reviewed; the operator reserves the
-          right to remove encrypted envelopes from storage at its discretion.
+          . Credible reports will be reviewed; the operator reserves the right
+          to remove encrypted envelopes from storage at its discretion.
         </p>
 
         <h2 style={headingStyle}>7. Changes</h2>

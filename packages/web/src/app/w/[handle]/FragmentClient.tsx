@@ -121,9 +121,7 @@ export default function FragmentClient({
           setState({ kind: "ready", data: initial.data, body, transitives });
           // Record this view in the browser-local inbox (per ADR-024).
           // Skip if we authored this wyrd — those belong in the outbox.
-          const authoredHandles = new Set(
-            listHistory().map((e) => e.handle),
-          );
+          const authoredHandles = new Set(listHistory().map((e) => e.handle));
           recordInboxView({
             handle: initial.data.handle,
             k_read_b64u,
@@ -193,76 +191,80 @@ export default function FragmentClient({
       {state.kind === "ready" && (
         <>
           <InstallAffordance variant="wyrd" />
-        <article style={panelStyle}>
-          <header
-            style={{
-              display: "flex",
-              justifyContent: "flex-end",
-              marginBottom: "var(--spacing-3)",
-            }}
-          >
-            <PrivacyIndicator />
-          </header>
-          <div
-            style={{
-              paddingTop: "var(--spacing-2)",
-              paddingBottom: "var(--spacing-3)",
-            }}
-          >
-            <WyrdBody body={state.body} transitives={state.transitives} />
-          </div>
-          <p
-            style={{
-              margin: 0,
-              color: "var(--color-ink-subtle)",
-              fontSize: "var(--text-microcaption)",
-              fontFamily: "var(--font-mono)",
-            }}
-          >
-            Sent {formatDate(new Date(state.data.published_at).toISOString())}
-            {!isPermanent(state.data.expires_at) && (
-              <>
-                {" "}
-                · expires{" "}
-                {formatDate(new Date(state.data.expires_at).toISOString())}
-              </>
-            )}
-          </p>
-          <ShareAffordance />
-          {state.data.replies_enabled && (
-            <ReplyForm
-              handle={state.data.handle}
-              k_origin_pub_b64u={state.data.k_origin_pub}
-            />
-          )}
-          {historyEntry &&
-            !historyEntry.gone_at &&
-            historyEntry.k_origin_pub_b64u === state.data.k_origin_pub && (
-              <BurnAffordance
+          <article style={panelStyle}>
+            <header
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                marginBottom: "var(--spacing-3)",
+              }}
+            >
+              <PrivacyIndicator />
+            </header>
+            <div
+              style={{
+                paddingTop: "var(--spacing-2)",
+                paddingBottom: "var(--spacing-3)",
+              }}
+            >
+              <WyrdBody body={state.body} transitives={state.transitives} />
+            </div>
+            <p
+              style={{
+                margin: 0,
+                color: "var(--color-ink-subtle)",
+                fontSize: "var(--text-microcaption)",
+                fontFamily: "var(--font-mono)",
+              }}
+            >
+              Sent {formatDate(new Date(state.data.published_at).toISOString())}
+              {!isPermanent(state.data.expires_at) && (
+                <>
+                  {" "}
+                  · expires{" "}
+                  {formatDate(new Date(state.data.expires_at).toISOString())}
+                </>
+              )}
+            </p>
+            <ShareAffordance />
+            {state.data.replies_enabled && (
+              <ReplyForm
                 handle={state.data.handle}
-                n={historyEntry.n}
-                onBurned={(gone_at) => {
-                  markHistoryEntryGone(state.data.handle, "burned", gone_at);
-                  setState({
-                    kind: "gone",
-                    reason: "burned",
-                    gone_at: new Date(gone_at).toISOString(),
-                  });
-                }}
-                onAlreadyGone={(reason, gone_at_iso) => {
-                  const gone_at_ms = new Date(gone_at_iso).getTime();
-                  if (reason === "burned" || reason === "expired") {
-                    markHistoryEntryGone(state.data.handle, reason, gone_at_ms);
-                  }
-                  setState({
-                    kind: "gone",
-                    reason,
-                    gone_at: gone_at_iso,
-                  });
-                }}
+                k_origin_pub_b64u={state.data.k_origin_pub}
               />
             )}
-        </article>
+            {historyEntry &&
+              !historyEntry.gone_at &&
+              historyEntry.k_origin_pub_b64u === state.data.k_origin_pub && (
+                <BurnAffordance
+                  handle={state.data.handle}
+                  n={historyEntry.n}
+                  onBurned={(gone_at) => {
+                    markHistoryEntryGone(state.data.handle, "burned", gone_at);
+                    setState({
+                      kind: "gone",
+                      reason: "burned",
+                      gone_at: new Date(gone_at).toISOString(),
+                    });
+                  }}
+                  onAlreadyGone={(reason, gone_at_iso) => {
+                    const gone_at_ms = new Date(gone_at_iso).getTime();
+                    if (reason === "burned" || reason === "expired") {
+                      markHistoryEntryGone(
+                        state.data.handle,
+                        reason,
+                        gone_at_ms,
+                      );
+                    }
+                    setState({
+                      kind: "gone",
+                      reason,
+                      gone_at: gone_at_iso,
+                    });
+                  }}
+                />
+              )}
+          </article>
         </>
       )}
     </main>

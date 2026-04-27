@@ -93,8 +93,8 @@ export default function BuildPage() {
             </li>
             <li>
               <strong>MCP server</strong> — <Code>@sendwyrd/mcp</Code> on npm,
-              stdio, exposes the wyrd verbs to MCP-capable clients (Claude
-              Code, Claude Desktop, Cursor, Zed). Install with{" "}
+              stdio, exposes the wyrd verbs to MCP-capable clients (Claude Code,
+              Claude Desktop, Cursor, Zed). Install with{" "}
               <Code>npx -y @sendwyrd/mcp</Code>.
             </li>
           </ul>
@@ -119,8 +119,8 @@ export default function BuildPage() {
             <Code>@sendwyrd/core</Code> from npm. It exports{" "}
             <Code>composeWyrd</Code>, <Code>decryptFromBase64Url</Code>,{" "}
             <Code>deriveOriginKey</Code>, <Code>buildFragmentUrl</Code>, and{" "}
-            <Code>parseWyrdUrl</Code>. The package is unstable below v1.0.0;
-            pin if you depend on it.
+            <Code>parseWyrdUrl</Code>. The package is unstable below v1.0.0; pin
+            if you depend on it.
           </p>
           <p style={pStyle}>
             <strong>If you&apos;re in another language</strong>: the spec is
@@ -153,7 +153,7 @@ export default function BuildPage() {
             list on restart.
           </p>
           <pre style={preStyle}>
-{`{
+            {`{
   "mcpServers": {
     "sendwyrd": {
       "command": "npx",

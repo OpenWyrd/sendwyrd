@@ -173,9 +173,7 @@ describe("WyrdBody — lightning chips", () => {
     const lnurl =
       "lnurl1dp68gurn8ghj7um9wfmxjcm99e3k7mf0v9cxj0m385ekvcenxc6r2c35xvukxefcv5mkvv34x5ekzd3ev56nyd3hxqurzepexejxxepnxscrvwfnv9nxzcn9xq6xyefhvgcxxcmyxymnserxfq5fns";
     render(<WyrdBody body={`pay: ${lnurl}`} />);
-    expect(
-      screen.getByRole("link", { name: "LNURL" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "LNURL" })).toBeInTheDocument();
   });
 
   it("renders an allowlisted Lightning address as a chip", () => {
