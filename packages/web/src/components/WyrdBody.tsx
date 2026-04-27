@@ -151,7 +151,7 @@ function PaymentChip({ seg }: { seg: PaymentSegment }) {
           display: "inline-flex",
           alignItems: "center",
           gap: "var(--spacing-2)",
-          padding: "var(--spacing-4) var(--spacing-3)",
+          padding: "var(--spacing-2) var(--spacing-3)",
           margin: "0 2px",
           border: "1px solid var(--color-hairline-strong)",
           background: "var(--color-surface)",
@@ -229,14 +229,13 @@ function PaymentChip({ seg }: { seg: PaymentSegment }) {
 
 const inlineChipBtn: React.CSSProperties = {
   background: "transparent",
-  border: "none",
-  padding: 0,
+  border: "1px solid var(--color-hairline)",
+  padding: "var(--spacing-1) var(--spacing-2)",
   color: "var(--color-ink-muted)",
   fontFamily: "var(--font-mono)",
-  fontSize: "var(--text-body)",
+  fontSize: "var(--text-caption)",
   cursor: "pointer",
-  textDecoration: "underline",
-  textUnderlineOffset: 2,
+  lineHeight: 1.2,
 };
 
 function EmbedFrame({
