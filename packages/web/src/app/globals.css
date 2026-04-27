@@ -150,7 +150,10 @@ body {
 }
 
 /* Mobile bottom Compose bar — permanent thumb-zone CTA on small screens.
-   Hidden on desktop; visible at max-width: 640px. */
+   Hidden on desktop; visible at max-width: 640px.
+   Visual model: a thin ribbon anchored to a crisp top hairline, matching
+   page ground so the bar reads as a defined edge rather than a two-tone
+   panel that dissolves into the viewport bottom. */
 .mobile-compose-bar {
   display: none;
 }
@@ -164,16 +167,25 @@ body {
     z-index: 50;
     align-items: center;
     justify-content: center;
-    padding: var(--spacing-4);
-    padding-bottom: calc(var(--spacing-4) + env(safe-area-inset-bottom, 0px));
-    background: var(--color-surface);
+    padding: var(--spacing-3) var(--spacing-4);
+    padding-bottom: calc(var(--spacing-3) + env(safe-area-inset-bottom, 0px));
+    background: var(--color-ground);
     border-top: 1px solid var(--color-hairline-strong);
     color: var(--color-ink);
     text-decoration: none;
     font-family: var(--font-mono);
     font-size: var(--text-body);
     letter-spacing: 0.04em;
-    min-height: 56px;
+    min-height: 52px;
+    transition: background-color 120ms cubic-bezier(0.4, 0, 0.2, 1);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mobile-compose-bar:active {
+    background: var(--color-surface);
+  }
+  .mobile-compose-bar:focus-visible {
+    outline: 1px solid var(--color-accent);
+    outline-offset: -3px;
   }
   /* Hide the "compose" item in the top Nav on mobile — redundant with
      the bottom bar. */
@@ -183,7 +195,7 @@ body {
   /* Pages that render the bar (set by MobileComposeBar's effect) need
      extra bottom padding on their main so content isn't hidden behind. */
   body.has-mobile-compose-bar main {
-    padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)) !important;
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
   }
 }
 
