@@ -421,7 +421,8 @@ export default function ComposePage() {
               padding: "var(--spacing-4) var(--spacing-8)",
               letterSpacing: "0.02em",
               color: "#ffffff",
-              opacity: overCap || isEmpty || sending ? 0.4 : 1,
+              fontSize: "calc(var(--text-body) * 1.2)",
+              opacity: overCap || isEmpty || sending ? 0.65 : 1,
               cursor: overCap || isEmpty || sending ? "not-allowed" : "pointer",
             }}
           >
