@@ -241,6 +241,185 @@ describe("body — countCountableCodepoints", () => {
     // The count exceeds the cap, but the parser doesn't reject it.
     expect(countCountableCodepoints(long)).toBe(400);
   });
+
+  it("excludes BOLT11 invoices from the codepoint count", () => {
+    const invoice =
+      "lnbc1500n1pvjluezpp5qqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqypqdpl2pkx2ctnv5sxxmmwwd5kgetjypeh2ursdae8g6twvus8g6rfwvs8qun0dfjkxaq8rkx3yf5tcsyz3d73gafnh3cax9rn449d9p5uxz9ezhhypd0elx87sjle52x86fux2ypatgddc6k63n7erqz25le42c4u4ecky03ylcqca784w";
+    const body = `tip me here: ${invoice} thanks`;
+    // text: "tip me here: " (13) + " thanks" (7) = 20
+    expect(countCountableCodepoints(body)).toBe(20);
+    const segs = parseBody(body);
+    const ln = segs.find((s) => s.kind === "lightning");
+    expect(ln).toBeDefined();
+    if (ln && ln.kind === "lightning") {
+      expect(ln.type).toBe("bolt11");
+      expect(ln.payload).toBe(invoice);
+    }
+  });
+
+  it("excludes BOLT12 offers from the codepoint count", () => {
+    // synthetic but well-formed bech32 prefix + 60 chars of valid charset
+    const offer =
+      "lno1qcp4256ypqpq86q2pucnq42ngssx2an9wfujqerp0yg069nfm2zlqqqsyqcyq5rqwzqfqqq";
+    const body = `pay this offer ${offer} please`;
+    expect(countCountableCodepoints(body)).toBe("pay this offer  please".length);
+    const segs = parseBody(body);
+    const ln = segs.find((s) => s.kind === "lightning");
+    expect(ln).toBeDefined();
+    if (ln && ln.kind === "lightning") {
+      expect(ln.type).toBe("bolt12");
+    }
+  });
+
+  it("excludes LNURL strings from the codepoint count", () => {
+    const lnurl =
+      "lnurl1dp68gurn8ghj7um9wfmxjcm99e3k7mf0v9cxj0m385ekvcenxc6r2c35xvukxefcv5mkvv34x5ekzd3ev56nyd3hxqurzepexejxxepnxscrvwfnv9nxzcn9xq6xyefhvgcxxcmyxymnserxfq5fns";
+    const body = `here: ${lnurl}`;
+    expect(countCountableCodepoints(body)).toBe("here: ".length);
+    const segs = parseBody(body);
+    const ln = segs.find((s) => s.kind === "lightning");
+    expect(ln && ln.kind === "lightning" && ln.type).toBe("lnurl");
+  });
+
+  it("recognizes the lightning: URI scheme as a single token", () => {
+    const uri = "lightning:lnbc1pvjluez";
+    const body = `pay ${uri} now`;
+    const segs = parseBody(body);
+    const ln = segs.find((s) => s.kind === "lightning");
+    expect(ln && ln.kind === "lightning" && ln.type).toBe("uri");
+    if (ln && ln.kind === "lightning") {
+      expect(ln.href).toBe(uri);
+    }
+    // text: "pay " (4) + " now" (4) = 8
+    expect(countCountableCodepoints(body)).toBe(8);
+  });
+
+  it("does not collide with bare-domain detection (lnbc... has no dots)", () => {
+    const body =
+      "lnbc500u1pvjluezpp5qqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqyq";
+    const segs = parseBody(body);
+    expect(segs).toHaveLength(1);
+    expect(segs[0]?.kind).toBe("lightning");
+  });
+
+  it("detects allowlisted Lightning addresses (getalby.com)", () => {
+    const body = "tip me at mike@getalby.com please";
+    const segs = parseBody(body);
+    const ln = segs.find((s) => s.kind === "lightning");
+    expect(ln && ln.kind === "lightning" && ln.type).toBe("address");
+    if (ln && ln.kind === "lightning") {
+      expect(ln.payload).toBe("mike@getalby.com");
+      expect(ln.href).toBe("lightning:mike@getalby.com");
+    }
+    expect(countCountableCodepoints(body)).toBe(
+      "tip me at  please".length, // 17
+    );
+  });
+
+  it("detects all dominant LN address providers", () => {
+    const providers = [
+      "user@getalby.com",
+      "user@walletofsatoshi.com",
+      "user@strike.me",
+      "user@coinos.io",
+      "user@mutinywallet.com",
+      "user@blink.sv",
+      "user@phoenix.acinq.co",
+      "user@sats.mobi",
+      "user@bitnob.com",
+      "user@primal.net",
+    ];
+    for (const p of providers) {
+      const segs = parseBody(p);
+      const ln = segs.find((s) => s.kind === "lightning");
+      expect(
+        ln && ln.kind === "lightning" && ln.type === "address",
+        `expected lightning address for ${p}`,
+      ).toBe(true);
+    }
+  });
+
+  it("does NOT detect off-allowlist email-shape strings as Lightning", () => {
+    const body = "email me at alice@gmail.com or bob@example.org";
+    const segs = parseBody(body);
+    expect(segs.find((s) => s.kind === "lightning")).toBeUndefined();
+    // alice@gmail.com isn't a URL either (negative-lookbehind on @ blocks
+    // bare-domain match). Whole body should be a single text segment.
+    expect(segs).toHaveLength(1);
+    expect(segs[0]?.kind).toBe("text");
+  });
+
+  it("detects bare email + lightning: prefix as a Lightning URI (off-list opt-in)", () => {
+    const body = "tip lightning:alice@my-self-hosted.example.com here";
+    const segs = parseBody(body);
+    const ln = segs.find((s) => s.kind === "lightning");
+    expect(ln && ln.kind === "lightning" && ln.type).toBe("uri");
+  });
+});
+
+describe("body — Bitcoin detection", () => {
+  it("detects bech32 native segwit addresses (bc1q...)", () => {
+    const addr = "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq";
+    const body = `pay to ${addr} please`;
+    const segs = parseBody(body);
+    const btc = segs.find((s) => s.kind === "bitcoin");
+    expect(btc && btc.kind === "bitcoin" && btc.type).toBe("bech32");
+    if (btc && btc.kind === "bitcoin") {
+      expect(btc.payload).toBe(addr);
+      expect(btc.href).toBe(`bitcoin:${addr}`);
+    }
+    expect(countCountableCodepoints(body)).toBe("pay to  please".length);
+  });
+
+  it("detects bech32m taproot addresses (bc1p...)", () => {
+    const addr =
+      "bc1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqzk5jj0";
+    const segs = parseBody(addr);
+    const btc = segs.find((s) => s.kind === "bitcoin");
+    expect(btc && btc.kind === "bitcoin" && btc.type === "bech32").toBe(true);
+  });
+
+  it("detects testnet (tb1...) addresses", () => {
+    const addr = "tb1q0sqzfp3zj42u0perxr6jahhu4y03uw4dypk6sc";
+    const segs = parseBody(addr);
+    const btc = segs.find((s) => s.kind === "bitcoin");
+    expect(btc && btc.kind === "bitcoin" && btc.type === "bech32").toBe(true);
+  });
+
+  it("detects bare legacy P2PKH addresses (1...)", () => {
+    const addr = "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa";
+    const segs = parseBody(`donate ${addr} thanks`);
+    const btc = segs.find((s) => s.kind === "bitcoin");
+    expect(btc && btc.kind === "bitcoin" && btc.type).toBe("legacy");
+  });
+
+  it("detects bare legacy P2SH addresses (3...)", () => {
+    const addr = "3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy";
+    const segs = parseBody(addr);
+    const btc = segs.find((s) => s.kind === "bitcoin");
+    expect(btc && btc.kind === "bitcoin" && btc.type === "legacy").toBe(true);
+  });
+
+  it("detects the bitcoin: URI scheme with BIP-21 query params", () => {
+    const uri = "bitcoin:bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq?amount=0.001&label=tip";
+    const segs = parseBody(`pay ${uri}`);
+    const btc = segs.find((s) => s.kind === "bitcoin");
+    expect(btc && btc.kind === "bitcoin" && btc.type).toBe("uri");
+    if (btc && btc.kind === "bitcoin") {
+      expect(btc.href).toBe(uri); // URI passed through unchanged
+    }
+  });
+
+  it("excludes Bitcoin tokens from the codepoint count", () => {
+    const addr = "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq";
+    const body = `tip ${addr} thanks`;
+    expect(countCountableCodepoints(body)).toBe("tip  thanks".length); // 11
+  });
+
+  it("does not collide with prose words (3-letter words don't match legacy)", () => {
+    const segs = parseBody("the cat ate 3 fish");
+    expect(segs.find((s) => s.kind === "bitcoin")).toBeUndefined();
+  });
 });
 
 describe("body — parseSendwyrdUrl", () => {

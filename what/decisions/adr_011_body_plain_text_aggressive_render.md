@@ -5,7 +5,7 @@ adr_number: 11
 title: "Body is plain text; renderer aggressively auto-embeds non-MOP URLs"
 status: accepted
 created: 2026-04-24
-updated: 2026-04-24
+updated: 2026-04-26
 last_edited_by: agent_operator
 supersedes:
 superseded_by:
@@ -115,3 +115,7 @@ Composer UX should communicate to authors that any URL they include is fetched b
 - **Image / video size limits during auto-fetch.** Renderer should bound how much it pulls per URL to defend against memory pressure / decompression attacks. Renderer-side hardening, not protocol.
 - **Content-type sniffing rules** for URLs without media extensions but with image/video content-types. Renderer detail.
 - **Composer-side URL handling.** Whether composer should warn authors about including known tracking domains, etc. UX detail.
+
+## Cross-references
+
+- **ADR-023 (payment-token posture).** Extends body-segment detection beyond URLs to include Lightning invoices/offers/LNURL/`lightning:` URI and Bitcoin addresses/`bitcoin:` URI. Renderer surfaces these as labelled chips with on-demand local QR rendering rather than auto-embeds. The "aggressive auto-embed" posture for URLs in this ADR is unchanged; payment-token segments are a parallel detection class with detect-and-handoff (not embed) semantics.

@@ -12,8 +12,9 @@
 
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { isAttestationBody, parseBody, type BodySegment } from "@sendwyrd/core";
+import QRCode from "qrcode-svg";
 import type { ResolutionMap } from "@/lib/resolveBody";
 import { AttestationBanner } from "@/components/AttestationBanner";
 import { LinkEmbed } from "@/components/LinkEmbed";
@@ -61,6 +62,12 @@ function Segment({
   if (seg.kind === "text") {
     return <span>{seg.value}</span>;
   }
+  if (seg.kind === "lightning") {
+    return <PaymentChip seg={seg} />;
+  }
+  if (seg.kind === "bitcoin") {
+    return <PaymentChip seg={seg} />;
+  }
   if (seg.type === "sendwyrd") {
     return <SendwyrdEmbed url={seg.href} resolved={transitives[seg.href]} />;
   }
@@ -75,6 +82,147 @@ function Segment({
     return <AudioEmbed url={seg.href} hostname={seg.hostname} />;
   return <LinkEmbed url={seg.href} hostname={seg.hostname} />;
 }
+
+type PaymentSegment = Extract<
+  BodySegment,
+  { kind: "lightning" } | { kind: "bitcoin" }
+>;
+
+const PAYMENT_LABELS: Record<string, string> = {
+  // lightning
+  bolt11: "BOLT11 invoice",
+  bolt12: "BOLT12 offer",
+  lnurl: "LNURL",
+  uri: "lightning",
+  address: "lightning address",
+  // bitcoin
+  bech32: "BTC address",
+  legacy: "BTC address",
+};
+
+function paymentLabel(seg: PaymentSegment): string {
+  if (seg.kind === "bitcoin" && seg.type === "uri") return "bitcoin";
+  return PAYMENT_LABELS[seg.type] ?? "payment";
+}
+
+function paymentGlyph(seg: PaymentSegment): string {
+  return seg.kind === "lightning" ? "⚡" : "₿";
+}
+
+function PaymentChip({ seg }: { seg: PaymentSegment }) {
+  const [copied, setCopied] = useState(false);
+  const [showQr, setShowQr] = useState(false);
+  const label = paymentLabel(seg);
+  const qrSvg = useMemo(() => {
+    if (!showQr) return "";
+    const qr = new QRCode({
+      content: seg.href,
+      padding: 2,
+      width: 192,
+      height: 192,
+      ecl: "M",
+      join: true,
+      container: "svg-viewbox",
+    });
+    return qr.svg();
+  }, [showQr, seg.href]);
+  function copy() {
+    void navigator.clipboard.writeText(seg.payload);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1200);
+  }
+  return (
+    <span style={{ display: "inline-block" }}>
+      <span
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "var(--spacing-2)",
+          padding: "0 var(--spacing-2)",
+          margin: "0 2px",
+          border: "1px solid var(--color-hairline-strong)",
+          background: "var(--color-surface)",
+          fontFamily: "var(--font-mono)",
+          fontSize: "var(--text-microcaption)",
+          color: "var(--color-ink)",
+          verticalAlign: "baseline",
+        }}
+      >
+        <span aria-hidden="true">{paymentGlyph(seg)}</span>
+        <a
+          href={seg.href}
+          style={{ color: "var(--color-ink)", textDecoration: "none" }}
+        >
+          {label}
+        </a>
+        <button
+          onClick={() => setShowQr((v) => !v)}
+          type="button"
+          style={inlineChipBtn}
+          aria-label={`${showQr ? "hide" : "show"} QR for ${label}`}
+        >
+          {showQr ? "hide QR" : "QR"}
+        </button>
+        <button
+          onClick={copy}
+          type="button"
+          style={inlineChipBtn}
+          aria-label={`copy ${label}`}
+        >
+          {copied ? "copied" : "copy"}
+        </button>
+      </span>
+      {showQr && (
+        <span
+          style={{
+            display: "block",
+            marginTop: "var(--spacing-3)",
+            marginBottom: "var(--spacing-3)",
+            padding: "var(--spacing-3)",
+            border: "1px solid var(--color-hairline)",
+            background: "var(--color-surface)",
+            width: "fit-content",
+          }}
+        >
+          <span
+            // QRCode lib outputs trusted SVG markup; payload is bounded
+            // and never executed. Rendered locally — host never sees this.
+            dangerouslySetInnerHTML={{ __html: qrSvg }}
+            style={{
+              display: "block",
+              width: 192,
+              height: 192,
+            }}
+          />
+          <span
+            style={{
+              display: "block",
+              marginTop: "var(--spacing-2)",
+              fontFamily: "var(--font-mono)",
+              fontSize: "var(--text-microcaption)",
+              color: "var(--color-ink-subtle)",
+              textAlign: "center",
+            }}
+          >
+            scan with your wallet
+          </span>
+        </span>
+      )}
+    </span>
+  );
+}
+
+const inlineChipBtn: React.CSSProperties = {
+  background: "transparent",
+  border: "none",
+  padding: 0,
+  color: "var(--color-ink-muted)",
+  fontFamily: "var(--font-mono)",
+  fontSize: "var(--text-microcaption)",
+  cursor: "pointer",
+  textDecoration: "underline",
+  textUnderlineOffset: 2,
+};
 
 function EmbedFrame({
   children,

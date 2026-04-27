@@ -20,8 +20,8 @@ import {
   type Base64Url,
 } from "./types.js";
 import { b64uEncode, b64uDecode } from "./encoding.js";
-import { encryptEnvelope, generateKRead } from "./envelope.js";
-import { deriveOriginKey, type OriginKeyPair } from "./hd.js";
+import { encryptEnvelope } from "./envelope.js";
+import { deriveOriginKey, deriveReadKey, type OriginKeyPair } from "./hd.js";
 import { publishMessage, schnorrSign } from "./sign.js";
 
 export interface ComposeArgs {
@@ -85,7 +85,7 @@ export async function composeWyrd(args: ComposeArgs): Promise<ComposeResult> {
   const handleBytes = crypto.getRandomValues(new Uint8Array(HANDLE_BYTES));
   const handle = b64uEncode(handleBytes);
 
-  const k_read = generateKRead();
+  const k_read = deriveReadKey(args.seed, args.n);
   const k_read_b64u = b64uEncode(k_read);
 
   const publish_timestamp_ms = args.now_ms ?? Date.now();

@@ -5,7 +5,7 @@ adr_number: 12
 title: "Object body size cap: 300 Unicode codepoints"
 status: accepted
 created: 2026-04-24
-updated: 2026-04-24
+updated: 2026-04-26
 last_edited_by: agent_operator
 supersedes:
 superseded_by:
@@ -38,7 +38,7 @@ A Hypermessage body is **at most 300 Unicode codepoints** of UTF-8 plain text.
 ### Enforcement
 
 - **Server (publish endpoint)**: rejects oversize bodies with a 4xx response. This is the authoritative cap. For private-form objects, the server cannot inspect plaintext to enforce — it enforces a ciphertext-length cap that bounds plaintext-length within reasonable margin (a few hundred bytes for crypto overhead).
-- **Composer / client**: enforces the 300-codepoint cap at compose time as a UX affordance. Live counter, soft warning at ~280, hard block at 300.
+- **Composer / client**: enforces the 300-codepoint cap at compose time as a UX affordance. Live counter rendered in red once the count crosses 300; the Send button is disabled past the cap. The textarea itself is **not** input-blocked — pasting an over-cap body (or pasting tokens that *would* exceed the cap if they were countable, like a long Lightning invoice that the parser will eventually exclude per ADR-023) flows freely so the user can edit down rather than fight the input.
 - **Renderer**: no enforcement; it trusts the published object. Renderer applies its own bounds for embedded recursive content (per ADR-007 depth/cycle limits and ADR-011 per-URL fetch bounds), which are independent of the body cap.
 
 ### Rationale (cultural)
@@ -77,5 +77,5 @@ A Hypermessage body is **at most 300 Unicode codepoints** of UTF-8 plain text.
 
 - **Ciphertext envelope cap.** Server enforces a max ciphertext length that bounds plaintext to ≤ 300 codepoints + crypto overhead. Exact number is implementation detail; should be documented in the protocol spec when written.
 - **Codepoint-counting normalization.** Whether to count after NFC normalization or as-typed. Server should normalize-then-count to avoid trivial bypasses (e.g., decomposed sequences). Implementation detail.
-- **Composer UX for over-cap content.** Soft warning at some threshold (e.g., 280) → hard block at 300. UX detail; renderer/composer-side.
+- **Composer UX for over-cap content.** Resolved post-launch: counter turns red past 300 and the Send button is disabled; the textarea itself flows freely. See "Enforcement" above and ADR-011's URL exclusion + ADR-023's Lightning-token exclusion for what the counter ignores.
 - **Twitter-import tooling** for users wanting to mirror tweets as Hypermessages. Out of v1 protocol scope; useful for the cross-post-canonical use case at launch (S1).

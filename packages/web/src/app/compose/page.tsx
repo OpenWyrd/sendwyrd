@@ -304,13 +304,7 @@ export default function ComposePage() {
       <form onSubmit={handleSend} style={panelStyle}>
         <textarea
           value={body}
-          onChange={(e) => {
-            const next = e.target.value;
-            if (countCountableCodepoints(next) > BODY_CODEPOINT_CAP) {
-              return;
-            }
-            setBody(next);
-          }}
+          onChange={(e) => setBody(e.target.value)}
           placeholder="A wyrd…"
           rows={6}
           autoFocus

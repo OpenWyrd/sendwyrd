@@ -5,7 +5,7 @@
  * stub returning 1 handle, and tri-state copy for persistent-storage UI.
  *
  * Mocks:
- *   - next/navigation router (stable singleton — see inbox notes)
+ *   - next/navigation router (stable singleton — see wyrds notes)
  *   - global fetch (presence-check stub)
  *   - lib/persistentStorage (so we can drive the tri-state)
  */

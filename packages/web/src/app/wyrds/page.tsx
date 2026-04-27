@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Inbox per visual_direction_v1.md §10.7.
+ * My Wyrds per visual_direction_v1.md §10.7.
  *
  * Lists the user's locally-tracked wyrd history (from compose). For each
  * wyrd: shows preview, dates, and (if replies_enabled) lets the user fetch
@@ -71,7 +71,7 @@ interface RepliesView {
   error?: string;
 }
 
-export default function InboxPage() {
+export default function WyrdsPage() {
   const router = useRouter();
   const [unlocked, setUnlocked] = useState(false);
   const [passphrase, setPassphrase] = useState("");
@@ -956,10 +956,12 @@ export default function InboxPage() {
 }
 
 function formatDate(ms: number): string {
-  return new Date(ms).toLocaleDateString("en-US", {
+  return new Date(ms).toLocaleString("en-US", {
     year: "numeric",
     month: "short",
     day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
   });
 }
 

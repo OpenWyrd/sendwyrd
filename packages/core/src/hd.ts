@@ -9,6 +9,10 @@ import { HDKey } from "@scure/bip32";
 import { mnemonicToSeedSync, validateMnemonic } from "@scure/bip39";
 import { wordlist } from "@scure/bip39/wordlists/english";
 import { secp256k1 } from "@noble/curves/secp256k1";
+import { hkdf } from "@noble/hashes/hkdf";
+import { sha256 } from "@noble/hashes/sha256";
+
+import { K_READ_BYTES } from "./types.js";
 
 /**
  * The English BIP-39 wordlist (2048 words). Re-exported so consumers can
@@ -43,6 +47,36 @@ export function isValidMnemonic(mnemonic: string): boolean {
  */
 export function mnemonicToSeed(mnemonic: string, passphrase = ""): Uint8Array {
   return mnemonicToSeedSync(mnemonic.trim(), passphrase);
+}
+
+/**
+ * HKDF info-string prefix for per-wyrd read-key derivation. The full info
+ * is `K_READ_INFO_PREFIX || n_be_4bytes`, giving each index its own subkey.
+ */
+const K_READ_INFO_PREFIX = new TextEncoder().encode("sendwyrd:k_read");
+
+/**
+ * Derive the per-wyrd K_read symmetric key from the BIP-39 seed and HD index.
+ *
+ * HKDF-SHA256 over the 64-byte seed with empty salt and info
+ * `"sendwyrd:k_read" || n_be_4bytes`, output 32 bytes (K_READ_BYTES). This
+ * is a separate domain from the secp256k1 K_origin path (m/300'/n'), so the
+ * two keys can never collide.
+ *
+ * Making K_read seed-derivable means a mnemonic recovery sweep reconstructs
+ * full share URLs (handle + read key), not just authorship metadata. The
+ * forward-secrecy property of v1's random K_read is replaced by the relay's
+ * deletion-based forward secrecy (TTL + burn): once the ciphertext is gone,
+ * no key can decrypt it.
+ */
+export function deriveReadKey(seed: Uint8Array, n: number): Uint8Array {
+  if (!Number.isInteger(n) || n < 0 || n > 0x7fffffff) {
+    throw new Error("n must be an unsigned 31-bit integer");
+  }
+  const info = new Uint8Array(K_READ_INFO_PREFIX.length + 4);
+  info.set(K_READ_INFO_PREFIX, 0);
+  new DataView(info.buffer).setUint32(K_READ_INFO_PREFIX.length, n, false);
+  return hkdf(sha256, seed, undefined, info, K_READ_BYTES);
 }
 
 /**

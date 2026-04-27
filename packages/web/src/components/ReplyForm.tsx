@@ -110,9 +110,15 @@ export function ReplyForm({ handle, k_origin_pub_b64u }: Props) {
               color: "var(--color-ink-subtle)",
               cursor: "pointer",
               listStyle: "none",
+              display: "inline-flex",
+              alignItems: "baseline",
+              gap: "var(--spacing-2)",
             }}
           >
-            What is a DM?
+            <span className="reply-disclosure-chevron" aria-hidden="true">
+              ›
+            </span>
+            <span>How wyrd replies work</span>
           </summary>
           <div
             style={{

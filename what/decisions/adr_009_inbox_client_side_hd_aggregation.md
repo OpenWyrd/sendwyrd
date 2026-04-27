@@ -5,7 +5,7 @@ adr_number: 9
 title: "Inbox aggregation: client-side via HD derivation, host stays per-object blind"
 status: accepted
 created: 2026-04-24
-updated: 2026-04-24
+updated: 2026-04-26
 last_edited_by: agent_operator
 supersedes:
 superseded_by:
@@ -17,6 +17,8 @@ tags: [adr, decision, mop, replies, inbox, hd-derivation, host-blindness]
 ## Status
 
 Accepted (v1 architecture decision).
+
+> **Nomenclature note (added 2026-04-26 per ADR-024):** The word "inbox" throughout this ADR refers to the **author-side aggregation** of self-authored wyrds (handles you published + replies addressed to those handles). The shipped UI exposes this as the `/wyrds` page with the label "my wyrds" — what users naturally call an *outbox*. ADR-024 reserves "inbox" for a different, optional surface: a browser-local viewing log of capability URLs the user has opened. The protocol-level construct described here is unaffected; only the user-facing label changed.
 
 ## Context
 

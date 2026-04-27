@@ -4,9 +4,11 @@ import {
   HARDENED_OFFSET,
   PURPOSE,
   deriveOriginKey,
+  deriveReadKey,
   isValidMnemonic,
   mnemonicToSeed,
 } from "../src/hd.js";
+import { K_READ_BYTES } from "../src/types.js";
 
 // BIP-39 known-vector mnemonic (12 words, all "abandon ... about" classic test vector).
 const TEST_MNEMONIC =
@@ -136,5 +138,55 @@ describe("hd — deriveOriginKey", () => {
   it("PURPOSE constant is 300 and HARDENED_OFFSET is 0x80000000", () => {
     expect(PURPOSE).toBe(300);
     expect(HARDENED_OFFSET).toBe(0x80000000);
+  });
+});
+
+describe("hd — deriveReadKey", () => {
+  const seed = mnemonicToSeed(TEST_MNEMONIC);
+
+  it("produces a 32-byte key", () => {
+    const k = deriveReadKey(seed, 0);
+    expect(k).toBeInstanceOf(Uint8Array);
+    expect(k.length).toBe(K_READ_BYTES);
+  });
+
+  it("is deterministic — same (seed, n) yields same key", () => {
+    const a = deriveReadKey(seed, 7);
+    const b = deriveReadKey(seed, 7);
+    expect(a).toEqual(b);
+  });
+
+  it("different n values yield different keys", () => {
+    const k0 = deriveReadKey(seed, 0);
+    const k1 = deriveReadKey(seed, 1);
+    const k2 = deriveReadKey(seed, 2);
+    expect(k0).not.toEqual(k1);
+    expect(k1).not.toEqual(k2);
+    expect(k0).not.toEqual(k2);
+  });
+
+  it("is domain-separated from K_origin (no byte overlap with origin priv at same n)", () => {
+    // Different domain → different KDF output. We don't expect any algebraic
+    // relationship; just sanity-check the bytes diverge.
+    const kRead = deriveReadKey(seed, 0);
+    const kOrigin = deriveOriginKey(seed, 0);
+    expect(kRead).not.toEqual(kOrigin.k_origin_priv);
+  });
+
+  it("rejects negative n", () => {
+    expect(() => deriveReadKey(seed, -1)).toThrow(/unsigned 31-bit/);
+  });
+
+  it("rejects non-integer n", () => {
+    expect(() => deriveReadKey(seed, 1.5)).toThrow(/unsigned 31-bit/);
+  });
+
+  it("rejects n > 0x7fffffff", () => {
+    expect(() => deriveReadKey(seed, 0x80000000)).toThrow(/unsigned 31-bit/);
+  });
+
+  it("accepts n = 0x7fffffff (max unsigned 31-bit)", () => {
+    const k = deriveReadKey(seed, 0x7fffffff);
+    expect(k.length).toBe(K_READ_BYTES);
   });
 });

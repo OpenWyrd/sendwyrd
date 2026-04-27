@@ -48,7 +48,7 @@ K_origin[n] = derive(master_seed, m/0'/{n}')   for object index n = 0, 1, 2, ...
 
 Hardened derivation is mandatory — non-hardened would leak cross-object linkability if any extended pubkey ever leaked.
 
-`K_read` (symmetric AES-256-GCM, per object) is **not** HD-derived. It is generated fresh per object via CSPRNG and embedded in the share URL. The URL itself is the read access; recovery isn't needed because anyone with the URL has K_read.
+`K_read` (symmetric AES-256-GCM, per object) was originally per-wyrd CSPRNG. **Superseded in part by ADR-022**: `K_read` is now HKDF-SHA256-derived from the seed at the same index `n` as `K_origin`, with domain separation via the info string `"sendwyrd:k_read"`. The URL fragment continues to carry the key bytes; recipients still don't need the seed. Mnemonic recovery now reconstructs full share URLs for forward wyrds, not just metadata.
 
 ### Backup format: BIP-39 mnemonic
 

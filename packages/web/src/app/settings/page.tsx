@@ -664,8 +664,8 @@ export default function SettingsPage() {
             {recoveryMessage.kind === "ok" && (
               <>
                 {" "}
-                <a href="/inbox" style={linkStyle}>
-                  View inbox →
+                <a href="/wyrds" style={linkStyle}>
+                  View my wyrds →
                 </a>
               </>
             )}

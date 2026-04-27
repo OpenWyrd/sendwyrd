@@ -162,7 +162,7 @@ Implementations MAY also support encoding only an HD branch (e.g., `xprv`-rooted
 
 ### 5.5 What HD recovery does and does NOT restore
 
-`K_read` is **per-wyrd random, NOT seed-derived**. It is 32 bytes from CSPRNG generated at compose time (§7.3) and distributed exclusively via the URL fragment.
+`K_read` is HKDF-SHA256-derived from the seed at the same HD index as `K_origin`, with domain separator `"sendwyrd:k_read"` (see ADR-022 — supersedes the v1-as-drafted "per-wyrd random" position). Distribution is unchanged: 32 bytes in the URL fragment. The fresh-device sweep (§5.3) reconstructs `K_read` for every occupied index alongside `K_origin`, so recovery now restores full share URLs rather than metadata only.
 
 This means the BIP-39 sweep on a fresh device (§5.3) reconstructs:
 
@@ -234,7 +234,18 @@ This prevents:
 
 ### 7.3 K_read derivation
 
-`K_read` is **32 random bytes from CSPRNG** generated at compose time. No KDF intermediate; the bytes ARE the AES-256 key. This minimizes attack surface and matches the URL-fragment-distribution model.
+`K_read` is **HKDF-SHA256-derived from the BIP-39 seed** at the wyrd's HD index `n`:
+
+```
+K_read[n] = HKDF-SHA256(
+  IKM   = seed (64 bytes, BIP-39 PBKDF2 output),
+  salt  = empty,
+  info  = "sendwyrd:k_read" || n_be_4bytes,
+  L     = 32 bytes
+)
+```
+
+The info string `"sendwyrd:k_read"` provides domain separation from any other seed-derived material. `n` matches the same hardened index used to derive `K_origin[n]` per §5.1. Distribution is unchanged: the 32-byte key rides in the URL fragment. See ADR-022 (supersedes the v1-as-drafted "per-wyrd random" choice).
 
 ### 7.4 Size limits
 
@@ -250,19 +261,22 @@ Per ADRs 007, 011, 012.
 
 ### 8.1 Body grammar
 
-The body is **plain UTF-8 text**. There is no markdown, no formatting language, no schema. URLs embedded in the text are detected by the renderer at view time.
+The body is **plain UTF-8 text**. There is no markdown, no formatting language, no schema. The renderer detects three classes of in-line tokens at view time and surfaces them as structured segments:
 
-URL detection: a substring is a URL if it matches:
+- **URLs** — `(https?|sendwyrd):\/\/[^\s]+` and bare-domain forms (lowercase host with a 2–24 letter TLD).
+- **Lightning tokens** — BOLT11 invoices (`(lnbc|lntb|lnbcrt|lnsb)\d*[munp]?1[ac-hj-np-z02-9]{50,}`), BOLT12 offers/invoices/invoice-requests (`(lno|lni|lnr)1[ac-hj-np-z02-9]{50,}`), bare LNURL (`lnurl1[ac-hj-np-z02-9]{50,}`), Lightning addresses on a small allowlist of well-known providers (`[a-z0-9._%+-]+@(getalby\.com|walletofsatoshi\.com|strike\.me|coinos\.io|mutinywallet\.com|blink\.sv|phoenix\.acinq\.co|sats\.mobi|bitnob\.com|primal\.net)`), and the `lightning:[^\s]+` URI scheme catch-all. Off-allowlist email-shape strings are NOT auto-detected (to avoid false-positives on real correspondence); users opt those in by prefixing with `lightning:`.
+- **Bitcoin tokens** — bech32/m segwit + taproot (`(bc|tb|bcrt)1[ac-hj-np-z02-9]{6,87}`), bare legacy P2PKH/P2SH (`[13][1-9A-HJ-NP-Za-km-z]{25,34}` Base58Check), and the `bitcoin:[^\s]+` URI scheme.
 
-```
-^(https?|sendwyrd):\/\/[^\s]+
-```
-
-The renderer aggressively auto-embeds detected URLs per ADR-011.
+The renderer auto-embeds detected URLs per ADR-011 and surfaces detected payment tokens (Lightning + Bitcoin) as a labelled chip with the canonical URI as `<a href>` (so OS-level handlers / wallets can intercept), a copy affordance, and an on-demand inline QR rendered fully client-side. Per ADR-023, SendWyrd does not mint, settle, or in any way participate in payment — it carries text, and wallets carry value. See §8.2 for cap semantics.
 
 ### 8.2 Codepoint counting
 
-The 300-codepoint cap is a **prose** budget, not a body budget. URLs (matching the §8.1 detection regex — `https?://...` and `sendwyrd://...`) are **excluded** from the count. Rationale: URLs are long and shouldn't crowd out actual prose content; a single shared link should not consume the user's entire compose budget.
+The 300-codepoint cap is a **prose** budget, not a body budget. The following classes of detected tokens are **excluded** from the count:
+
+- **URLs** (matching the §8.1 detection — `https?://…`, `sendwyrd://…`, and bare-domain forms).
+- **Lightning tokens** — BOLT11 invoices (`lnbc1…`/`lntb1…`/`lnbcrt1…`/`lnsb1…`), BOLT12 offers/invoices/invoice-requests (`lno1…`/`lni1…`/`lnr1…`), bare LNURL (`lnurl1…`), and the `lightning:` URI scheme catch-all.
+
+Rationale: long opaque payloads — URLs and bech32-encoded invoices alike — shouldn't crowd out actual prose. A pasted invoice or share link should not consume the user's entire compose budget.
 
 The composer MUST count using the same algorithm the server uses. Counting is **Unicode codepoint**, not bytes and not grapheme clusters. Reference algorithm:
 
@@ -273,7 +287,7 @@ function countCountableCodepoints(body) {
     if (seg.kind === "text") {
       for (const _ of seg.value) n++;   // for...of iterates by codepoint
     }
-    // url segments contribute 0 to the cap.
+    // url and lightning segments contribute 0 to the cap.
   }
   return n;
 }
@@ -281,7 +295,7 @@ function countCountableCodepoints(body) {
 
 Empty body is allowed at the protocol layer (length zero) but composers SHOULD warn the user.
 
-This refines ADR-012's "300 codepoints" — the cap counts non-URL codepoints only. The body itself can be longer than 300 codepoints if the excess is entirely URLs.
+This refines ADR-012's "300 codepoints" — the cap counts text codepoints only. The body itself can be longer than 300 codepoints if the excess is URLs or Lightning payloads.
 
 ### 8.3 Transitive capability references
 
@@ -693,6 +707,8 @@ Replies are NOT signature-replay-protected — the host accepts duplicate-lookin
 
 Per §5.3.
 
+The presence-check endpoint is **strictly author-side**. It is keyed by `K_origin_pub` and answers "what handles did this author-key publish?" There is no recipient-side analog and the protocol does not provide one — capability URLs are bearer tokens delivered out-of-band, and the relay has no concept of a recipient. Any user-facing "inbox" of received wyrds is necessarily a browser-local viewing log, scoped to one device, never queried from the relay (per ADR-024).
+
 ### 15.1 Endpoint
 
 ```
@@ -866,11 +882,17 @@ Items that the wire spec deliberately leaves to implementation phase (Phase E) o
 - ADR-019 — Privacy-posture indicator (amended by ADR-021 — now monomorphic Sealed-only).
 - ADR-020 — v1 stack.
 - ADR-021 — Single-form addressing (supersedes the two-form addressing in ADR-004 and the symmetric indicator in ADR-019).
+- ADR-022 — `K_read` derived from seed via HKDF (supersedes the per-wyrd-random `K_read` in §7.3 as drafted; partially supersedes ADR-005's K_read paragraph).
+- ADR-023 — Payment-token posture: detect locally, hand off to wallets, never settle. Extends §8.1 detection to Bitcoin addresses + `bitcoin:` URI alongside Lightning forms; extends §8.2 cap exclusion to all detected payment tokens.
+- ADR-024 — No relay-side recipient model: user-side aggregation is author-only or browser-local. Reinforces §13/§15 absence of recipient-keyed surfaces; clarifies the "inbox"/"outbox" UI vocabulary against ADR-009.
 
 ---
 
 ## 21. Changelog
 
+- **v1.0.7-draft (2026-04-26)** — bank ADR-023 (payment-token posture: detect locally, hand off, never settle) and ADR-024 (no relay-side recipient model). §8.1 grammar extended to recognize Bitcoin tokens (bech32/m + bare legacy + `bitcoin:` URI) and Lightning addresses on a small allowlist alongside the previously banked Lightning forms. §8.2 cap exclusion now covers all detected payment tokens. No wire changes; renderer-side detection only. ADR-024 documents that the protocol has no recipient-keyed surface (§13, §15) and disambiguates "inbox"/"outbox" vocabulary against ADR-009. ADR-012 enforcement language reconciled with shipped UX (counter-red + send-disabled, textarea flows freely; not "hard block at 300").
+- **v1.0.6-draft (2026-04-26)** — extend §8.2 codepoint exclusion to Lightning tokens (BOLT11, BOLT12, LNURL, `lightning:` URI). Same rationale as the URL exclusion in v1.0.4-draft: pasted opaque payloads shouldn't crowd the prose budget. Body parser surfaces `kind: "lightning"` segments alongside `url` segments; rendering is up to the client. No protocol change.
+- **v1.0.5-draft (2026-04-26)** — `K_read` is now HKDF-SHA256-derived from the seed at index `n`, replacing the original per-wyrd CSPRNG choice. URL fragment distribution unchanged. Mnemonic recovery now restores full share URLs, not just metadata. Forward secrecy is provided by the relay's TTL + burn behavior rather than by key non-derivability. See ADR-022. Updates §5.5 and §7.3; obsoletes the asymmetry note in v1.0.3-draft entry 5.
 - **v1.0.4-draft (2026-04-26)** — refine §8.2 codepoint counting: URLs are excluded from the 300-cap; the cap is a *prose* budget, not a body budget. Refines ADR-012. Source already implements this (`countCountableCodepoints` in `packages/core/src/body.ts`); spec was the lagging artifact.
 - **v1.0.3-draft (2026-04-26)** — sync to shipped post-Tier-1. Six drift points reconciled with the deployed API (`packages/api/src/routes/{wyrds,authors,replies}.ts`):
   1. **`published_at` is client-asserted** (§6 wyrd-structure table, §9.3 step 7). The server stores `publish_timestamp_ms` as-is after validating it is within the ±60s replay window. The server never substitutes `server_now`. This preserves the AAD binding (§7.2) — `expires_at = publish_timestamp_ms + ttl_seconds * 1000` is computed from the client's signed timestamp, so the server cannot extend or contract TTL.

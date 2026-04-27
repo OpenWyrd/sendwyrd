@@ -8,6 +8,7 @@
 
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { WyrdBody } from "@/components/WyrdBody";
 import type { ResolutionMap } from "@/lib/resolveBody";
 
@@ -153,5 +154,56 @@ describe("WyrdBody — sendwyrd:// transitive references", () => {
     const links = screen.getAllByRole("link");
     expect(links.length).toBeGreaterThanOrEqual(1);
     expect(links[0]?.textContent).toBe(SENDWYRD_URL);
+  });
+});
+
+describe("WyrdBody — lightning chips", () => {
+  it("renders a BOLT11 invoice as a labelled chip with copy + lightning: link", () => {
+    const invoice =
+      "lnbc1500n1pvjluezpp5qqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqypqdpl2pkx2ctnv5sxxmmwwd5kgetjypeh2ursdae8g6twvus8g6rfwvs8qun0dfjkxaq8rkx3yf5tcsyz3d73gafnh3cax9rn449d9p5uxz9ezhhypd0elx87sjle52x86fux2ypatgddc6k63n7erqz25le42c4u4ecky03ylcqca784w";
+    render(<WyrdBody body={`tip: ${invoice}`} />);
+    const link = screen.getByRole("link", { name: "BOLT11 invoice" });
+    expect(link).toHaveAttribute("href", `lightning:${invoice}`);
+    expect(
+      screen.getByRole("button", { name: /copy BOLT11/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("renders an LNURL chip with the LNURL label", () => {
+    const lnurl =
+      "lnurl1dp68gurn8ghj7um9wfmxjcm99e3k7mf0v9cxj0m385ekvcenxc6r2c35xvukxefcv5mkvv34x5ekzd3ev56nyd3hxqurzepexejxxepnxscrvwfnv9nxzcn9xq6xyefhvgcxxcmyxymnserxfq5fns";
+    render(<WyrdBody body={`pay: ${lnurl}`} />);
+    expect(
+      screen.getByRole("link", { name: "LNURL" }),
+    ).toBeInTheDocument();
+  });
+
+  it("renders an allowlisted Lightning address as a chip", () => {
+    render(<WyrdBody body="tip mike@getalby.com please" />);
+    const link = screen.getByRole("link", { name: "lightning address" });
+    expect(link).toHaveAttribute("href", "lightning:mike@getalby.com");
+  });
+
+  it("renders a bare BTC bech32 address as a chip", () => {
+    const addr = "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq";
+    render(<WyrdBody body={`donate ${addr} thanks`} />);
+    const link = screen.getByRole("link", { name: "BTC address" });
+    expect(link).toHaveAttribute("href", `bitcoin:${addr}`);
+  });
+
+  it("toggles inline QR rendering on chip click", async () => {
+    const user = userEvent.setup();
+    const addr = "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq";
+    const { container } = render(<WyrdBody body={addr} />);
+    // QR button visible; QR SVG not yet rendered
+    const qrBtn = screen.getByRole("button", { name: /show QR for BTC/i });
+    expect(container.querySelector("svg")).toBeNull();
+    await user.click(qrBtn);
+    // After click, an SVG appears in the DOM
+    expect(container.querySelector("svg")).not.toBeNull();
+    // Toggle back
+    expect(
+      screen.getByRole("button", { name: /hide QR for BTC/i }),
+    ).toBeInTheDocument();
   });
 });

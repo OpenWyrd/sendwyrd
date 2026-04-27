@@ -413,37 +413,106 @@ sig=<base64url-signature>`}
           </p>
         </CollapsibleSection>
 
-        <CollapsibleSection title="Why not Nostr">
+        <CollapsibleSection title="Bitcoin & Lightning">
+          <p style={pStyle}>
+            SendWyrd is a relay primitive. It does not handle payments, mint
+            invoices, custody funds, resolve LNURL endpoints, or run any
+            payment infrastructure. Wallets handle payment; SendWyrd hands
+            off.
+          </p>
+          <p style={pStyle}>
+            When a wyrd body contains a payment token, the renderer detects it
+            client-side on the decrypted text and excludes it from the
+            300-codepoint cap (same treatment as URLs — the cap is for prose,
+            not addresses). Detected forms:
+          </p>
+          <ul style={ulStyle}>
+            <li>
+              <strong>Lightning</strong>: BOLT11 invoices, BOLT12 offers /
+              invoices / invoice-requests, bare LNURL, and the{" "}
+              <Code>lightning:</Code> URI scheme. Lightning addresses
+              (<Code>user@domain</Code>) are auto-detected when the domain is
+              on a small allowlist of well-known providers; off-list addresses
+              opt in by prefixing with <Code>lightning:</Code>. Bare
+              email-format strings on off-list domains stay text — no false
+              positives on normal correspondence.
+            </li>
+            <li>
+              <strong>Bitcoin</strong>: native segwit and taproot bech32 / bech32m
+              (<Code>bc1</Code> / <Code>tb1</Code> / <Code>bcrt1</Code>),
+              legacy P2PKH / P2SH, and the <Code>bitcoin:</Code> URI scheme
+              (BIP-21).
+            </li>
+          </ul>
+          <p style={pStyle}>
+            Detected tokens render as labelled inline chips with an OS-handler
+            link (<Code>bitcoin:</Code> / <Code>lightning:</Code>) and a copy
+            button. Click expands an inline QR code rendered fully in the
+            recipient&apos;s browser — no external requests, no third-party
+            QR service, the host never sees the content. The QR is just bytes
+            painted from a string the recipient already has.
+          </p>
+          <p style={pStyle}>
+            From there, the user&apos;s wallet takes over via the
+            <Code> bitcoin:</Code> / <Code>lightning:</Code> URI handoff at
+            the OS level. SendWyrd never bridges, never connects, never
+            settles.
+          </p>
+        </CollapsibleSection>
+
+        <CollapsibleSection title="Comparison to Nostr">
+          <p style={pStyle}>
+            SendWyrd and Nostr solve different problems in the same
+            neighborhood. Many people will want both.
+          </p>
           <p style={pStyle}>
             Nostr is identity-first. Each user has a stable <Code>npub</Code>/
             <Code>nsec</Code> keypair. Events are signed by that stable key,
-            posted to relays, aggregated by clients into feeds. Most events are
-            public broadcasts.
+            posted to relays, aggregated by clients into feeds. The dominant
+            mode is public broadcast against a durable, signed event log per
+            identity. Nostr is built for <em>censorship-resistant public
+            speech under stable identity</em>.
           </p>
           <p style={pStyle}>
-            SendWyrd makes the opposite call. No stable per-user key — per-wyrd
-            random <Code>K_origin</Code>. No public broadcast — the URL is the
-            only path. The host stays blind. The protocol refuses durable
-            archive.
+            SendWyrd is capability-first. The URL is the access primitive; the
+            handle is per-wyrd random, addressed by capability rather than
+            pubkey. Each wyrd gets its own <Code>K_origin</Code> — two wyrds by
+            the same author look unlinked to the host. There is no relay-side
+            feed and no aggregation surface; the relay only resolves a handle
+            to an encrypted envelope. SendWyrd is built for{" "}
+            <em>host-blind ephemeral handoff through trust networks</em>.
           </p>
           <p style={pStyle}>
-            The two solve different problems. Nostr optimizes for{" "}
-            <em>censorship-resistant public broadcasting</em> — important.
-            SendWyrd optimizes for{" "}
-            <em>host-blind ephemeral handoff through trust networks</em> — a
-            different problem in the same neighborhood. They compose. A wyrd
-            body can carry a signed Nostr event — the recipient verifies the
-            signature against an <Code>npub</Code>, and SendWyrd is just
-            transport for an attestation that already stands on its own.
-            Alternatively, the wyrd URL is forwarded by a trusted identity
-            source — a Nostr key, a domain, a known account — that signs the act
-            of sending. Either way, the attestation lives outside the protocol.
-            SendWyrd doesn&apos;t model identity; it composes with whatever
-            attestation layer the participants choose to bring.
+            Concretely:
           </p>
+          <ul style={ulStyle}>
+            <li>
+              <strong>Addressing</strong>: Nostr — pubkey-addressed signed
+              events. SendWyrd — capability-URL-addressed encrypted envelopes.
+            </li>
+            <li>
+              <strong>Identity</strong>: Nostr — stable <Code>npub</Code> per
+              person. SendWyrd — fresh per-wyrd <Code>K_origin</Code>;
+              unlinkable at the relay.
+            </li>
+            <li>
+              <strong>Distribution</strong>: Nostr — relay aggregation, client
+              feeds. SendWyrd — out-of-band forwarding through whatever rails
+              people already use.
+            </li>
+            <li>
+              <strong>Persistence</strong>: Nostr — durable signed event log.
+              SendWyrd — TTL-bounded ciphertext, default 90 days, burnable.
+            </li>
+          </ul>
           <p style={pStyle}>
-            The deepest difference is the archive. Nostr accumulates a signed
-            event log per identity. SendWyrd refuses the archive on purpose.
+            The two compose. A wyrd body can carry a signed Nostr event — the
+            recipient verifies the signature against an <Code>npub</Code>, and
+            SendWyrd is just transport for an attestation that already stands
+            on its own. Alternatively, the wyrd URL is forwarded by a trusted
+            Nostr identity that signs the act of sending. SendWyrd doesn&apos;t
+            model identity; it composes with whatever attestation layer the
+            participants choose to bring.
           </p>
         </CollapsibleSection>
 

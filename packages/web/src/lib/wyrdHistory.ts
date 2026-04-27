@@ -1,6 +1,6 @@
 /**
- * Author-side record of published wyrds, kept locally so the inbox can
- * fetch replies for each one without re-deriving from a recovery sweep.
+ * Author-side record of published wyrds, kept locally so the My Wyrds page
+ * can fetch replies for each one without re-deriving from a recovery sweep.
  *
  * Stored in localStorage under STORAGE_KEY as a JSON array.
  *
@@ -9,11 +9,12 @@
  * the author needs to view their own wyrds; not a secret beyond the share
  * URL itself).
  *
- * `k_read_b64u` is optional because mnemonic-recovered entries do not have
- * it (K_read is per-wyrd random and not seed-derived; recovering from a
- * mnemonic alone reconstructs everything except the body-decryption key).
- * `recovered: true` flags such entries so the UI can render them
- * appropriately (no share-URL link; burn/replies still work via K_origin).
+ * `k_read_b64u` is optional only for legacy entries left over from the v1
+ * scheme where K_read was per-wyrd random. New wyrds derive K_read from the
+ * seed (HKDF) so recovery reconstructs everything; entries authored under
+ * the old random-K_read scheme are still re-decryptable via their stored
+ * key but cannot be reconstructed by a mnemonic-only sweep. `recovered: true`
+ * still flags entries reconstructed via the sweep.
  */
 
 "use client";
@@ -24,7 +25,8 @@ export interface HistoryEntry {
   handle: string;
   n: number;
   k_origin_pub_b64u: string;
-  /** Per-wyrd 32-byte read key, base64url. Absent on mnemonic-recovered entries. */
+  /** Per-wyrd 32-byte read key, base64url. Absent only on legacy entries
+   * (random-K_read scheme) reconstructed via mnemonic sweep. */
   k_read_b64u?: string;
   published_at: number;
   expires_at: number;
@@ -34,7 +36,7 @@ export interface HistoryEntry {
   /**
    * Local tombstone marker. Set when the author has burned the wyrd from
    * this device, or when a fetch surfaced a 410 tombstone for it. The host
-   * is the source of truth; this is just a UX hint so the inbox doesn't
+   * is the source of truth; this is just a UX hint so the page doesn't
    * surface burned rows as still-live.
    */
   gone_at?: number;

@@ -2,6 +2,7 @@
 type: state
 created: 2026-04-24
 updated: 2026-04-26
+last_session_decisions: [adr_022, adr_023, adr_024, adr_012_amend, inbox_to_wyrds_rename, stay_private]
 status: active
 last_edited_by: agent_operator
 last_session: session_operator_20260426_mcp_server
@@ -53,6 +54,9 @@ Plus the **post-agora topology** section (banked 2026-04-26) — the consequence
 | 019 | Renderer displays a symmetric privacy-posture indicator (Sealed / Open) — **amended by ADR-021** to monomorphic |
 | 020 | v1 stack: Next.js + Hono on Cloudflare + Neon + R2; Web Crypto + noble + scure |
 | 021 | Single canonical fragment URL form: collapses two-form addressing; OG previews refused on social platforms by design |
+| 022 | K_read derived from seed via HKDF (was: per-wyrd CSPRNG) — mnemonic recovery now reconstructs full share URLs; forward secrecy via TTL+burn |
+| 023 | Payment-token posture: detect locally, hand off to wallets, never settle — no `tip_offer` field, no `zap_attestation` kind, no in-app minting |
+| 024 | No relay-side recipient model — capability URLs do all addressing; "outbox" view recoverable from seed, "inbox" (if shipped) is browser-local-only |
 
 ### Use cases identified (`who/governance/VISION.md`)
 
@@ -145,6 +149,12 @@ None. Production live at `https://sendwyrd.com`, verified end-to-end, observed v
 | 2026-04-26 | **Post-agora topology section banked in VISION.md** — five principles' consequence: routing as personal infrastructure (CEO call) | MCP server session |
 | 2026-04-26 | **H3 horizon banked**: agent-routing surfaces atop the post-agora topology | MCP server session |
 | 2026-04-26 | **MCP server shipped** (`packages/mcp/`, PR #38) — first concrete realization of the post-agora topology; stdio default, 13 verbs, ADR-003-aligned (no remote MCP in v1) | MCP server session |
+| 2026-04-26 | **ADR-022 banked**: K_read derived from seed via HKDF (was per-wyrd CSPRNG). Mnemonic recovery now reconstructs full share URLs. Forward secrecy via TTL+burn deletion, not key non-derivability. | Wrap-up session |
+| 2026-04-26 | **ADR-023 banked**: payment-token posture — detect locally, hand off to wallets, never settle. Body parser surfaces Lightning + Bitcoin tokens; renderer shows labelled chips with on-demand local QR. `tip_offer` envelope field and `zap_attestation` wyrd type explicitly rejected. | Wrap-up session |
+| 2026-04-26 | **ADR-024 banked**: no relay-side recipient model. Locks down "the relay knows authors, never recipients." Disambiguates inbox/outbox terminology vs ADR-009. Future inbox view is browser-local viewing log only. | Wrap-up session |
+| 2026-04-26 | **ADR-012 enforcement amended**: composer is send-disable + red counter, not input hard-block (lets users paste long Lightning invoices that the parser excludes from the cap). | Wrap-up session |
+| 2026-04-26 | `/inbox` route renamed to `/wyrds` (label "my wyrds") — page lists author-side wyrds, not received messages. ADR-024 frames the structural reason. | Wrap-up session |
+| 2026-04-26 | **Open-source decision**: stay private through launch; spec stays private with implementation; revisit after PMF validates usage. Source-available trajectory (BSL/FSL) deferred. | Wrap-up session |
 
 ## Recent Upgrades
 
@@ -166,6 +176,13 @@ None. Production live at `https://sendwyrd.com`, verified end-to-end, observed v
 | 2026-04-26 | H2 paid-tier horizon documented in `future_horizons.md` | UX/perf session |
 | 2026-04-26 | **`packages/mcp/` shipped — stdio MCP server, 13 verbs, 20 tests + e2e smoke green** | MCP server session |
 | 2026-04-26 | **VISION.md gains post-agora topology section; future_horizons.md gains H3** | MCP server session |
+| 2026-04-26 | **K_read seed-derived via HKDF (ADR-022)** — `deriveReadKey` in `@sendwyrd/core/hd`; recovery sweep reconstructs full share URLs | Wrap-up session |
+| 2026-04-26 | **Payment-token detection + local QR (ADR-023)** — body parser surfaces Lightning (BOLT11/12, LNURL, addresses on 10-provider allowlist, `lightning:` URI) and Bitcoin (bech32/m, legacy, `bitcoin:` URI) tokens; `WyrdBody` renders labelled chips + on-demand inline QR via `qrcode-svg` | Wrap-up session |
+| 2026-04-26 | **`/inbox` → `/wyrds` (label "my wyrds")** — directory rename + nav/links/tests + ADR-024 documenting the structural reason | Wrap-up session |
+| 2026-04-26 | Compose UX: input flows past 300-cap; counter goes red; Send disables. Pasting long invoices no longer fights the input. | Wrap-up session |
+| 2026-04-26 | Time-of-day on wyrd timestamps (`/wyrds` page + `/w/[handle]` view). | Wrap-up session |
+| 2026-04-26 | About page: "Why not Nostr" → "Comparison to Nostr" (neutral reframe); new "Bitcoin & Lightning" section explaining detection + local QR posture; Cryptography section updated for HKDF derivation. | Wrap-up session |
+| 2026-04-26 | ReplyForm disclosure: "What is a DM?" → "How wyrd replies work" with `›`→`▾` chevron affordance. | Wrap-up session |
 
 ## Partial-Resume Detection
 
@@ -189,7 +206,7 @@ SendWyrd v1 is **live, hardened, observed, and now agent-callable.** Read order:
    - `feedback_ops_capability_url.md` — `/ops/{secret}` capability-URL gating, not auth flows
    - `user_profile.md`
 7. Most recent session log: `how/sessions/active/session_operator_20260426_mcp_server.md` (or its `history/` location after close).
-8. ADRs 003–021 only on demand. Banked is banked; do NOT re-debate.
+8. ADRs 003–024 only on demand. Banked is banked; do NOT re-debate. ADRs 022/023/024 (this wrap-up) are load-bearing for any future payment, recipient-model, or recovery-flow work.
 
 **Highest-leverage next moves** (ranked):
 

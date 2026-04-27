@@ -1,5 +1,5 @@
 /**
- * Inbox page integration — empty state, live, burned, recovered-without-key.
+ * My Wyrds page integration — empty state, live, burned, recovered-without-key.
  *
  * Mocks:
  *   - next/navigation router + pathname
@@ -13,15 +13,15 @@ import userEvent from "@testing-library/user-event";
 const mockReplace = vi.fn();
 const mockPush = vi.fn();
 // IMPORTANT: returning a fresh object from useRouter on every render would
-// cause an infinite re-render loop because Inbox's useEffect deps on router.
+// cause an infinite re-render loop because the page's useEffect deps on router.
 // Stable singleton avoids that.
 const stableRouter = { push: mockPush, replace: mockReplace };
 vi.mock("next/navigation", () => ({
   useRouter: () => stableRouter,
-  usePathname: () => "/inbox",
+  usePathname: () => "/wyrds",
 }));
 
-import InboxPage from "@/app/inbox/page";
+import WyrdsPage from "@/app/wyrds/page";
 import { storeOpenSeed, forgetSeed } from "@/lib/seedClient";
 import {
   addHistoryEntry,
@@ -57,7 +57,7 @@ beforeEach(() => {
       ),
     ),
   );
-  // Seed a fake open seed so inbox doesn't redirect.
+  // Seed a fake open seed so the page doesn't redirect.
   const seed = new Uint8Array(64);
   seed.fill(0x99);
   storeOpenSeed({ seed, counter: 0 });
@@ -67,9 +67,9 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("Inbox — empty state", () => {
+describe("My Wyrds — empty state", () => {
   it("renders empty-state copy when no history exists", async () => {
-    render(<InboxPage />);
+    render(<WyrdsPage />);
     await waitFor(() => {
       expect(
         screen.getByText(/No wyrds yet\. Compose one to begin\./i),
@@ -79,12 +79,12 @@ describe("Inbox — empty state", () => {
 
   it("redirects to /onboarding when no seed exists", () => {
     forgetSeed();
-    render(<InboxPage />);
+    render(<WyrdsPage />);
     expect(mockReplace).toHaveBeenCalledWith("/onboarding");
   });
 });
 
-describe("Inbox — live wyrd", () => {
+describe("My Wyrds — live wyrd", () => {
   it("renders a live wyrd with status pill = 'live'", async () => {
     addHistoryEntry(
       makeEntry({
@@ -93,7 +93,7 @@ describe("Inbox — live wyrd", () => {
         expires_at: Date.now() + 86_400_000,
       }),
     );
-    render(<InboxPage />);
+    render(<WyrdsPage />);
     // Handle text rendered as a link — wait for it to appear first.
     await waitFor(() => {
       expect(screen.getByText("live000000000aaa")).toBeInTheDocument();
@@ -109,7 +109,7 @@ describe("Inbox — live wyrd", () => {
   });
 });
 
-describe("Inbox — burned wyrd", () => {
+describe("My Wyrds — burned wyrd", () => {
   it("renders status pill = 'burned' and applies tombstone styling", async () => {
     addHistoryEntry(
       makeEntry({
@@ -118,7 +118,7 @@ describe("Inbox — burned wyrd", () => {
         gone_reason: "burned",
       }),
     );
-    render(<InboxPage />);
+    render(<WyrdsPage />);
     await waitFor(() => {
       expect(screen.getByText("burned")).toBeInTheDocument();
     });
@@ -128,7 +128,7 @@ describe("Inbox — burned wyrd", () => {
   });
 });
 
-describe("Inbox — recovered without k_read_b64u", () => {
+describe("My Wyrds — recovered without k_read_b64u", () => {
   it("renders a metadata-only line, no clickable URL", async () => {
     addHistoryEntry(
       makeEntry({
@@ -137,7 +137,7 @@ describe("Inbox — recovered without k_read_b64u", () => {
         recovered: true,
       }),
     );
-    render(<InboxPage />);
+    render(<WyrdsPage />);
     await waitFor(() => {
       expect(screen.getByText("rec0recoveredrec")).toBeInTheDocument();
     });
@@ -149,10 +149,10 @@ describe("Inbox — recovered without k_read_b64u", () => {
   });
 });
 
-describe("Inbox — filter pills", () => {
+describe("My Wyrds — filter pills", () => {
   it("renders 'all' / 'live' / 'gone' segmented control", async () => {
     addHistoryEntry(makeEntry({ handle: "any00000000any00" }));
-    render(<InboxPage />);
+    render(<WyrdsPage />);
     await waitFor(() => {
       expect(screen.getByLabelText(/all/i)).toBeInTheDocument();
     });
@@ -161,7 +161,7 @@ describe("Inbox — filter pills", () => {
   });
 });
 
-describe("Inbox — authorship attestation", () => {
+describe("My Wyrds — authorship attestation", () => {
   it("renders the 'attest authorship' action on live entries", async () => {
     addHistoryEntry(
       makeEntry({
@@ -170,7 +170,7 @@ describe("Inbox — authorship attestation", () => {
         expires_at: Date.now() + 86_400_000,
       }),
     );
-    render(<InboxPage />);
+    render(<WyrdsPage />);
     await waitFor(() => {
       expect(
         screen.getByRole("button", { name: /attest authorship/i }),
@@ -186,7 +186,7 @@ describe("Inbox — authorship attestation", () => {
         gone_reason: "burned",
       }),
     );
-    render(<InboxPage />);
+    render(<WyrdsPage />);
     await waitFor(() => {
       expect(screen.getByText("burn00000000burn")).toBeInTheDocument();
     });
@@ -237,7 +237,7 @@ describe("Inbox — authorship attestation", () => {
         expires_at: Date.now() + 86_400_000,
       }),
     );
-    render(<InboxPage />);
+    render(<WyrdsPage />);
 
     const attestBtn = await screen.findByRole("button", {
       name: /attest authorship/i,

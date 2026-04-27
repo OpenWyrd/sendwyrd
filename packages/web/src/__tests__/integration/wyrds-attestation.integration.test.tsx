@@ -1,5 +1,5 @@
 /**
- * Inbox attest-authorship affordance — happy path, body shape, signature
+ * My Wyrds attest-authorship affordance — happy path, body shape, signature
  * round-trip, success URL surfacing, publish-error UX.
  *
  * Mocks:
@@ -19,11 +19,11 @@ import userEvent from "@testing-library/user-event";
 
 const mockReplace = vi.fn();
 const mockPush = vi.fn();
-// Stable singleton — see note in inbox.integration.test.tsx.
+// Stable singleton — see note in wyrds.integration.test.tsx.
 const stableRouter = { push: mockPush, replace: mockReplace };
 vi.mock("next/navigation", () => ({
   useRouter: () => stableRouter,
-  usePathname: () => "/inbox",
+  usePathname: () => "/wyrds",
 }));
 
 // Stub publishWyrd so we can capture the publish_payload (and therefore the
@@ -51,7 +51,7 @@ import {
   verifyAuthorshipAttestation,
 } from "@sendwyrd/core";
 
-import InboxPage from "@/app/inbox/page";
+import WyrdsPage from "@/app/wyrds/page";
 import { storeOpenSeed, forgetSeed } from "@/lib/seedClient";
 import {
   addHistoryEntry,
@@ -89,7 +89,7 @@ beforeEach(() => {
     expires_at: 1_710_000_000_000,
   });
   mockReplace.mockReset();
-  // Replies endpoint stub — inbox auto-fetches replies for live rows that
+  // Replies endpoint stub — the page auto-fetches replies for live rows that
   // have replies_enabled. Our seeded entry has replies disabled, but keep
   // the stub in place to fail loud if any unexpected fetch lands.
   vi.stubGlobal(
@@ -114,11 +114,11 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("Inbox — attest authorship (happy path)", () => {
+describe("My Wyrds — attest authorship (happy path)", () => {
   it("publishes a strict three-line attestation body whose signature round-trips against the target's K_origin_pub", async () => {
     const user = userEvent.setup();
     addHistoryEntry(makeLiveEntry());
-    render(<InboxPage />);
+    render(<WyrdsPage />);
 
     // Click the "attest authorship" affordance on the live row.
     const attestBtn = await screen.findByRole("button", {
@@ -222,7 +222,7 @@ describe("Inbox — attest authorship (happy path)", () => {
   it("surfaces the new wyrd's share URL with copy/done affordances on success", async () => {
     const user = userEvent.setup();
     addHistoryEntry(makeLiveEntry());
-    render(<InboxPage />);
+    render(<WyrdsPage />);
 
     const attestBtn = await screen.findByRole("button", {
       name: /Attest authorship of/i,
@@ -262,12 +262,12 @@ describe("Inbox — attest authorship (happy path)", () => {
   });
 });
 
-describe("Inbox — attest authorship (error path)", () => {
+describe("My Wyrds — attest authorship (error path)", () => {
   it("does not lie about success when publishWyrd returns an error response", async () => {
     publishMock.mockResolvedValue({ error: "rate_limited" });
     const user = userEvent.setup();
     addHistoryEntry(makeLiveEntry());
-    render(<InboxPage />);
+    render(<WyrdsPage />);
 
     const attestBtn = await screen.findByRole("button", {
       name: /Attest authorship of/i,

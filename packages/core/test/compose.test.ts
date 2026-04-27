@@ -4,7 +4,7 @@ import {
   countCodepoints,
   decryptFromBase64Url,
 } from "../src/compose.js";
-import { mnemonicToSeed } from "../src/hd.js";
+import { deriveReadKey, mnemonicToSeed } from "../src/hd.js";
 import { b64uDecode } from "../src/encoding.js";
 import { schnorrVerify, publishMessage } from "../src/sign.js";
 import {
@@ -88,6 +88,18 @@ describe("compose — composeWyrd happy path", () => {
     const sig = b64uDecode(result.publish_payload.publish_signature);
     const xpub = result.k_origin.k_origin_xpub;
     expect(schnorrVerify(sig, m, xpub)).toBe(true);
+  });
+
+  it("k_read matches deriveReadKey(seed, n) — recovery-friendly derivation", async () => {
+    const result = await composeWyrd({
+      plaintext: "derived-k-read",
+      seed,
+      n: 4,
+      ttl_seconds: 60,
+      replies_enabled: false,
+      now_ms: 1_745_625_600_000,
+    });
+    expect(result.k_read).toEqual(deriveReadKey(seed, 4));
   });
 
   it("ttl_seconds=0 uses PERMANENT_EXPIRES_AT_MS sentinel", async () => {

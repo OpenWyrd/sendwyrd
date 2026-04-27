@@ -2,7 +2,7 @@
 
 /**
  * Minimal top navigation: wordmark + three links.
- * Used on compose / view / inbox / settings. Landing and onboarding omit.
+ * Used on compose / view / wyrds / settings. Landing and onboarding omit.
  */
 
 import Link from "next/link";
@@ -11,7 +11,7 @@ import { WyrdSigil } from "@/components/WyrdSigil";
 
 const ITEMS: Array<{ href: string; label: string }> = [
   { href: "/compose", label: "compose" },
-  { href: "/inbox", label: "inbox" },
+  { href: "/wyrds", label: "my wyrds" },
   { href: "/about", label: "about" },
   { href: "/settings", label: "settings" },
 ];

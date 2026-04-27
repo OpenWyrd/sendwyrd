@@ -1,7 +1,9 @@
 /**
  * HD recovery sweep — given a BIP-39 mnemonic, derive K_origin keys along
  * `m/300'/n'` (per ADR-017) and ask the host which handles exist for each
- * derived pub via the §15 presence-check endpoint.
+ * derived pub via the §15 presence-check endpoint. For each occupied index
+ * we also derive the K_read symmetric key via `deriveReadKey(seed, n)`, so
+ * recovered entries get full share URLs (handle + read key).
  *
  * Sweep terminates when `gap` consecutive empty derivations is hit
  * (BIP-44 gap-limit convention; default 20). The highest occupied index
@@ -16,6 +18,7 @@
 import {
   b64uEncode,
   deriveOriginKey,
+  deriveReadKey,
   isValidMnemonic,
   mnemonicToSeed,
   presenceCheckMessage,
@@ -157,12 +160,13 @@ export async function sweepFromMnemonic(args: {
         });
       }
       if (r.handles.length > 0) {
+        const k_read_b64u = b64uEncode(deriveReadKey(seed, r.idx));
         for (const h of r.handles) {
           entries.push({
             handle: h.handle,
             n: r.idx,
             k_origin_pub_b64u: r.k_origin_pub_b64u,
-            // k_read_b64u intentionally omitted — not seed-derivable.
+            k_read_b64u,
             published_at: h.published_at,
             expires_at: h.expires_at,
             replies_enabled: h.replies_enabled,

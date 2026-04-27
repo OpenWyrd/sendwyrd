@@ -256,6 +256,16 @@ body {
 .reply-disclosure summary::marker {
   content: "";
 }
+.reply-disclosure-chevron {
+  display: inline-block;
+  width: 0.7em;
+  flex-shrink: 0;
+  color: var(--color-ink-subtle);
+  transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.reply-disclosure[open] .reply-disclosure-chevron {
+  transform: rotate(90deg);
+}
 
 /* Reduced motion — kill all animations per visual_direction_v1.md §12. */
 @media (prefers-reduced-motion: reduce) {
