@@ -191,6 +191,8 @@ export default function FragmentClient({
       )}
 
       {state.kind === "ready" && (
+        <>
+          <InstallAffordance variant="wyrd" />
         <article style={panelStyle}>
           <header
             style={{
@@ -227,7 +229,6 @@ export default function FragmentClient({
             )}
           </p>
           <ShareAffordance />
-          <InstallAffordance variant="wyrd" />
           {state.data.replies_enabled && (
             <ReplyForm
               handle={state.data.handle}
@@ -262,6 +263,7 @@ export default function FragmentClient({
               />
             )}
         </article>
+        </>
       )}
     </main>
   );
