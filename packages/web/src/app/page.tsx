@@ -57,8 +57,8 @@ export default function LandingPage() {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        padding: "var(--spacing-12) var(--spacing-6) var(--spacing-16)",
-        gap: "var(--spacing-12)",
+        padding: "var(--spacing-4) var(--spacing-6) var(--spacing-6)",
+        gap: "var(--spacing-6)",
       }}
     >
       {/* Wordmark */}
@@ -78,7 +78,7 @@ export default function LandingPage() {
       {/* Breathing sigil — landing only */}
       <span className="landing-sigil">
         <WyrdSigil
-          size={96}
+          size={56}
           breathing
           ariaLabel="SendWyrd sigil"
           className=""
@@ -118,12 +118,12 @@ export default function LandingPage() {
           lineHeight: 1.6,
         }}
       >
-        <p style={{ margin: 0, marginBottom: "var(--spacing-4)" }}>
+        <p style={{ margin: 0, marginBottom: "var(--spacing-2)" }}>
           A wyrd is a short, encrypted message that lives at a URL and dissolves
           when its time is up. You compose. You share the URL through the
           channels you already use. The protocol stays out of the way.
         </p>
-        <p style={{ margin: 0, marginBottom: "var(--spacing-4)" }}>
+        <p style={{ margin: 0, marginBottom: "var(--spacing-2)" }}>
           No accounts. No feed. No archive. Capability over identity. The thing
           you send takes its course.
         </p>
