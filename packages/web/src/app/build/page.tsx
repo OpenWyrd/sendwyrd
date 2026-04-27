@@ -87,9 +87,17 @@ export default function BuildPage() {
             <li>
               <strong>Reference TS package</strong> <Code>@sendwyrd/core</Code>{" "}
               — compose/decrypt envelope, HD derivation, URL parsing, ECIES
-              replies, Schnorr sign/verify. On npm. Install with{" "}
-              <Code>pnpm add @sendwyrd/core</Code>. v0.1.x unstable; semver
-              discipline from v1.0.0.
+              replies, Schnorr sign/verify. ~1.6k LOC, 96% unit-test coverage.
+              npm publish in flight (gated on token setup); request source
+              access via{" "}
+              <a
+                href="https://x.com/deltaclimbs"
+                style={linkStyle}
+                rel="noreferrer"
+              >
+                @deltaclimbs
+              </a>{" "}
+              until it lands. v0.1.x unstable; semver from v1.0.0.
             </li>
             <li>
               <strong>MCP server</strong> — <Code>@sendwyrd/mcp</Code> on npm,
@@ -115,12 +123,20 @@ export default function BuildPage() {
             the full pipeline in ~50 lines.
           </p>
           <p style={pStyle}>
-            <strong>If you&apos;re in JS/TS</strong>: install{" "}
-            <Code>@sendwyrd/core</Code> from npm. It exports{" "}
-            <Code>composeWyrd</Code>, <Code>decryptFromBase64Url</Code>,{" "}
-            <Code>deriveOriginKey</Code>, <Code>buildFragmentUrl</Code>, and{" "}
-            <Code>parseWyrdUrl</Code>. The package is unstable below v1.0.0; pin
-            if you depend on it.
+            <strong>If you&apos;re in JS/TS</strong>: the{" "}
+            <Code>@sendwyrd/core</Code> package exports <Code>composeWyrd</Code>
+            , <Code>decryptFromBase64Url</Code>, <Code>deriveOriginKey</Code>,{" "}
+            <Code>buildFragmentUrl</Code>, and <Code>parseWyrdUrl</Code>. npm
+            publish is in flight; reach out to{" "}
+            <a
+              href="https://x.com/deltaclimbs"
+              style={linkStyle}
+              rel="noreferrer"
+            >
+              @deltaclimbs
+            </a>{" "}
+            for source access in the meantime. v0.1.x is unstable; semver
+            discipline starts at v1.0.0.
           </p>
           <p style={pStyle}>
             <strong>If you&apos;re in another language</strong>: the spec is
