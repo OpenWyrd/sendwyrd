@@ -119,15 +119,13 @@ None. Production live at `https://sendwyrd.com`, verified end-to-end, observed v
 
 ## Rolling Backlog (next-up, ranked by leverage)
 
-1. **`npm publish @sendwyrd/mcp`** — gated on user creating `@sendwyrd` npm org + `npm login`. Workspace install ships now; npm install ships agent-ecosystem reach.
-2. **MCP registry listings** — Anthropic MCP catalog, Smithery, open-MCP. Trivial once on npm; widens discovery for agent operators.
-3. **Soft-launch** — pick 5-10 humans, send sendwyrd.com URLs, watch `/ops/{secret}`. Bottleneck is no longer code.
-4. **Neon HTTP-fetch mode** — cuts cold-Postgres connection latency on cold-worker starts (currently ~600-1200ms cold).
-5. **Edge-cache `/api/v1/wyrds/{handle}` ~10s TTL** — cuts repeat-read latency. Risk: burns within TTL serve stale 200; needs cache-purge on `DELETE`.
-6. **Per-IP rate limiting via KV** — closes ADR-013 operational gap. **In flight on `rate-limit-api`.**
-7. **Security headers** — hardening pass. **In flight on `security-headers`.**
-8. **`@sendwyrd/core` npm publish** — same `@sendwyrd` org gate as MCP.
-9. **Deferred**: native iOS / Android (ADR-014 post-v1); Söhne typography swap; federation; Python SDK / OpenAPI; defensive domain registrations (declined this cycle).
+1. **MCP registry listings** — Anthropic MCP catalog, Smithery, open-MCP. Widens discovery for agent operators now that `@sendwyrd/mcp` is on npm.
+2. **Soft-launch** — pick 5-10 humans, send sendwyrd.com URLs, watch `/ops/{secret}`. Bottleneck is no longer code.
+3. **Neon HTTP-fetch mode** — cuts cold-Postgres connection latency on cold-worker starts (currently ~600-1200ms cold).
+4. **Edge-cache `/api/v1/wyrds/{handle}` ~10s TTL** — cuts repeat-read latency. Risk: burns within TTL serve stale 200; needs cache-purge on `DELETE`.
+5. **Per-IP rate limiting via KV** — closes ADR-013 operational gap. **In flight on `rate-limit-api`.**
+6. **Security headers** — hardening pass. **In flight on `security-headers`.**
+7. **Deferred**: native iOS / Android (ADR-014 post-v1); Söhne typography swap; federation; Python SDK / OpenAPI; defensive domain registrations (declined this cycle).
 
 ## Recent Decisions Timeline
 
@@ -159,6 +157,8 @@ None. Production live at `https://sendwyrd.com`, verified end-to-end, observed v
 | 2026-04-26 | **BIP-21 chip preview** (ADR-023 follow-on): bitcoin: URI parser surfaces `?amount=&label=&message=` query params; chip label reads "0.001 BTC to bc1qar0s…5mdq" instead of bare "BTC address" when amount is present. | Follow-on session |
 | 2026-04-26 | **CSP flipped to enforce mode**: `Content-Security-Policy-Report-Only` → `Content-Security-Policy` in next.config.ts. Real-traffic Sentry telemetry was clean over the post-launch observe window. | Follow-on session |
 | 2026-04-26 | **PWA install affordance moved to top of wyrd-view page**: was buried mid-article (after Sent date); now appears above the article when state.kind === "ready". Compose-page placement (already top) and landing (no widget) unchanged. | Follow-on session |
+| 2026-04-26 | **`@sendwyrd/mcp` published to npm** — registry returns 200; install path is now `npx -y @sendwyrd/mcp` (was workspace-only). | Publish-prep session |
+| 2026-04-26 | **`@sendwyrd/core` publish-prep complete** — package metadata (license, repository, homepage, keywords, publishConfig, files), conditional `dist/` exports, README, LICENSE landed. Pending `pnpm publish --access public` from `packages/core`. `/build` page updated: roadmap bullet removed, "What ships today" + JS/TS paragraph rewritten to point at npm. | This session |
 
 ## Recent Upgrades
 

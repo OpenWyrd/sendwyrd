@@ -1,24 +1,76 @@
 {
   "name": "@sendwyrd/core",
   "version": "0.1.0",
-  "private": true,
-  "description": "SendWyrd shared core: crypto envelope, HD derivation, URL parsing, wire types. Consumed by web, api, and (post-v1) native shells.",
+  "private": false,
+  "description": "SendWyrd shared core: crypto envelope, HD derivation, URL parsing, wire types. Reference TypeScript implementation of the SendWyrd protocol.",
   "type": "module",
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
+  "license": "MIT",
+  "homepage": "https://sendwyrd.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/openwyrd/sendwyrd.git",
+    "directory": "packages/core"
+  },
+  "bugs": {
+    "url": "https://github.com/openwyrd/sendwyrd/issues"
+  },
+  "keywords": [
+    "sendwyrd",
+    "capability-url",
+    "ephemeral",
+    "encrypted-messaging",
+    "secp256k1",
+    "schnorr",
+    "bip32",
+    "bip39"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./crypto": "./src/envelope.ts",
-    "./hd": "./src/hd.ts",
-    "./url": "./src/url.ts",
-    "./types": "./src/types.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./crypto": {
+      "types": "./dist/envelope.d.ts",
+      "import": "./dist/envelope.js",
+      "default": "./dist/envelope.js"
+    },
+    "./hd": {
+      "types": "./dist/hd.d.ts",
+      "import": "./dist/hd.js",
+      "default": "./dist/hd.js"
+    },
+    "./url": {
+      "types": "./dist/url.d.ts",
+      "import": "./dist/url.js",
+      "default": "./dist/url.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js",
+      "default": "./dist/types.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=20"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "build": "tsc",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "prepublishOnly": "pnpm build"
   },
   "dependencies": {
     "@noble/curves": "^1.7.0",
