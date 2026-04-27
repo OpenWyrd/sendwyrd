@@ -191,6 +191,15 @@ describe("WyrdBody — lightning chips", () => {
     expect(link).toHaveAttribute("href", `bitcoin:${addr}`);
   });
 
+  it("surfaces BIP-21 amount in the chip preview", () => {
+    const uri =
+      "bitcoin:bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq?amount=0.001&label=tip";
+    render(<WyrdBody body={uri} />);
+    // Chip label becomes "0.001 BTC to bc1qar0s…5mdq" instead of bare "bitcoin"
+    const link = screen.getByRole("link", { name: /^0\.001 BTC to bc1q/i });
+    expect(link).toHaveAttribute("href", uri);
+  });
+
   it("toggles inline QR rendering on chip click", async () => {
     const user = userEvent.setup();
     const addr = "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq";

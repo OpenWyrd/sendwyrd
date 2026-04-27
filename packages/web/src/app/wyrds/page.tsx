@@ -37,11 +37,18 @@ import {
   renameHistoryEntry,
   type HistoryEntry,
 } from "@/lib/wyrdHistory";
+import {
+  listInbox,
+  removeInboxEntry,
+  renameInboxEntry,
+  type InboxEntry,
+} from "@/lib/wyrdInbox";
 import { burnWyrd, publishWyrd } from "@/lib/api";
 import { requestPersistence } from "@/lib/persistentStorage";
 import { Segmented } from "@/components/Segmented";
 import { Nav } from "@/components/Nav";
 
+type View = "outbox" | "inbox";
 type Filter = "all" | "live" | "gone";
 
 interface BurnUiState {
@@ -77,6 +84,8 @@ export default function WyrdsPage() {
   const [passphrase, setPassphrase] = useState("");
   const [unlockError, setUnlockError] = useState<string | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [inbox, setInbox] = useState<InboxEntry[]>([]);
+  const [view, setView] = useState<View>("outbox");
   const [filter, setFilter] = useState<Filter>("all");
   const [now, setNow] = useState(Date.now());
   const [repliesByHandle, setRepliesByHandle] = useState<
@@ -301,6 +310,7 @@ export default function WyrdsPage() {
     }
     setUnlocked(isUnlocked());
     setHistory(listHistory());
+    setInbox(listInbox());
     setNow(Date.now());
   }, [router]);
 
@@ -442,10 +452,53 @@ export default function WyrdsPage() {
     return true;
   });
 
+  function removeFromInbox(handle: string) {
+    removeInboxEntry(handle);
+    setInbox(listInbox());
+  }
+
   return (
     <main style={pageStyle}>
       <Nav />
       <section style={{ ...panelStyle, maxWidth: "var(--max-list)" }}>
+        <div style={{ marginBottom: "var(--spacing-4)" }}>
+          <Segmented
+            name="view"
+            value={view}
+            onChange={(v) => setView(v as View)}
+            size="sm"
+            ariaLabel="View"
+            options={[
+              { value: "outbox", label: "outbox" },
+              { value: "inbox", label: "inbox" },
+            ]}
+          />
+        </div>
+
+        {view === "inbox" ? (
+          <InboxView
+            inbox={inbox}
+            renamingHandle={renamingHandle}
+            renameDraft={renameDraft}
+            onStartRename={(h, n) => {
+              setRenamingHandle(h);
+              setRenameDraft(n ?? "");
+            }}
+            onRenameDraftChange={setRenameDraft}
+            onCommitRename={(h) => {
+              renameInboxEntry(h, renameDraft);
+              setRenamingHandle(null);
+              setRenameDraft("");
+              setInbox(listInbox());
+            }}
+            onCancelRename={() => {
+              setRenamingHandle(null);
+              setRenameDraft("");
+            }}
+            onRemove={removeFromInbox}
+          />
+        ) : (
+          <>
         <p
           style={{
             margin: 0,
@@ -950,10 +1003,228 @@ export default function WyrdsPage() {
             </article>
           );
         })}
+          </>
+        )}
       </section>
     </main>
   );
 }
+
+function InboxView({
+  inbox,
+  renamingHandle,
+  renameDraft,
+  onStartRename,
+  onRenameDraftChange,
+  onCommitRename,
+  onCancelRename,
+  onRemove,
+}: {
+  inbox: InboxEntry[];
+  renamingHandle: string | null;
+  renameDraft: string;
+  onStartRename: (handle: string, current?: string) => void;
+  onRenameDraftChange: (s: string) => void;
+  onCommitRename: (handle: string) => void;
+  onCancelRename: () => void;
+  onRemove: (handle: string) => void;
+}) {
+  if (inbox.length === 0) {
+    return (
+      <>
+        <p
+          style={{
+            margin: 0,
+            marginBottom: "var(--spacing-4)",
+            color: "var(--color-ink-muted)",
+            fontSize: "var(--text-caption)",
+          }}
+        >
+          0 wyrds opened in this browser{" "}
+          <span style={{ color: "var(--color-ink-subtle)" }}>
+            (the inbox is local to this browser only — there is no relay-side
+            record of wyrds you&apos;ve received, by design)
+          </span>
+        </p>
+        <p
+          style={{
+            margin: 0,
+            color: "var(--color-ink-muted)",
+            fontSize: "var(--text-caption)",
+          }}
+        >
+          When you open a wyrd URL, it&apos;ll appear here.
+        </p>
+      </>
+    );
+  }
+  return (
+    <>
+      <p
+        style={{
+          margin: 0,
+          marginBottom: "var(--spacing-6)",
+          color: "var(--color-ink-muted)",
+          fontSize: "var(--text-caption)",
+        }}
+      >
+        {inbox.length} wyrd{inbox.length === 1 ? "" : "s"} opened in this
+        browser{" "}
+        <span style={{ color: "var(--color-ink-subtle)" }}>
+          (local to this browser — never queried from the relay, never
+          recoverable from your seed; clearing site data wipes the list)
+        </span>
+      </p>
+      {inbox.map((entry) => {
+        const url = `/w/${entry.handle}#${entry.k_read_b64u}`;
+        return (
+          <article
+            key={entry.handle}
+            style={{
+              paddingTop: "var(--spacing-4)",
+              paddingBottom: "var(--spacing-4)",
+              borderTop: "1px solid var(--color-hairline)",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                gap: "var(--spacing-3)",
+                flexWrap: "wrap",
+                alignItems: "flex-start",
+              }}
+            >
+              <div style={{ flex: "1 1 0", minWidth: 0 }}>
+                {renamingHandle === entry.handle ? (
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      onCommitRename(entry.handle);
+                    }}
+                    style={{
+                      display: "flex",
+                      gap: "var(--spacing-2)",
+                      alignItems: "center",
+                    }}
+                  >
+                    <input
+                      type="text"
+                      value={renameDraft}
+                      onChange={(e) => onRenameDraftChange(e.target.value)}
+                      autoFocus
+                      placeholder="add a name…"
+                      maxLength={80}
+                      style={{
+                        flex: "1 1 0",
+                        minWidth: 0,
+                        background: "transparent",
+                        border: "none",
+                        borderBottom:
+                          "1px solid var(--color-hairline-strong)",
+                        color: "var(--color-ink)",
+                        fontFamily: "var(--font-mono)",
+                        fontSize: "var(--text-caption)",
+                        outline: "none",
+                        padding: "var(--spacing-1) 0",
+                      }}
+                    />
+                    <button type="submit" style={inboxInlineBtn}>
+                      save
+                    </button>
+                    <button
+                      type="button"
+                      onClick={onCancelRename}
+                      style={inboxInlineBtn}
+                    >
+                      cancel
+                    </button>
+                  </form>
+                ) : (
+                  <a
+                    href={url}
+                    style={{
+                      color: "var(--color-ink)",
+                      textDecoration: "none",
+                      fontFamily: "var(--font-mono)",
+                      fontSize: "var(--text-caption)",
+                      overflowWrap: "anywhere",
+                      display: "block",
+                    }}
+                  >
+                    {entry.nickname || entry.handle}
+                  </a>
+                )}
+                {entry.nickname && renamingHandle !== entry.handle && (
+                  <span
+                    style={{
+                      display: "block",
+                      fontFamily: "var(--font-mono)",
+                      fontSize: "var(--text-microcaption)",
+                      color: "var(--color-ink-subtle)",
+                      marginTop: "var(--spacing-1)",
+                      overflowWrap: "anywhere",
+                    }}
+                  >
+                    {entry.handle}
+                  </span>
+                )}
+              </div>
+            </div>
+            <p
+              style={{
+                margin: 0,
+                marginTop: "var(--spacing-2)",
+                color: "var(--color-ink-subtle)",
+                fontSize: "var(--text-microcaption)",
+                fontFamily: "var(--font-mono)",
+                display: "flex",
+                gap: "var(--spacing-3)",
+                flexWrap: "wrap",
+                alignItems: "center",
+              }}
+            >
+              <span>
+                First opened {formatDate(entry.first_seen_at)}
+                {entry.last_viewed_at !== entry.first_seen_at &&
+                  ` · last opened ${formatDate(entry.last_viewed_at)}`}
+              </span>
+              {renamingHandle !== entry.handle && (
+                <button
+                  onClick={() =>
+                    onStartRename(entry.handle, entry.nickname)
+                  }
+                  style={inboxInlineBtn}
+                >
+                  {entry.nickname ? "rename" : "add name"}
+                </button>
+              )}
+              <button
+                onClick={() => onRemove(entry.handle)}
+                style={inboxInlineBtn}
+                aria-label={`Remove ${entry.nickname || entry.handle} from inbox`}
+              >
+                remove
+              </button>
+            </p>
+          </article>
+        );
+      })}
+    </>
+  );
+}
+
+const inboxInlineBtn: React.CSSProperties = {
+  background: "transparent",
+  border: "none",
+  padding: 0,
+  color: "var(--color-ink-muted)",
+  fontFamily: "var(--font-mono)",
+  fontSize: "var(--text-microcaption)",
+  cursor: "pointer",
+  textDecoration: "underline",
+  textUnderlineOffset: 2,
+};
 
 function formatDate(ms: number): string {
   return new Date(ms).toLocaleString("en-US", {

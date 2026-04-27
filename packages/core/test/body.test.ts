@@ -407,6 +407,40 @@ describe("body — Bitcoin detection", () => {
     expect(btc && btc.kind === "bitcoin" && btc.type).toBe("uri");
     if (btc && btc.kind === "bitcoin") {
       expect(btc.href).toBe(uri); // URI passed through unchanged
+      expect(btc.address).toBe("bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq");
+      expect(btc.amount).toBe("0.001");
+      expect(btc.label).toBe("tip");
+    }
+  });
+
+  it("parses BIP-21 message param (URL-decoded)", () => {
+    const uri = "bitcoin:bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq?amount=0.5&message=coffee%20fund";
+    const segs = parseBody(uri);
+    const btc = segs.find((s) => s.kind === "bitcoin");
+    if (btc && btc.kind === "bitcoin") {
+      expect(btc.amount).toBe("0.5");
+      expect(btc.message).toBe("coffee fund");
+    }
+  });
+
+  it("bare bech32 address has address === payload, no params", () => {
+    const addr = "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq";
+    const segs = parseBody(addr);
+    const btc = segs.find((s) => s.kind === "bitcoin");
+    if (btc && btc.kind === "bitcoin") {
+      expect(btc.address).toBe(addr);
+      expect(btc.amount).toBeUndefined();
+      expect(btc.label).toBeUndefined();
+    }
+  });
+
+  it("bitcoin: URI without query string still parses (no params)", () => {
+    const uri = "bitcoin:bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq";
+    const segs = parseBody(uri);
+    const btc = segs.find((s) => s.kind === "bitcoin");
+    if (btc && btc.kind === "bitcoin") {
+      expect(btc.address).toBe("bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq");
+      expect(btc.amount).toBeUndefined();
     }
   });
 

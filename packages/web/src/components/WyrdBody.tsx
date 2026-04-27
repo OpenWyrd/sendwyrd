@@ -101,8 +101,21 @@ const PAYMENT_LABELS: Record<string, string> = {
 };
 
 function paymentLabel(seg: PaymentSegment): string {
-  if (seg.kind === "bitcoin" && seg.type === "uri") return "bitcoin";
+  if (seg.kind === "bitcoin") {
+    // Surface BIP-21 amount in the chip preview when present:
+    // "0.001 BTC to bc1q…" instead of bare "BTC address".
+    if (seg.amount) {
+      const truncated = truncateAddress(seg.address);
+      return `${seg.amount} BTC to ${truncated}`;
+    }
+    if (seg.type === "uri") return "bitcoin";
+  }
   return PAYMENT_LABELS[seg.type] ?? "payment";
+}
+
+function truncateAddress(addr: string): string {
+  if (addr.length <= 14) return addr;
+  return `${addr.slice(0, 8)}…${addr.slice(-4)}`;
 }
 
 function paymentGlyph(seg: PaymentSegment): string {

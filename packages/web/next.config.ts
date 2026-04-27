@@ -4,10 +4,9 @@ import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 initOpenNextCloudflareForDev();
 
 // Content-Security-Policy. Closes the Phase E open item from
-// spec_mop_v1.md §19.5. Shipped in Report-Only mode initially — browser
-// fires `securitypolicyviolation` for any rule that *would* block, Sentry
-// captures those events automatically, we observe a few hours of real
-// traffic, then flip to enforcing.
+// spec_mop_v1.md §19.5. Originally shipped in Report-Only mode for
+// observation; Sentry telemetry ran clean over real traffic, so we flipped
+// to enforce mode on 2026-04-26.
 //
 // Why each directive looks the way it does:
 //   default-src 'self'         — closed default
@@ -109,10 +108,11 @@ const config: NextConfig = {
             value: "max-age=63072000; includeSubDomains; preload",
           },
           { key: "Permissions-Policy", value: permissionsPolicy },
-          // Report-Only mode — observe before we enforce. Flip the header
-          // name to `Content-Security-Policy` once Sentry shows zero
-          // unexpected violations from real traffic.
-          { key: "Content-Security-Policy-Report-Only", value: csp },
+          // Enforce mode (was Report-Only through the post-launch observe
+          // window; flipped 2026-04-26 after real-traffic telemetry came
+          // back clean). Any rule violation now blocks the offending
+          // resource and fires a `securitypolicyviolation` event.
+          { key: "Content-Security-Policy", value: csp },
         ],
       },
     ];

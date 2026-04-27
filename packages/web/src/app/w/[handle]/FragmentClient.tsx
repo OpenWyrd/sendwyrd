@@ -37,6 +37,7 @@ import {
   markHistoryEntryGone,
   type HistoryEntry,
 } from "@/lib/wyrdHistory";
+import { recordInboxView } from "@/lib/wyrdInbox";
 
 type State =
   | { kind: "loading" }
@@ -116,8 +117,19 @@ export default function FragmentClient({
           replies_enabled: initial.data.replies_enabled,
         });
         const transitives = await resolveTransitives(body);
-        if (!cancelled)
+        if (!cancelled) {
           setState({ kind: "ready", data: initial.data, body, transitives });
+          // Record this view in the browser-local inbox (per ADR-024).
+          // Skip if we authored this wyrd — those belong in the outbox.
+          const authoredHandles = new Set(
+            listHistory().map((e) => e.handle),
+          );
+          recordInboxView({
+            handle: initial.data.handle,
+            k_read_b64u,
+            authoredHandles,
+          });
+        }
       } catch {
         if (!cancelled) setState({ kind: "decrypt_failed" });
       }

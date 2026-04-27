@@ -129,6 +129,15 @@ export type BodySegment =
       /** A `bitcoin:` URI safe to use in `<a href>` for OS-level handler. */
       href: string;
       type: BitcoinSegmentType;
+      /** Address part — for URI form, the payment target sans `bitcoin:`
+       * scheme and query string. For bare addresses, identical to payload. */
+      address: string;
+      /** BIP-21 `amount=` parameter, decimal BTC string (e.g. `0.001`). */
+      amount?: string;
+      /** BIP-21 `label=` parameter, URL-decoded. */
+      label?: string;
+      /** BIP-21 `message=` parameter, URL-decoded. */
+      message?: string;
     };
 
 /**
@@ -228,9 +237,29 @@ function buildBitcoinSegment(
   const lower = token.toLowerCase();
   let type: BitcoinSegmentType;
   let href: string;
+  let address = token;
+  let amount: string | undefined;
+  let label: string | undefined;
+  let message: string | undefined;
+
   if (lower.startsWith("bitcoin:")) {
     type = "uri";
     href = token;
+    // BIP-21: bitcoin:<address>[?amount=<amount>[&label=<label>][&message=<message>][&...]]
+    const afterScheme = token.slice("bitcoin:".length);
+    const qIdx = afterScheme.indexOf("?");
+    address = qIdx === -1 ? afterScheme : afterScheme.slice(0, qIdx);
+    if (qIdx !== -1) {
+      const query = afterScheme.slice(qIdx + 1);
+      try {
+        const params = new URLSearchParams(query);
+        amount = params.get("amount") ?? undefined;
+        label = params.get("label") ?? undefined;
+        message = params.get("message") ?? undefined;
+      } catch {
+        // Malformed query — ignore params, surface bare address only.
+      }
+    }
   } else if (
     lower.startsWith("bc1") ||
     lower.startsWith("tb1") ||
@@ -242,7 +271,16 @@ function buildBitcoinSegment(
     type = "legacy";
     href = `bitcoin:${token}`;
   }
-  return { kind: "bitcoin", payload: token, href, type };
+  return {
+    kind: "bitcoin",
+    payload: token,
+    href,
+    type,
+    address,
+    amount,
+    label,
+    message,
+  };
 }
 
 function classifyUrl(url: string): UrlSegmentType {

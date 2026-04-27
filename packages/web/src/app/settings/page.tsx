@@ -31,6 +31,12 @@ import {
 } from "@/lib/seedClient";
 import { generateSeed, isValidMnemonic, mnemonicToSeed } from "@sendwyrd/core";
 import { mergeHistoryEntries } from "@/lib/wyrdHistory";
+import {
+  isAutoRecordEnabled,
+  setAutoRecordEnabled,
+  clearInbox,
+  listInbox,
+} from "@/lib/wyrdInbox";
 import { sweepFromMnemonic, type SweepProgress } from "@/lib/recovery";
 import { Segmented } from "@/components/Segmented";
 import { Nav } from "@/components/Nav";
@@ -93,6 +99,11 @@ export default function SettingsPage() {
   const [persistSupported, setPersistSupported] = useState(true);
   const [estimate, setEstimate] = useState<StorageEstimate | null>(null);
 
+  // Inbox state (browser-local viewing log per ADR-024)
+  const [inboxAutorecord, setInboxAutorecord] = useState(true);
+  const [inboxCount, setInboxCount] = useState(0);
+  const [inboxClearedAt, setInboxClearedAt] = useState<number | null>(null);
+
   useEffect(() => {
     const stored =
       (localStorage.getItem(THEME_KEY) as Theme | null) ?? "system";
@@ -108,6 +119,8 @@ export default function SettingsPage() {
       setPersistAsked(ps.asked);
       setEstimate(await getStorageEstimate());
     })();
+    setInboxAutorecord(isAutoRecordEnabled());
+    setInboxCount(listInbox().length);
   }, []);
 
   function changeTheme(next: Theme) {
@@ -670,6 +683,68 @@ export default function SettingsPage() {
               </>
             )}
           </p>
+        )}
+        <div style={{ marginBottom: "var(--spacing-12)" }} />
+
+        <h2 style={sectionStyle}>Inbox</h2>
+        <p style={{ ...metaStyle, marginBottom: "var(--spacing-4)" }}>
+          The inbox is a local viewing log of wyrd URLs you&apos;ve opened in
+          this browser. There is no relay-side record of received wyrds — by
+          design (ADR-024). The list lives in localStorage and is wiped when
+          you clear site data; clearing your seed does not affect it.
+        </p>
+        <div
+          style={{
+            display: "flex",
+            gap: "var(--spacing-3)",
+            alignItems: "center",
+            marginBottom: "var(--spacing-3)",
+            flexWrap: "wrap",
+          }}
+        >
+          <Segmented
+            name="inbox-autorecord"
+            value={inboxAutorecord ? "on" : "off"}
+            onChange={(v) => {
+              const enabled = v === "on";
+              setInboxAutorecord(enabled);
+              setAutoRecordEnabled(enabled);
+            }}
+            size="sm"
+            ariaLabel="Auto-record opened wyrds"
+            options={[
+              { value: "on", label: "auto-record on" },
+              { value: "off", label: "off" },
+            ]}
+          />
+          <span style={{ ...metaStyle, fontSize: "var(--text-microcaption)" }}>
+            {inboxCount} wyrd{inboxCount === 1 ? "" : "s"} in inbox
+          </span>
+        </div>
+        {inboxCount > 0 && (
+          <div style={{ marginBottom: "var(--spacing-4)" }}>
+            <button
+              onClick={() => {
+                clearInbox();
+                setInboxCount(0);
+                setInboxClearedAt(Date.now());
+              }}
+              style={btnStyle}
+            >
+              Clear inbox
+            </button>
+            {inboxClearedAt !== null && (
+              <span
+                style={{
+                  ...metaStyle,
+                  marginLeft: "var(--spacing-3)",
+                  fontSize: "var(--text-microcaption)",
+                }}
+              >
+                cleared
+              </span>
+            )}
+          </div>
         )}
         <div style={{ marginBottom: "var(--spacing-12)" }} />
 
