@@ -73,8 +73,11 @@ export default function BuildPage() {
             <li>
               <strong>Wire spec</strong> — byte-for-byte description of every
               endpoint, envelope layout, signed payload, and error code.
-              Currently at v1.0.4-draft. Available on request while the
-              implementation repo stays private; reach out to{" "}
+              Currently at v1.0.4-draft. The published{" "}
+              <Code>@sendwyrd/core</Code> package is the executable reference —{" "}
+              <Code>npm view @sendwyrd/core</Code> or unpack the tarball to read
+              the implementation directly. The companion spec doc is available
+              on request from{" "}
               <a
                 href="https://x.com/deltaclimbs"
                 style={linkStyle}
@@ -88,16 +91,8 @@ export default function BuildPage() {
               <strong>Reference TS package</strong> <Code>@sendwyrd/core</Code>{" "}
               — compose/decrypt envelope, HD derivation, URL parsing, ECIES
               replies, Schnorr sign/verify. ~1.6k LOC, 96% unit-test coverage.
-              npm publish in flight (gated on token setup); request source
-              access via{" "}
-              <a
-                href="https://x.com/deltaclimbs"
-                style={linkStyle}
-                rel="noreferrer"
-              >
-                @deltaclimbs
-              </a>{" "}
-              until it lands. v0.1.x unstable; semver from v1.0.0.
+              On npm: <Code>pnpm add @sendwyrd/core</Code>. v0.1.x unstable;
+              semver from v1.0.0.
             </li>
             <li>
               <strong>MCP server</strong> — <Code>@sendwyrd/mcp</Code> on npm,
@@ -123,20 +118,12 @@ export default function BuildPage() {
             the full pipeline in ~50 lines.
           </p>
           <p style={pStyle}>
-            <strong>If you&apos;re in JS/TS</strong>: the{" "}
-            <Code>@sendwyrd/core</Code> package exports <Code>composeWyrd</Code>
-            , <Code>decryptFromBase64Url</Code>, <Code>deriveOriginKey</Code>,{" "}
-            <Code>buildFragmentUrl</Code>, and <Code>parseWyrdUrl</Code>. npm
-            publish is in flight; reach out to{" "}
-            <a
-              href="https://x.com/deltaclimbs"
-              style={linkStyle}
-              rel="noreferrer"
-            >
-              @deltaclimbs
-            </a>{" "}
-            for source access in the meantime. v0.1.x is unstable; semver
-            discipline starts at v1.0.0.
+            <strong>If you&apos;re in JS/TS</strong>: install{" "}
+            <Code>@sendwyrd/core</Code> via <Code>npm i @sendwyrd/core</Code>{" "}
+            (or <Code>pnpm add</Code>) for <Code>composeWyrd</Code>,{" "}
+            <Code>decryptFromBase64Url</Code>, <Code>deriveOriginKey</Code>,{" "}
+            <Code>buildFragmentUrl</Code>, and <Code>parseWyrdUrl</Code>. v0.1.x
+            is unstable; semver discipline starts at v1.0.0.
           </p>
           <p style={pStyle}>
             <strong>If you&apos;re in another language</strong>: the spec is

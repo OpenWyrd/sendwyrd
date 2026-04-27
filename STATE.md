@@ -119,14 +119,13 @@ None. Production live at `https://sendwyrd.com`, verified end-to-end, observed v
 
 ## Rolling Backlog (next-up, ranked by leverage)
 
-1. **Publish `@sendwyrd/core` to npm** — **medium-high priority**. Publish-prep already landed in commit `d3cfc60` (package.json metadata, dist-targeted exports, README, LICENSE, prepublishOnly). Build page currently soft-claims "npm publish in flight" — this commit makes that true. Blocked on npm token setup: account requires 2FA, current token is automation-type without bypass-2FA. Fix: generate a Granular Access Token at npmjs.com/settings/~/tokens with `@sendwyrd` org write access AND "Allow access to bypass 2FA" enabled, install via `npm config set //registry.npmjs.org/:_authToken=<TOKEN>`, then `cd packages/core && pnpm publish --access public`. After publish lands, re-tighten the build page copy in `packages/web/src/app/build/page.tsx` (two places, both flagged "in flight"). ~5 minutes once token is sorted.
-2. **MCP registry listings** — Anthropic MCP catalog, Smithery, open-MCP. Widens discovery for agent operators now that `@sendwyrd/mcp` is on npm.
-3. **Soft-launch** — pick 5-10 humans, send sendwyrd.com URLs, watch `/ops/{secret}`. Bottleneck is no longer code.
-4. **Neon HTTP-fetch mode** — cuts cold-Postgres connection latency on cold-worker starts (currently ~600-1200ms cold).
-5. **Edge-cache `/api/v1/wyrds/{handle}` ~10s TTL** — cuts repeat-read latency. Risk: burns within TTL serve stale 200; needs cache-purge on `DELETE`.
-6. **Per-IP rate limiting via KV** — closes ADR-013 operational gap. **In flight on `rate-limit-api`.**
-7. **Security headers** — hardening pass. **In flight on `security-headers`.**
-8. **Deferred**: native iOS / Android (ADR-014 post-v1); Söhne typography swap; federation; Python SDK / OpenAPI; defensive domain registrations (declined this cycle).
+1. **MCP registry listings** — Anthropic MCP catalog, Smithery, open-MCP. Widens discovery for agent operators now that `@sendwyrd/mcp` is on npm.
+2. **Soft-launch** — pick 5-10 humans, send sendwyrd.com URLs, watch `/ops/{secret}`. Bottleneck is no longer code.
+3. **Neon HTTP-fetch mode** — cuts cold-Postgres connection latency on cold-worker starts (currently ~600-1200ms cold).
+4. **Edge-cache `/api/v1/wyrds/{handle}` ~10s TTL** — cuts repeat-read latency. Risk: burns within TTL serve stale 200; needs cache-purge on `DELETE`.
+5. **Per-IP rate limiting via KV** — closes ADR-013 operational gap. **In flight on `rate-limit-api`.**
+6. **Security headers** — hardening pass. **In flight on `security-headers`.**
+7. **Deferred**: native iOS / Android (ADR-014 post-v1); Söhne typography swap; federation; Python SDK / OpenAPI; defensive domain registrations (declined this cycle).
 
 ## Recent Decisions Timeline
 
@@ -152,6 +151,7 @@ None. Production live at `https://sendwyrd.com`, verified end-to-end, observed v
 | 2026-04-26 | **ADR-023 banked**: payment-token posture — detect locally, hand off to wallets, never settle. Body parser surfaces Lightning + Bitcoin tokens; renderer shows labelled chips with on-demand local QR. `tip_offer` envelope field and `zap_attestation` wyrd type explicitly rejected. | Wrap-up session |
 | 2026-04-26 | **ADR-024 banked**: no relay-side recipient model. Locks down "the relay knows authors, never recipients." Disambiguates inbox/outbox terminology vs ADR-009. Future inbox view is browser-local viewing log only. | Wrap-up session |
 | 2026-04-26 | **ADR-012 enforcement amended**: composer is send-disable + red counter, not input hard-block (lets users paste long Lightning invoices that the parser excludes from the cap). | Wrap-up session |
+| 2026-04-27 | **`@sendwyrd/core@0.1.0` published to npm** — unblock via granular access token with bypass-2FA flag (account 2FA stays disabled). Build page tightened to drop "in flight" soft-claims. | npm unblock session |
 | 2026-04-26 | `/inbox` route renamed to `/wyrds` (label "my wyrds") — page lists author-side wyrds, not received messages. ADR-024 frames the structural reason. | Wrap-up session |
 | 2026-04-26 | **Open-source decision**: stay private through launch; spec stays private with implementation; revisit after PMF validates usage. Source-available trajectory (BSL/FSL) deferred. | Wrap-up session |
 | 2026-04-26 | **Inbox-as-second-view shipped** (ADR-024 follow-on): `wyrdInbox.ts` localStorage lib + auto-record on view-page decrypt + Segmented `outbox \| inbox` toggle on `/wyrds` + Settings opt-out toggle + clear-inbox button. Browser-local, never relay-queried, not seed-recoverable. 10 unit tests. | Follow-on session |
