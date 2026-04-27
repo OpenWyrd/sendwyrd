@@ -43,13 +43,26 @@ import {
   renameInboxEntry,
   type InboxEntry,
 } from "@/lib/wyrdInbox";
-import { burnWyrd, publishWyrd } from "@/lib/api";
+import { burnWyrd, fetchWyrd, publishWyrd } from "@/lib/api";
 import { requestPersistence } from "@/lib/persistentStorage";
 import { Segmented } from "@/components/Segmented";
 import { Nav } from "@/components/Nav";
 
 type View = "outbox" | "inbox";
 type Filter = "all" | "live" | "gone";
+
+/**
+ * Liveness state for an inbox entry, computed by re-fetching the handle
+ * from the relay at view time. Per ADR-024 we never cache plaintext on
+ * the inbox; status is always fresh-from-relay. `expired` distinguishes
+ * a TTL'd-out wyrd from a manually-burned one when the tombstone has
+ * `reason` populated.
+ */
+type LivenessState =
+  | { kind: "checking" }
+  | { kind: "live"; expires_at: number }
+  | { kind: "gone"; reason: "burned" | "expired" | "unknown"; gone_at: number }
+  | { kind: "unreachable" };
 
 interface BurnUiState {
   /** confirm: row showed prompt; burning: request in flight; error: surfaced. */
@@ -85,6 +98,9 @@ export default function WyrdsPage() {
   const [unlockError, setUnlockError] = useState<string | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [inbox, setInbox] = useState<InboxEntry[]>([]);
+  const [inboxLiveness, setInboxLiveness] = useState<
+    Record<string, LivenessState>
+  >({});
   const [view, setView] = useState<View>("outbox");
   const [filter, setFilter] = useState<Filter>("all");
   const [now, setNow] = useState(Date.now());
@@ -329,6 +345,59 @@ export default function WyrdsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [unlocked, history]);
 
+  // Inbox liveness — refetch each entry when the inbox view is active.
+  // Per ADR-024 we never cache plaintext on the inbox; liveness is fresh
+  // from the relay each time the user opens the view. Skips entries we've
+  // already classified in this session (cheap re-renders don't re-fetch).
+  useEffect(() => {
+    if (view !== "inbox") return;
+    if (inbox.length === 0) return;
+    const toFetch = inbox.filter((e) => !inboxLiveness[e.handle]);
+    if (toFetch.length === 0) return;
+    setInboxLiveness((m) => {
+      const next = { ...m };
+      for (const e of toFetch) next[e.handle] = { kind: "checking" };
+      return next;
+    });
+    void Promise.all(
+      toFetch.map(async (entry) => {
+        try {
+          const res = await fetchWyrd(entry.handle);
+          if (res.kind === "live") {
+            setInboxLiveness((m) => ({
+              ...m,
+              [entry.handle]: {
+                kind: "live",
+                expires_at: res.data.expires_at,
+              },
+            }));
+          } else if (res.kind === "gone") {
+            const reason =
+              res.data.reason === "burned" || res.data.reason === "expired"
+                ? res.data.reason
+                : "unknown";
+            const gone_at = new Date(res.data.gone_at).getTime();
+            setInboxLiveness((m) => ({
+              ...m,
+              [entry.handle]: { kind: "gone", reason, gone_at },
+            }));
+          } else {
+            setInboxLiveness((m) => ({
+              ...m,
+              [entry.handle]: { kind: "unreachable" },
+            }));
+          }
+        } catch {
+          setInboxLiveness((m) => ({
+            ...m,
+            [entry.handle]: { kind: "unreachable" },
+          }));
+        }
+      }),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, inbox]);
+
   async function handleUnlock(e: React.FormEvent) {
     e.preventDefault();
     setUnlockError(null);
@@ -478,6 +547,7 @@ export default function WyrdsPage() {
         {view === "inbox" ? (
           <InboxView
             inbox={inbox}
+            liveness={inboxLiveness}
             renamingHandle={renamingHandle}
             renameDraft={renameDraft}
             onStartRename={(h, n) => {
@@ -1012,6 +1082,7 @@ export default function WyrdsPage() {
 
 function InboxView({
   inbox,
+  liveness,
   renamingHandle,
   renameDraft,
   onStartRename,
@@ -1021,6 +1092,7 @@ function InboxView({
   onRemove,
 }: {
   inbox: InboxEntry[];
+  liveness: Record<string, LivenessState>;
   renamingHandle: string | null;
   renameDraft: string;
   onStartRename: (handle: string, current?: string) => void;
@@ -1077,6 +1149,28 @@ function InboxView({
       </p>
       {inbox.map((entry) => {
         const url = `/w/${entry.handle}#${entry.k_read_b64u}`;
+        const live = liveness[entry.handle];
+        const isGone = live?.kind === "gone";
+        const statusLabel =
+          live?.kind === "checking"
+            ? "checking…"
+            : live?.kind === "live"
+              ? "live"
+              : live?.kind === "gone"
+                ? live.reason === "burned"
+                  ? "burned"
+                  : live.reason === "expired"
+                    ? "expired"
+                    : "gone"
+                : live?.kind === "unreachable"
+                  ? "unreachable"
+                  : "";
+        const statusColor =
+          live?.kind === "live"
+            ? "var(--color-mark-sealed)"
+            : live?.kind === "gone" || live?.kind === "unreachable"
+              ? "var(--color-ink-subtle)"
+              : "var(--color-ink-muted)";
         return (
           <article
             key={entry.handle}
@@ -1084,6 +1178,7 @@ function InboxView({
               paddingTop: "var(--spacing-4)",
               paddingBottom: "var(--spacing-4)",
               borderTop: "1px solid var(--color-hairline)",
+              opacity: isGone ? 0.7 : 1,
             }}
           >
             <div
@@ -1145,7 +1240,10 @@ function InboxView({
                     href={url}
                     style={{
                       color: "var(--color-ink)",
-                      textDecoration: "none",
+                      textDecoration:
+                        live?.kind === "gone" && live.reason === "burned"
+                          ? "line-through"
+                          : "none",
                       fontFamily: "var(--font-mono)",
                       fontSize: "var(--text-caption)",
                       overflowWrap: "anywhere",
@@ -1164,12 +1262,28 @@ function InboxView({
                       color: "var(--color-ink-subtle)",
                       marginTop: "var(--spacing-1)",
                       overflowWrap: "anywhere",
+                      textDecoration:
+                        live?.kind === "gone" && live.reason === "burned"
+                          ? "line-through"
+                          : "none",
                     }}
                   >
                     {entry.handle}
                   </span>
                 )}
               </div>
+              {statusLabel && (
+                <span
+                  style={{
+                    fontFamily: "var(--font-mono)",
+                    fontSize: "var(--text-microcaption)",
+                    color: statusColor,
+                    flexShrink: 0,
+                  }}
+                >
+                  {statusLabel}
+                </span>
+              )}
             </div>
             <p
               style={{

@@ -269,3 +269,186 @@ describe("My Wyrds — authorship attestation", () => {
     expect(publishCalls.length).toBeGreaterThanOrEqual(1);
   });
 });
+
+describe("My Wyrds — outbox|inbox toggle", () => {
+  it("defaults to outbox view; inbox toggle is present", async () => {
+    addHistoryEntry(
+      makeEntry({
+        handle: "live000000000aaa",
+        published_at: Date.now() - 1000,
+        expires_at: Date.now() + 86_400_000,
+      }),
+    );
+    render(<WyrdsPage />);
+    await waitFor(() => {
+      // Outbox content is visible by default
+      expect(screen.getByText(/wyrds? on this device/i)).toBeInTheDocument();
+    });
+    // Inbox toggle is present
+    expect(
+      screen.getByRole("radio", { name: /inbox/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("inbox view shows empty state when no inbox entries exist", async () => {
+    const user = userEvent.setup();
+    render(<WyrdsPage />);
+    await waitFor(() => {
+      expect(
+        screen.getByRole("radio", { name: /inbox/i }),
+      ).toBeInTheDocument();
+    });
+    await user.click(screen.getByRole("radio", { name: /inbox/i }));
+    await waitFor(() => {
+      expect(
+        screen.getByText(/0 wyrds opened in this browser/i),
+      ).toBeInTheDocument();
+    });
+    expect(
+      screen.getByText(/When you open a wyrd URL, it'll appear here/i),
+    ).toBeInTheDocument();
+  });
+
+  it("inbox view renders entries from wyrdInbox localStorage with liveness fetch", async () => {
+    const user = userEvent.setup();
+    // Seed the inbox directly via localStorage (bypassing the
+    // FragmentClient auto-record path).
+    localStorage.setItem(
+      "sendwyrd:inbox:v1",
+      JSON.stringify([
+        {
+          handle: "inbox000000aaaaa",
+          k_read_b64u: "k_read_43_chars_padding_padding_padding_pad",
+          first_seen_at: Date.now() - 60_000,
+          last_viewed_at: Date.now() - 60_000,
+        },
+      ]),
+    );
+    // Override fetch: when the inbox liveness check hits /api/v1/wyrds/{handle},
+    // return a live envelope.
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        if (
+          typeof url === "string" &&
+          url.includes("/api/v1/wyrds/inbox000000aaaaa")
+        ) {
+          return new Response(
+            JSON.stringify({
+              handle: "inbox000000aaaaa",
+              envelope: "x",
+              k_origin_pub: "y",
+              ttl_seconds: 86400,
+              replies_enabled: false,
+              publish_signature: "z",
+              published_at: Date.now() - 1000,
+              expires_at: Date.now() + 86_400_000,
+            }),
+            { status: 200, headers: { "content-type": "application/json" } },
+          );
+        }
+        return new Response(JSON.stringify({}), { status: 200 });
+      }),
+    );
+
+    render(<WyrdsPage />);
+    await waitFor(() => {
+      expect(
+        screen.getByRole("radio", { name: /inbox/i }),
+      ).toBeInTheDocument();
+    });
+    await user.click(screen.getByRole("radio", { name: /inbox/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText("inbox000000aaaaa")).toBeInTheDocument();
+    });
+    // Liveness label appears once the fetch resolves
+    await waitFor(() => {
+      expect(screen.getByText(/^live$/i)).toBeInTheDocument();
+    });
+  });
+
+  it("inbox liveness shows 'burned' for tombstoned entries", async () => {
+    const user = userEvent.setup();
+    localStorage.setItem(
+      "sendwyrd:inbox:v1",
+      JSON.stringify([
+        {
+          handle: "burnedinbox00aaa",
+          k_read_b64u: "k_read_43_chars_padding_padding_padding_pad",
+          first_seen_at: Date.now() - 120_000,
+          last_viewed_at: Date.now() - 120_000,
+        },
+      ]),
+    );
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        if (
+          typeof url === "string" &&
+          url.includes("/api/v1/wyrds/burnedinbox00aaa")
+        ) {
+          return new Response(
+            JSON.stringify({
+              reason: "burned",
+              gone_at: new Date(Date.now() - 30_000).toISOString(),
+            }),
+            { status: 410, headers: { "content-type": "application/json" } },
+          );
+        }
+        return new Response(JSON.stringify({}), { status: 200 });
+      }),
+    );
+
+    render(<WyrdsPage />);
+    await waitFor(() => {
+      expect(
+        screen.getByRole("radio", { name: /inbox/i }),
+      ).toBeInTheDocument();
+    });
+    await user.click(screen.getByRole("radio", { name: /inbox/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/^burned$/i)).toBeInTheDocument();
+    });
+  });
+
+  it("remove button drops an entry from the inbox", async () => {
+    const user = userEvent.setup();
+    localStorage.setItem(
+      "sendwyrd:inbox:v1",
+      JSON.stringify([
+        {
+          handle: "removable00aaaaa",
+          k_read_b64u: "k_read_43_chars_padding_padding_padding_pad",
+          first_seen_at: Date.now(),
+          last_viewed_at: Date.now(),
+        },
+      ]),
+    );
+    render(<WyrdsPage />);
+    await waitFor(() => {
+      expect(
+        screen.getByRole("radio", { name: /inbox/i }),
+      ).toBeInTheDocument();
+    });
+    await user.click(screen.getByRole("radio", { name: /inbox/i }));
+    await waitFor(() => {
+      expect(screen.getByText("removable00aaaaa")).toBeInTheDocument();
+    });
+    await user.click(
+      screen.getByRole("button", { name: /Remove removable00aaaaa from inbox/i }),
+    );
+    await waitFor(() => {
+      expect(screen.queryByText("removable00aaaaa")).not.toBeInTheDocument();
+    });
+    // Empty-state copy returns
+    expect(
+      screen.getByText(/0 wyrds opened in this browser/i),
+    ).toBeInTheDocument();
+  });
+});
+
+afterEach(() => {
+  localStorage.clear();
+});
