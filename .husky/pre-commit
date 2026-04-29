@@ -1,1 +1,16 @@
+PATTERNS='mrchapiro|machcap|chapiro|5aa935489ed472330341d50ca095b641|org-crimson-bar-31850116|holy-poetry-85164505'
+
+LEAKS=$(git diff --cached -U0 -- ':!.husky/pre-commit' | grep -E '^\+[^+]' | grep -nE "$PATTERNS" || true)
+
+if [ -n "$LEAKS" ]; then
+  echo "" >&2
+  echo "Pre-commit blocked: staged content contains banned operator personal-info patterns." >&2
+  echo "" >&2
+  echo "$LEAKS" >&2
+  echo "" >&2
+  echo "Patterns blocked: $PATTERNS" >&2
+  echo "Remove the offending content or edit .husky/pre-commit if this is a false positive." >&2
+  exit 1
+fi
+
 pnpm exec lint-staged
