@@ -811,7 +811,7 @@ Exceeding any limit returns `429 Too Many Requests` with body:
 }
 ```
 
-The `Retry-After` HTTP header SHOULD also be set. Numbers are ADR-013 starting points; canonical host operator (the operator) SHALL tune at launch.
+The `Retry-After` HTTP header SHOULD also be set. Numbers are ADR-013 starting points; the canonical host operator SHALL tune at launch.
 
 ---
 

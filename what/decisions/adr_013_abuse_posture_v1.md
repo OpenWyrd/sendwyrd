@@ -73,7 +73,7 @@ This ADR therefore documents the **v1 mop.app host-operator posture**, not a wir
 
 - **Residential-proxy spam is undefended.** An attacker rotating through residential IPs can publish arbitrary objects at modest cost. Mitigation in v1 is "detect and respond operationally" (block IP ranges, tighten edge rules, escalate to PoW if it gets bad). This is a real risk; flagged.
 - **Reply-flood attacks on individual objects need careful per-object limits.** Setting the per-object reply rate too high invites flood-bury of legitimate replies; setting it too low limits legitimate use cases (a viral intro/ask object that gets 50 replies in an hour). Numbers are operational tuning.
-- **First-incident-response cost is non-zero.** When the inevitable spam wave hits, the operator (the operator) has to react in production rather than having defended-by-design. Acknowledged trade.
+- **First-incident-response cost is non-zero.** When the inevitable spam wave hits, the operator has to react in production rather than having defended-by-design. Acknowledged trade.
 - **Cypherpunk-aligned audiences may notice the absence of PoW.** "What stops spam?" is a fair question that v1 answers with "Cloudflare and good intentions." Some users will object; that's accepted.
 
 ### Neutral
@@ -85,7 +85,7 @@ This ADR therefore documents the **v1 mop.app host-operator posture**, not a wir
 
 - **Option (b) — Light always-on PoW for publish + reply.** Cypherpunk-Nostr-aligned; tunable; small honest-user cost. **Rejected for v1** — adds a compute step on every publish (mobile UX cost), requires a difficulty-negotiation scheme, requires every client (including future third-party clients) to implement the same PoW algorithm. Deferred to post-v1; revisitable if spam becomes operationally painful.
 - **Option (c) — Adaptive PoW (zero default, escalates under load).** Smarter; harder to ship. **Rejected for v1** — significant implementation cost (load metrics, difficulty signaling, client-side adaptation) for a defense whose absence may not actually bite.
-- **Option (d) — Punt entirely to host-operator policy with no v1 commitment.** **Rejected** — leaves the v1 host operator (the operator) without a documented posture and leaves potential users without a clear answer to "what stops spam." Documenting (a) as the v1 posture is honest about the trade.
+- **Option (d) — Punt entirely to host-operator policy with no v1 commitment.** **Rejected** — leaves the v1 host operator without a documented posture and leaves potential users without a clear answer to "what stops spam." Documenting (a) as the v1 posture is honest about the trade.
 
 ## Open follow-ons
 

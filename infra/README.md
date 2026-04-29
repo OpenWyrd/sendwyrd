@@ -6,9 +6,9 @@ Provisioning state and deploy notes for SendWyrd v1.
 
 | Resource | Identifier | Notes |
 |----------|------------|-------|
-| Neon project | `***` (`sendwyrd`) in `aws-us-east-1` | Connection URL stored in local `.env.local` and Worker secret. |
+| Neon project | (operator-private; see `infra/PRIVATE.md`) | Connection URL stored in local `.env.local` and Worker secret. |
 | R2 bucket | `sendwyrd-blobs` | Bound to API Worker as `BLOBS` (see `packages/api/wrangler.toml`). |
-| Cloudflare account | `***` | Owns `sendwyrd.com`, `sendwyrd.app` (purchased 2026-04-25). |
+| Cloudflare account | (operator-private; via `CLOUDFLARE_ACCOUNT_ID` env var) | Owns `sendwyrd.com`, `sendwyrd.app` (purchased 2026-04-25). |
 
 ## Pending
 

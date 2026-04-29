@@ -4,7 +4,8 @@
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-04-01",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
-  "account_id": "***",
+  // account_id is read from the CLOUDFLARE_ACCOUNT_ID env var (CI: GitHub
+  // Actions secret; local dev: shell or .env.local).
   "assets": {
     "binding": "ASSETS",
     "directory": ".open-next/assets",

@@ -48,7 +48,7 @@ User selected **SendWyrd** with `sendwyrd.com` available on `.com`. Etymology: *
 
 The original ADR retained the `MOP/` directory name "for operational continuity." On further reflection, the user chose consistency over continuity:
 
-- **GitHub repository renamed**: `github.com/DeltaClimbs/MOP` → `github.com/openwyrd/sendwyrd`. GitHub serves automatic redirects from the old path; old clones can be updated with `git remote set-url origin https://github.com/openwyrd/sendwyrd.git`.
+- **GitHub repository renamed**: `github.com/openwyrd/sendwyrd` → `github.com/openwyrd/sendwyrd`. GitHub serves automatic redirects from the old path; old clones can be updated with `git remote set-url origin https://github.com/openwyrd/sendwyrd.git`.
 - **Working directory renamed**: `~/lattice/MOP/` → `~/lattice/sendwyrd/`.
 - **Parent lattice files updated**: `~/lattice/.gitignore` and `~/lattice/bootstrap.sh` REPOS array updated.
 - **Local agent memory directory** was copied across the path change to preserve user-profile, feedback, and project memory. Old path retained until next session start verifies the new path works.

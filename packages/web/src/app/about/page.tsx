@@ -233,8 +233,8 @@ export default function AboutPage() {
           <p style={pStyle}>
             The protocol carries text only. Identity, signing, trust, and
             provenance are either inlined into the body (a name, a Nostr
-            signature) or inherited from the share channel — &ldquo;a friend sent me
-            this.&rdquo; Trust rides the rail.
+            signature) or inherited from the share channel — &ldquo;a friend
+            sent me this.&rdquo; Trust rides the rail.
           </p>
           <p style={pStyle}>
             One pragmatic recipient-side note: when a wyrd body contains an

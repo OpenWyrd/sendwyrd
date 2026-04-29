@@ -114,9 +114,9 @@ None. Production live at `https://sendwyrd.com`, verified end-to-end, observed v
 **Operational provisioning** (unchanged):
 - Cloudflare API token: `~/.config/cloudflare/sendwyrd_api_token` (mode 600)
 - Sentry user auth token: `~/.config/sentry/auth_token` (mode 600)
-- Wrangler authed under the operator's account (`***`)
-- Neon CLI authed under `the Neon org` (***)
-- Neon project `***`, R2 bucket `sendwyrd-blobs`, Workers `sendwyrd-api` + `sendwyrd-web`
+- Wrangler authed under the operator's CF account (account ID stored in `~/.config/cloudflare/sendwyrd_api_token` / `CLOUDFLARE_ACCOUNT_ID`)
+- Neon CLI authed under the operator's project
+- Neon project + R2 bucket + Worker names live in `infra/PRIVATE.md` (gitignored)
 
 ## Rolling Backlog (next-up, ranked by leverage)
 

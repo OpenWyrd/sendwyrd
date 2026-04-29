@@ -2,7 +2,8 @@ name = "sendwyrd-api"
 main = "src/index.ts"
 compatibility_date = "2026-04-01"
 compatibility_flags = ["nodejs_compat"]
-account_id = "***"
+# account_id is read from the CLOUDFLARE_ACCOUNT_ID env var (CI: GitHub Actions
+# secret; local dev: shell or .env.local).
 
 # Mount the worker at sendwyrd.com/api/*. The zone exists automatically because
 # sendwyrd.com is registered through Cloudflare Registrar.

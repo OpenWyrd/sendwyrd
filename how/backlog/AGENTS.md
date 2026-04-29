@@ -135,7 +135,7 @@ When an idea accumulates enough context and gets user buy-in:
 
 | Idea | Category | Status | Priority | Effort |
 |------|----------|--------|----------|--------|
-| *(none yet)* | | | | |
+| [Cross-impl inbox routing](idea_cross_impl_inbox_routing.md) | technical | proposed | low | mission |
 
 ## Load/Skip Decision
 
