@@ -177,9 +177,9 @@ describe("WyrdBody — lightning chips", () => {
   });
 
   it("renders an allowlisted Lightning address as a chip", () => {
-    render(<WyrdBody body="tip mike@getalby.com please" />);
+    render(<WyrdBody body="tip alice@getalby.com please" />);
     const link = screen.getByRole("link", { name: "lightning address" });
-    expect(link).toHaveAttribute("href", "lightning:mike@getalby.com");
+    expect(link).toHaveAttribute("href", "lightning:alice@getalby.com");
   });
 
   it("renders a bare BTC bech32 address as a chip", () => {

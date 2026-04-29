@@ -21,8 +21,8 @@ A process skill (human-driven). Walks through the operator's actions to ship the
 ## Inputs
 
 - The draft markdown (e.g. `what/docs/spec/nip_capability_url_v1.md`).
-- A Nostr identity (npub) for pre-discussion. The DeltaClimbs npub if one exists; otherwise the operator generates one for this workflow.
-- A GitHub identity. The DeltaClimbs GitHub user is canonical.
+- A Nostr identity (npub) for pre-discussion. The operator's npub if one exists; otherwise the operator generates one for this workflow.
+- A GitHub identity. The operator's GitHub user is canonical.
 
 ## Phase 1 — Pre-discussion (1–3 weeks)
 
@@ -48,7 +48,7 @@ Iterate the draft based on feedback. Do not rush to PR.
 
 When pre-discussion has stabilized the spec:
 
-1. Fork `nostr-protocol/nips` to `DeltaClimbs/nips` (or however operator's GitHub is set up).
+1. Fork `nostr-protocol/nips` to the operator's GitHub.
 2. Add the markdown file as `XX.md` where `XX` is the next unused integer in the catalog. Check `README.md` of the upstream repo for the current high-water mark; pick the next free number. (Reviewers will reassign if there's a conflict.)
 3. Update the upstream `README.md` table to add a row for the new NIP. (Not always required; check current convention.)
 4. Open the PR with this template:

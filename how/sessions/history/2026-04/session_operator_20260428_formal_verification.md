@@ -5,7 +5,7 @@ updated: 2026-04-28
 last_edited_by: agent_operator
 tags: [session, formal-verification, proverif, cryptoverif, security, tier1, tier2, tier3, adr-025]
 session_id: session_operator_20260428_formal_verification
-user: michael
+user: deltaclimbs
 started: 2026-04-28T20:00:00-07:00
 status: completed
 intent: "Stand up a complete formal-verification artifact set for OpenWyrd MOP v1: Tier 1 (ProVerif), Tier 2 (CryptoVerif POC + hand-written reductions), Tier 3 (property-based regression), plus ADR-025 + governance updates."

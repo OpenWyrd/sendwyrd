@@ -14,7 +14,7 @@ tags: [inspiration, context, tweetjoin, relational-first, nostr, nietzschean, no
 
 ## Source
 
-Shared by user (DeltaClimbs, npub1c8nlcgd5l8qenesgdcy4vw0s794yujyy23z50n52v5ld0ddkcjnsppqsah) on 2026-04-24, originally drafted March 2026.
+Shared by the operator (npub1c8nlcgd5l8qenesgdcy4vw0s794yujyy23z50n52v5ld0ddkcjnsppqsah) on 2026-04-24, originally drafted March 2026.
 
 ## Summary
 
