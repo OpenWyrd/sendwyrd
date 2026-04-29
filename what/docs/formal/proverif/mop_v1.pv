@@ -1,0 +1,272 @@
+(* ============================================================
+   OpenWyrd MOP v1 — Symbolic Verification (Tier 1)
+   ProVerif model for the wire spec defined in
+       what/docs/spec/spec_mop_v1.md  (v1.0.7-draft)
+
+   Adversary: Dolev-Yao on the public network. The canonical SendWyrd
+   host is the network — anything that flows on `net` is observable and
+   tamper-able by the adversary. The URL fragment (K_read) is delivered
+   between honest parties on a private out-of-band rail (`oob`), which
+   models existing messaging rails (iMessage, Signal, etc.). Modeling
+   leakage of the URL is trivial: out(net, k_read) — by design, that
+   wyrd is then readable by the attacker, which is the contract.
+
+   Run:
+       proverif -in pitype mop_v1.pv
+
+   Properties checked (see queries at the bottom):
+       Q1  body confidentiality (URL kept on oob)
+       Q2  reply confidentiality (only K_origin_priv decrypts)
+       Q3  publish authentication (no host-accepted forgery)
+       Q4  burn authorization (no host-honored forged burn)
+
+   NOT a property — by design:
+       Reply submission is unauthenticated (ADR-008): anyone holding
+       the URL can submit a reply blob, and the host accepts it without
+       a Schnorr signature. We therefore do NOT query reply origin
+       integrity. Spam/abuse is governed by per-object rate limits
+       (§16, ADR-013), not by cryptography. What the cryptography DOES
+       give the author is reply confidentiality (Q2) and AAD binding
+       to the wyrd's handle and ephemeral pubkey (in `reply_aad`),
+       which prevents cross-handle confusion of a delivered reply.
+   ============================================================ *)
+
+(* ---- Channels ------------------------------------------------------- *)
+free net : channel.                       (* attacker-controlled network + host *)
+free oob : channel [private].             (* honest out-of-band share rail       *)
+
+(* ---- Types ---------------------------------------------------------- *)
+type seed.
+type sk.
+type pk.
+type aes_key.
+type ge.
+type idx.
+
+(* ---- Schnorr signatures (BIP-340 abstraction) ----------------------- *)
+fun pk_of(sk) : pk.
+fun sign(bitstring, sk) : bitstring.
+reduc forall m : bitstring, k : sk;
+    checksign(sign(m, k), m, pk_of(k)) = true.
+
+(* ---- Hardened HD derivation (BIP-32 m/300'/n' abstraction) ----------
+   Hardened derivation requires the parent secret. Modeled as a free
+   injective function of (seed, idx). The attacker, lacking `seed`,
+   cannot evaluate it. ---------------------------------------------- *)
+fun derive_origin_priv(seed, idx) : sk.
+fun derive_k_read    (seed, idx) : aes_key.
+
+(* ---- AES-256-GCM as authenticated encryption (one-shot) ------------- *)
+fun aenc(bitstring, aes_key, bitstring) : bitstring.
+reduc forall m : bitstring, k : aes_key, aad : bitstring;
+    adec(aenc(m, k, aad), k, aad) = m.
+
+(* ---- ECDH on secp256k1 (symmetric: ecdh(a, B) = ecdh(b, A)) -------- *)
+fun ecdh(sk, pk) : ge.
+equation forall a : sk, b : sk;
+    ecdh(a, pk_of(b)) = ecdh(b, pk_of(a)).
+
+(* ---- HKDF-SHA256 (modeled as PRF / free function) ------------------- *)
+fun hkdf_aes(ge, bitstring) : aes_key.
+fun hkdf_iv (ge, bitstring) : bitstring.
+
+(* ---- SHA-256 (collision-resistant in symbolic model) ---------------- *)
+fun hash(bitstring) : bitstring.
+
+(* ---- Tagged constructors for AAD / signed messages -----------------
+   Domain-separated, opaque (no [data]) so the attacker cannot
+   deconstruct them — they exist only to make hashed/AAD'd blobs
+   unambiguous. ----------------------------------------------------- *)
+fun aad_envelope(bitstring, bitstring, bitstring, bitstring) : bitstring.
+    (* ver_envelope, handle, expires_at, replies_enabled *)
+fun publish_msg (bitstring, bitstring, bitstring, bitstring, bitstring) : bitstring.
+fun delete_msg  (bitstring, bitstring) : bitstring.
+fun fetch_replies_msg(bitstring, bitstring) : bitstring.
+fun reply_aad   (bitstring, bitstring, bitstring) : bitstring.
+fun reply_info_aes(bitstring, bitstring) : bitstring.
+fun reply_info_iv (bitstring, bitstring) : bitstring.
+
+(* Reply blob is (e_pub, ct); we want destructuring -> mark [data]. *)
+fun blob(pk, bitstring) : bitstring [data].
+
+(* Fixed protocol-version tags (public constants). *)
+free ver_envelope : bitstring.
+free ver_reply    : bitstring.
+
+(* ---- Events --------------------------------------------------------- *)
+event Authored(bitstring, pk, bitstring, bitstring, bitstring).
+    (* handle, K_origin_pub, body, ttl, replies_enabled *)
+event HostStored(bitstring, pk, bitstring, bitstring, bitstring).
+    (* handle, K_origin_pub, env, ttl, replies_enabled *)
+event Burned(bitstring, pk).
+event HostBurned(bitstring, pk).
+event Replied(bitstring, bitstring).         (* handle, reply_plaintext *)
+event ReplyDelivered(bitstring, bitstring).  (* handle, reply_plaintext *)
+
+(* ---- Tables (host-side state) -------------------------------------- *)
+(* Maps handle -> (K_origin_pub) so the burn endpoint can verify
+   the delete signature against the stored author key. *)
+table wyrd_kop(bitstring, pk).
+
+(* ---- Free secrets the attacker tries to learn ---------------------- *)
+free body_secret  : bitstring [private].
+free reply_secret : bitstring [private].
+
+(* ============================================================
+   Author — composes one wyrd, publishes, leaks URL on oob,
+   later burns + fetches replies.
+   ============================================================ *)
+let Author(s : seed) =
+    new n     : idx;
+    new handle: bitstring;
+    new ttl   : bitstring;
+    new repl  : bitstring;
+    new ts_pub: bitstring;
+
+    let kop_priv = derive_origin_priv(s, n) in
+    let kop_pub  = pk_of(kop_priv)            in
+    let k_read   = derive_k_read(s, n)        in
+
+    let aad_e    = aad_envelope(ver_envelope, handle, ts_pub, repl) in
+    let envelope = aenc(body_secret, k_read, aad_e) in
+    let pmsg     = publish_msg(handle, envelope, ttl, repl, ts_pub) in
+    let psig     = sign(hash(pmsg), kop_priv) in
+
+    event Authored(handle, kop_pub, body_secret, ttl, repl);
+
+    out(net, (handle, envelope, kop_pub, ttl, repl, ts_pub, psig));
+    out(oob, (handle, k_read, kop_pub, ttl, repl, ts_pub));
+
+    (* Author later burns. *)
+    new ts_burn : bitstring;
+    let dmsg = delete_msg(handle, ts_burn) in
+    let dsig = sign(hash(dmsg), kop_priv) in
+    event Burned(handle, kop_pub);
+    out(net, (handle, ts_burn, dsig));
+
+    (* Author later fetches and decrypts replies. *)
+    new ts_fr : bitstring;
+    let frm = fetch_replies_msg(handle, ts_fr) in
+    let frs = sign(hash(frm), kop_priv) in
+    out(net, (handle, ts_fr, frs));
+    in(net, (=handle, b : bitstring));
+    let blob(e_pub, ct) = b in
+    let shared = ecdh(kop_priv, e_pub) in
+    let raes   = hkdf_aes(shared, reply_info_aes(handle, e_pub)) in
+    let raad   = reply_aad(ver_reply, handle, e_pub) in
+    let rpt    = adec(ct, raes, raad) in
+    event ReplyDelivered(handle, rpt);
+    0.
+
+(* ============================================================
+   Recipient — receives URL via oob, fetches envelope from host,
+   decrypts via AAD-bound K_read, may reply.
+   ============================================================ *)
+let Recipient =
+    in(oob, (handle  : bitstring, k_read : aes_key, kop : pk,
+             ttl     : bitstring, repl   : bitstring, ts_pub : bitstring));
+
+    (* Fetch the served envelope from the host (public). *)
+    in(net, (=handle, env : bitstring, =kop, =ttl, =repl, =ts_pub,
+             psig : bitstring));
+
+    (* Render-time decryption: AAD recomputed from server-supplied fields. *)
+    let aad_e = aad_envelope(ver_envelope, handle, ts_pub, repl) in
+    let m     = adec(env, k_read, aad_e) in
+    (* m is now the body; recipient holds it. *)
+
+    (* Recipient submits an ECIES reply to kop. *)
+    new e_priv : sk;
+    let e_pub   = pk_of(e_priv) in
+    let shared  = ecdh(e_priv, kop) in
+    let raes    = hkdf_aes(shared, reply_info_aes(handle, e_pub)) in
+    let raad    = reply_aad(ver_reply, handle, e_pub) in
+    let ct      = aenc(reply_secret, raes, raad) in
+    event Replied(handle, reply_secret);
+    out(net, (handle, blob(e_pub, ct))).
+
+(* ============================================================
+   Host — accepts publishes, burns, replies, and signed fetches.
+   The host has no secrets; it is functionally part of the attacker
+   surface. We still model it explicitly so we can place events at
+   the moment the host *commits* to a state change.
+   ============================================================ *)
+
+let Host_publish =
+    in(net, (handle : bitstring, env : bitstring, kop : pk,
+             ttl    : bitstring, repl : bitstring, ts_pub : bitstring,
+             psig   : bitstring));
+    let pmsg = publish_msg(handle, env, ttl, repl, ts_pub) in
+    if checksign(psig, hash(pmsg), kop) = true then
+        insert wyrd_kop(handle, kop);
+        event HostStored(handle, kop, env, ttl, repl);
+        out(net, (handle, env, kop, ttl, repl, ts_pub, psig)).
+
+let Host_burn =
+    in(net, (handle : bitstring, ts_burn : bitstring, dsig : bitstring));
+    get wyrd_kop(=handle, kop) in
+    let dmsg = delete_msg(handle, ts_burn) in
+    if checksign(dsig, hash(dmsg), kop) = true then
+        event HostBurned(handle, kop).
+
+(* Reply-submit endpoint accepts blobs without auth. We model storage
+   as a passthrough: blobs become available on the network for the
+   author to fetch. *)
+let Host_reply_in =
+    in(net, (handle : bitstring, b : bitstring));
+    out(net, (handle, b)).
+
+(* Signed-fetch-replies endpoint. We don't actually return blobs here
+   (the attacker on `net` already sees them via Host_reply_in's
+   passthrough); the event is what we use for correspondence. *)
+let Host_fetch_replies =
+    in(net, (handle : bitstring, ts_fr : bitstring, frs : bitstring));
+    get wyrd_kop(=handle, kop) in
+    let frm = fetch_replies_msg(handle, ts_fr) in
+    if checksign(frs, hash(frm), kop) = true then
+        0.
+
+(* ============================================================
+   Queries
+   ============================================================ *)
+
+(* Q1. Body confidentiality. The body is unreachable to the attacker
+       provided the URL flows only on the safe oob rail. *)
+query attacker(body_secret).
+
+(* Q2. Reply confidentiality. Submitted replies are unreadable to the
+       attacker; only K_origin_priv (= seed-derived) can decrypt. *)
+query attacker(reply_secret).
+
+(* Q3. Publish authentication. Every host-stored wyrd corresponds to an
+       Authored event by the legitimate K_origin_priv holder, with
+       matching (ttl, replies_enabled). *)
+query handle : bitstring, kop : pk, env : bitstring,
+      ttl : bitstring, repl : bitstring;
+    event(HostStored(handle, kop, env, ttl, repl)) ==>
+    (event(Authored(handle, kop, body_secret, ttl, repl))).
+
+(* Q4. Burn authorization. The host only honors burns produced by the
+       wyrd's K_origin_priv holder. *)
+query handle : bitstring, kop : pk;
+    event(HostBurned(handle, kop)) ==> event(Burned(handle, kop)).
+
+(* No reply-origin authentication query. Reply submission is
+   unauthenticated by design (ADR-008); anyone with the URL — including
+   the attacker — can produce a valid blob under K_origin_pub. The
+   ReplyDelivered event is retained only to make confidentiality (Q2)
+   meaningful (i.e., we model an honest replier's blob explicitly so
+   that Q2 has something concrete to protect). *)
+
+(* ============================================================
+   System
+   ============================================================ *)
+process
+    new s : seed;
+    (   !Author(s)
+      | !Recipient
+      | !Host_publish
+      | !Host_burn
+      | !Host_reply_in
+      | !Host_fetch_replies
+    )
