@@ -5,6 +5,12 @@ import { SentryInit } from "@/components/SentryInit";
 import { MobileComposeBar } from "@/components/MobileComposeBar";
 
 export const metadata: Metadata = {
+  // Absolute-URL base for og:image, twitter:image, and any other URL fields
+  // Next.js resolves to. Without this, dev defaults to http://localhost:3000
+  // and that string ships into production OG cards, breaking image unfurls.
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://sendwyrd.com",
+  ),
   title: "SendWyrd",
   description: "Hyperlinks for conversational objects.",
   applicationName: "SendWyrd",
