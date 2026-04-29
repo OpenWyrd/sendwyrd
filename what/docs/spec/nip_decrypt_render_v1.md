@@ -20,9 +20,9 @@ https://sendwyrd.com/w/Ix3kP9oW0bC2mLxV#7ZQv...K0n
 
 Today, every Nostr client that does link-card rendering (Damus, Amethyst, Iris, Snort, Primal) shows the same austere "tap to decrypt" OpenGraph card the user would see on X, iMessage, or Slack — a content-free credential card. The recipient can't read the wyrd in feed; they have to tap, leave the client, and decrypt in a browser tab.
 
-Closed platforms (X, iMessage, WhatsApp, Telegram) can't do better than that — they don't run JavaScript on third-party content and wouldn't ship protocol-specific decryption codepaths on principle. **Nostr can.** The fragment in the URL is the read key. A Nostr client that recognizes the URL shape, fetches the envelope, and decrypts client-side can render the actual plaintext in the feed preview, in lieu of the OpenGraph card.
+OpenWyrd MOP itself is platform-agnostic — capability URLs render the same austere card on any OG-rendering surface today. But client-side decrypt-and-render in feed is a *rendering pattern* that's only viable on Nostr. Closed platforms (X, iMessage, WhatsApp, Telegram, Facebook Messenger) don't run JavaScript on third-party content, and their dev cultures wouldn't ship protocol-specific decryption codepaths on principle. Nostr is the one ecosystem with both the technical surface (clients render rich content, run JS, ship fast) and the cultural disposition (decentralized, sovereign, willing to integrate open protocols) to make this implementable in practice.
 
-This NIP defines the rendering contract for Nostr clients to do that.
+This NIP defines the rendering contract for that case.
 
 ### Demonstrating the gap
 
@@ -143,7 +143,7 @@ The sender chose to post the URL in a public event. Anyone who reads the post ca
 
 ## 5. Ecosystem Positioning
 
-This NIP is deliberately Nostr-only. Closed platforms (X, iMessage, WhatsApp, Telegram, Facebook Messenger) won't ship protocol-specific decrypt-and-render codepaths on principle. The asymmetry is the design: **OpenWyrd MOP renders fully on Nostr; degrades gracefully on closed platforms** to the existing content-free OG card.
+This NIP is scoped to Nostr clients not because the protocol is Nostr-specific (OpenWyrd MOP is platform-agnostic and ships everywhere a URL ships), but because Nostr is the only ecosystem where this *rendering pattern* is realistically implementable. Closed platforms have neither the technical surface (no JS execution on third-party content, no extensibility for client developers) nor the cultural disposition (no incentive to integrate sovereign-protocol decryption) to ship it. The asymmetry is the practical reality: **OpenWyrd MOP renders fully on Nostr; degrades gracefully elsewhere** to the existing content-free OG card. The protocol stays open; only the high-fidelity rendering is Nostr-shaped.
 
 ## 6. Reference Implementation
 
