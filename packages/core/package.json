@@ -1,28 +1,24 @@
 {
   "name": "@sendwyrd/core",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
-  "description": "SendWyrd shared core: crypto envelope, HD derivation, URL parsing, wire types. Reference TypeScript implementation of the SendWyrd protocol.",
+  "description": "DEPRECATED — re-export shim for @openwyrd/mop. Use @openwyrd/mop directly. This package will be deprecated 60 days after v0.2.0 publish.",
   "type": "module",
-  "license": "MIT",
-  "homepage": "https://sendwyrd.com",
+  "license": "Apache-2.0",
+  "homepage": "https://openwyrd.org",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/openwyrd/sendwyrd.git",
     "directory": "packages/core"
   },
   "bugs": {
-    "url": "https://github.com/openwyrd/sendwyrd/issues"
+    "url": "https://github.com/openwyrd/mop-js/issues"
   },
   "keywords": [
-    "sendwyrd",
-    "capability-url",
-    "ephemeral",
-    "encrypted-messaging",
-    "secp256k1",
-    "schnorr",
-    "bip32",
-    "bip39"
+    "deprecated",
+    "shim",
+    "openwyrd",
+    "mop"
   ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -31,26 +27,6 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
-    },
-    "./crypto": {
-      "types": "./dist/envelope.d.ts",
-      "import": "./dist/envelope.js",
-      "default": "./dist/envelope.js"
-    },
-    "./hd": {
-      "types": "./dist/hd.d.ts",
-      "import": "./dist/hd.js",
-      "default": "./dist/hd.js"
-    },
-    "./url": {
-      "types": "./dist/url.d.ts",
-      "import": "./dist/url.js",
-      "default": "./dist/url.js"
-    },
-    "./types": {
-      "types": "./dist/types.d.ts",
-      "import": "./dist/types.js",
-      "default": "./dist/types.js"
     }
   },
   "files": [
@@ -67,21 +43,14 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "build": "tsc",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
+    "test": "echo 'Tests live in @openwyrd/mop; this is a re-export shim.'",
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
-    "@noble/curves": "^1.7.0",
-    "@noble/hashes": "^1.6.1",
-    "@scure/bip32": "^1.6.0",
-    "@scure/bip39": "^1.5.0"
+    "@openwyrd/mop": "0.2.0"
   },
   "devDependencies": {
-    "@vitest/coverage-v8": "^2.1.8",
     "tsx": "^4.21.0",
-    "typescript": "^5.7.2",
-    "vitest": "^2.1.8"
+    "typescript": "^5.7.2"
   }
 }

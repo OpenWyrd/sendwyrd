@@ -13,7 +13,7 @@ import {
   generateSeed,
   b64uDecode,
   buildFragmentUrl,
-} from "../src/index.js";
+} from "@sendwyrd/core";
 
 const ORIGIN = "https://sendwyrd.com";
 

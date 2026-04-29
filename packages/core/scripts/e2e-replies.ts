@@ -15,7 +15,7 @@ import {
   b64uEncode,
   fetchRepliesMessage,
   schnorrSign,
-} from "../src/index.js";
+} from "@sendwyrd/core";
 
 const ORIGIN = "https://sendwyrd.com";
 

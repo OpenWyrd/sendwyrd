@@ -1,24 +1,13 @@
 /**
- * @sendwyrd/core — shared crypto, HD derivation, URL parsing, wire types.
- * Consumed by web, api, and (post-v1) native shells.
+ * @sendwyrd/core — DEPRECATED re-export shim.
  *
- * See `what/docs/spec/spec_mop_v1.md` for the wire spec this implements.
+ * This package has been renamed to @openwyrd/mop and relicensed Apache-2.0.
+ * The full implementation now lives at https://github.com/openwyrd/mop-js.
+ *
+ * Migrate at your convenience:
+ *   - import { composeWyrd } from "@sendwyrd/core";   // still works (this shim)
+ *   - import { composeWyrd } from "@openwyrd/mop";    // canonical going forward
+ *
+ * This shim will be `npm deprecate`'d 60 days after v0.2.0 ships.
  */
-
-export * from "./types.js";
-export * from "./encoding.js";
-export * from "./url.js";
-export * from "./envelope.js";
-export * from "./hd.js";
-export * from "./sign.js";
-export * from "./seedStore.js";
-export * from "./body.js";
-export * from "./reply.js";
-export * from "./attestation.js";
-export {
-  composeWyrd,
-  countCodepoints,
-  type ComposeArgs,
-  type ComposeResult,
-  type PublishPayload,
-} from "./compose.js";
+export * from "@openwyrd/mop";

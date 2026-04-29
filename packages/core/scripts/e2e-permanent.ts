@@ -1,4 +1,4 @@
-import { composeWyrd, generateSeed, buildFragmentUrl } from "../src/index.js";
+import { composeWyrd, generateSeed, buildFragmentUrl } from "@sendwyrd/core";
 const ORIGIN = "https://sendwyrd.com";
 const { seed } = generateSeed(12);
 const r = await composeWyrd({
