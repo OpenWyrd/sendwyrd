@@ -33,10 +33,20 @@ Berthier session, 2026-04-29 ~04:32Z. **STANDING DOWN — operator instruction (
 - [ ] Pre-commit hook blocking the literal strings + CF account ID
 - [ ] Move operator detail to gitignored `infra/PRIVATE.md`
 
-**Tier 3 — Git history rewrite (gated on operator approval, must not run concurrently with other session):**
-- [ ] `git filter-repo --mailmap` for email rewrite
-- [ ] `git filter-repo --replace-text` for literal strings + CF account ID
-- [ ] Force-push to `main`
+**Tier 3 — Git history rewrite (DONE 2026-04-29 by Session B per operator directive):**
+- [x] `git filter-repo --mailmap` — `***REDACTED***` → `DeltaClimbs@users.noreply.github.com` across all 184 commits
+- [x] `git filter-repo --replace-text` — `***REDACTED***`, `***REDACTED***`, CF account ID, Neon org/project IDs, "the operator", "home-operator-lattice" → all redacted to `***` or genericized in every blob
+- [x] `git filter-repo --replace-message` — same string set + word-boundary operator-name pattern, operator-nickname pattern in commit messages
+- [x] Force-push to `main` — origin verified pre-flip at `9f9117b`, post-flip at `aead664`. Old SHAs now dangling on GitHub; GC window 14–90 days before they're truly unreachable.
+
+Pre-flip in-tree scrub also done in same session (Tier 1 absorbed into Session B's scope when Session A stood down): 8 `session_operator_*.md` files renamed to `session_operator_*.md`; `agent_operator` → `agent_operator` in 60+ frontmatter fields; CF account ID stripped from wrangler files (now reads `CLOUDFLARE_ACCOUNT_ID` env var; CI already sets this from secrets); Neon IDs and "the Neon org" stripped from STATE/infra docs; narrative "a friend sent me this" → "a friend sent me this" in README/ADR-003/VISION/about-page; "Alice → Bob → Carol" → "Alice → Bob → Carol" chains.
+
+**Verification commands the operator can run:**
+```
+git log --all --pretty='%ae' | sort -u           # only DeltaClimbs no-reply
+git log --all --pretty='%s%n%b' | grep -iE 'operator-name-patterns'   # empty
+git grep -iE '***|***|***|org-***|***'       # empty
+```
 
 ## Other session
 
