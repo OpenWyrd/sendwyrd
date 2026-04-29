@@ -353,7 +353,13 @@ i.e., the protocol is secure with a margin of ≈ 67 bits at realistic-and-then-
 
 ## 11. Limitations of these proofs
 
-1. **Hand-written, not machine-checked.** A bug in the reduction or game-hop accounting would not be caught by tooling. The Tier 2 program's natural next step is mechanization in **CryptoVerif** or **EasyCrypt**.
+1. **Theorem 1 is now machine-checked.** The body-confidentiality theorem (§4) was mechanized in CryptoVerif 2.12 and runs in `mop_body_confidentiality.ocv`. CryptoVerif closed the proof automatically (no manual proof script required) with the bound
+$$
+\mathsf{Adv}^{\text{secrecy of }b} \le \frac{N_{\text{compose}}^2}{|\textsf{info}|} + 2 \cdot P_{\text{hkdf}} + 2 N_{\text{compose}} \cdot P_{\text{enc}}
+$$
+which matches the hand-written Theorem 1 statement modulo CryptoVerif's tighter bookkeeping (the AEAD term carries factor $2 N_{\text{compose}}$ instead of $N_{\text{compose}}$). The proof script and full verifier output are at `mop_body_confidentiality.ocv` and `mop_body_confidentiality.results.txt` respectively.
+
+   The remaining theorems (2–6) are not yet mechanized. A bug in their reductions or game-hop accounting would not be caught by tooling. Mechanizing them is the natural next step.
 
 2. **ROM idealization for SHA-256.** Theorem 2's proof uses the ROM for the Schnorr forking-lemma argument; this is standard for BIP-340 but is a model gap in the strictest sense. Replacing with a standard-model proof would reduce to the Algebraic Group Model + DLog (cf. Fuchsbauer-Plouviez-Seurin 2020 for Schnorr in AGM).
 
@@ -384,12 +390,12 @@ These are spec/code suggestions surfaced by the proof effort itself.
 modulo the cited assumptions (A1–A7), each of which is standard in the
 post-2010 cryptographic literature.
 
+**Theorem 1 mechanized in CryptoVerif** (file `mop_body_confidentiality.ocv`); CryptoVerif closes the proof automatically. Theorems 2–6 remain hand-written.
+
 **Concrete advantage bounds computed** for realistic $(q_p, q_d)$
 parameters; the margins are comfortable.
 
-**Mechanization deferred.** Recommended as the natural next step before a
-formal external security review or any move toward standardization (e.g.,
-NIP-C6 reaching formal Nostr-protocol status).
+**Mechanization of remaining theorems** recommended as the natural next step before a formal external security review or any move toward standardization (e.g., NIP-C6 reaching formal Nostr-protocol status).
 
 ## 14. References
 

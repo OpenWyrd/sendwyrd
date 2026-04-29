@@ -1,11 +1,11 @@
 ---
 type: state
 created: 2026-04-24
-updated: 2026-04-26
-last_session_decisions: [adr_022, adr_023, adr_024, adr_012_amend, inbox_to_wyrds_rename, stay_private]
+updated: 2026-04-28
+last_session_decisions: [adr_025_formal_verification]
 status: active
 last_edited_by: agent_operator
-last_session: session_operator_20260426_ci_hardening_nip_c6_ref
+last_session: session_operator_20260428_formal_verification
 tags: [state, governance, mop, sendwyrd]
 ---
 
@@ -57,6 +57,7 @@ Plus the **post-agora topology** section (banked 2026-04-26) — the consequence
 | 022 | K_read derived from seed via HKDF (was: per-wyrd CSPRNG) — mnemonic recovery now reconstructs full share URLs; forward secrecy via TTL+burn |
 | 023 | Payment-token posture: detect locally, hand off to wallets, never settle — no `tip_offer` field, no `zap_attestation` kind, no in-app minting |
 | 024 | No relay-side recipient model — capability URLs do all addressing; "outbox" view recoverable from seed, "inbox" (if shipped) is browser-local-only |
+| 025 | Formal verification effort — Tier 1 ProVerif (run, all 4 queries pass), Tier 2 CryptoVerif POC (Theorem 1 mechanized) + hand-written reductions for Theorems 2–6, Tier 3 property-based regression (`what/docs/formal/`) |
 
 ### Use cases identified (`who/governance/VISION.md`)
 
@@ -163,6 +164,7 @@ None. Production live at `https://sendwyrd.com`, verified end-to-end, observed v
 | 2026-04-27 | **composeWyrd cap check moved to `countCountableCodepoints`**: matches the live UI counter so a body that's *only* a Lightning invoice or URL composes successfully (raw count > cap, countable count ≤ cap). Empty-body check still uses raw codepoints. New test `excludes Lightning invoices from the codepoint cap`. | NIP submission session |
 | 2026-04-26 | **`@sendwyrd/mcp` published to npm** — registry returns 200; install path is now `npx -y @sendwyrd/mcp` (was workspace-only). | Publish-prep session |
 | 2026-04-26 | **`@sendwyrd/core` publish-prep complete** — package metadata (license, repository, homepage, keywords, publishConfig, files), conditional `dist/` exports, README, LICENSE landed. Pending `pnpm publish --access public` from `packages/core`. `/build` page updated: roadmap bullet removed, "What ships today" + JS/TS paragraph rewritten to point at npm. | This session |
+| 2026-04-28 | **Formal verification artifacts banked (ADR-025)**: Tier 1 ProVerif model + report (run, all 4 queries pass), Tier 2 hand-written game-based reductions for 5 theorems + composition bound, Theorem 1 mechanized in CryptoVerif (auto-closes), Tier 3 property-based regression suite (400/400 checks pass). Lives at `what/docs/formal/`. | Formal-verification session |
 
 ## Recent Upgrades
 

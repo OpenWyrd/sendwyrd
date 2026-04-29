@@ -1,0 +1,209 @@
+Linear part:
+ecdh(a,pk_of(b)) = ecdh(b,pk_of(a))
+Completing equations...
+Completed equations:
+ecdh(a,pk_of(b)) = ecdh(b,pk_of(a))
+Convergent part: No equation.
+Process 0 (that is, the initial process):
+{1}new s: seed;
+(
+    {2}!
+    {3}let s_1: seed = s in
+    {4}new n: idx;
+    {5}new handle: bitstring;
+    {6}new ttl: bitstring;
+    {7}new repl: bitstring;
+    {8}new ts_pub: bitstring;
+    {9}let kop_priv: sk = derive_origin_priv(s_1,n) in
+    {10}let kop_pub: pk = pk_of(kop_priv) in
+    {11}let k_read: aes_key = derive_k_read(s_1,n) in
+    {12}event HonestKop(kop_pub);
+    {13}let aad_e: bitstring = aad_envelope(ver_envelope,handle,ts_pub,repl) in
+    {14}let envelope: bitstring = aenc(body_secret,k_read,aad_e) in
+    {15}let pmsg: bitstring = publish_msg(handle,envelope,ttl,repl,ts_pub) in
+    {16}let psig: bitstring = sign(hash(pmsg),kop_priv) in
+    {17}event Authored(handle,kop_pub,body_secret,ttl,repl);
+    {18}out(net, (handle,envelope,kop_pub,ttl,repl,ts_pub,psig));
+    {19}out(oob, (handle,k_read,kop_pub,ttl,repl,ts_pub));
+    {20}new ts_burn: bitstring;
+    {21}let dmsg: bitstring = delete_msg(handle,ts_burn) in
+    {22}let dsig: bitstring = sign(hash(dmsg),kop_priv) in
+    {23}event Burned(handle,kop_pub);
+    {24}out(net, (handle,ts_burn,dsig));
+    {25}new ts_fr: bitstring;
+    {26}let frm: bitstring = fetch_replies_msg(handle,ts_fr) in
+    {27}let frs: bitstring = sign(hash(frm),kop_priv) in
+    {28}out(net, (handle,ts_fr,frs));
+    {29}in(net, (=handle,b: bitstring));
+    {30}let blob(e_pub: pk,ct: bitstring) = b in
+    {31}let shared: ge = ecdh(kop_priv,e_pub) in
+    {32}let raes: aes_key = hkdf_aes(shared,reply_info_aes(handle,e_pub)) in
+    {33}let raad: bitstring = reply_aad(ver_reply,handle,e_pub) in
+    {34}let rpt: bitstring = adec(ct,raes,raad) in
+    {35}event ReplyDelivered(handle,rpt)
+) | (
+    {36}!
+    {37}in(oob, (handle_1: bitstring,k_read_1: aes_key,kop: pk,ttl_1: bitstring,repl_1: bitstring,ts_pub_1: bitstring));
+    {38}in(net, (=handle_1,env: bitstring,=kop,=ttl_1,=repl_1,=ts_pub_1,psig_1: bitstring));
+    {39}let aad_e_1: bitstring = aad_envelope(ver_envelope,handle_1,ts_pub_1,repl_1) in
+    {40}let m: bitstring = adec(env,k_read_1,aad_e_1) in
+    {41}new e_priv: sk;
+    {42}let e_pub_1: pk = pk_of(e_priv) in
+    {43}let shared_1: ge = ecdh(e_priv,kop) in
+    {44}let raes_1: aes_key = hkdf_aes(shared_1,reply_info_aes(handle_1,e_pub_1)) in
+    {45}let raad_1: bitstring = reply_aad(ver_reply,handle_1,e_pub_1) in
+    {46}let ct_1: bitstring = aenc(reply_secret,raes_1,raad_1) in
+    {47}event Replied(handle_1,reply_secret);
+    {48}out(net, (handle_1,blob(e_pub_1,ct_1)))
+) | (
+    {49}!
+    {50}in(net, (handle_2: bitstring,env_1: bitstring,kop_1: pk,ttl_2: bitstring,repl_2: bitstring,ts_pub_2: bitstring,psig_2: bitstring));
+    {51}let pmsg_1: bitstring = publish_msg(handle_2,env_1,ttl_2,repl_2,ts_pub_2) in
+    {52}if (checksign(psig_2,hash(pmsg_1),kop_1) = true) then
+    {53}insert wyrd_kop(handle_2,kop_1);
+    {54}event HostStored(handle_2,kop_1,env_1,ttl_2,repl_2);
+    {55}out(net, (handle_2,env_1,kop_1,ttl_2,repl_2,ts_pub_2,psig_2))
+) | (
+    {56}!
+    {57}in(net, (handle_3: bitstring,ts_burn_1: bitstring,dsig_1: bitstring));
+    {61}get wyrd_kop(=handle_3,kop_2: pk) in
+    {58}let dmsg_1: bitstring = delete_msg(handle_3,ts_burn_1) in
+    {59}if (checksign(dsig_1,hash(dmsg_1),kop_2) = true) then
+    {60}event HostBurned(handle_3,kop_2)
+) | (
+    {62}!
+    {63}in(net, (handle_4: bitstring,b_1: bitstring));
+    {64}out(net, (handle_4,b_1))
+) | (
+    {65}!
+    {66}in(net, (handle_5: bitstring,ts_fr_1: bitstring,frs_1: bitstring));
+    {69}get wyrd_kop(=handle_5,kop_3: pk) in
+    {67}let frm_1: bitstring = fetch_replies_msg(handle_5,ts_fr_1) in
+    {68}if (checksign(frs_1,hash(frm_1),kop_3) = true) then
+    0
+)
+
+--  Process 1 (that is, process 0, with let moved downwards):
+{1}new s: seed;
+(
+    {2}!
+    {4}new n: idx;
+    {5}new handle: bitstring;
+    {6}new ttl: bitstring;
+    {7}new repl: bitstring;
+    {8}new ts_pub: bitstring;
+    {3}let s_1: seed = s in
+    {9}let kop_priv: sk = derive_origin_priv(s_1,n) in
+    {10}let kop_pub: pk = pk_of(kop_priv) in
+    {12}event HonestKop(kop_pub);
+    {17}event Authored(handle,kop_pub,body_secret,ttl,repl);
+    {13}let aad_e: bitstring = aad_envelope(ver_envelope,handle,ts_pub,repl) in
+    {11}let k_read: aes_key = derive_k_read(s_1,n) in
+    {14}let envelope: bitstring = aenc(body_secret,k_read,aad_e) in
+    {15}let pmsg: bitstring = publish_msg(handle,envelope,ttl,repl,ts_pub) in
+    {16}let psig: bitstring = sign(hash(pmsg),kop_priv) in
+    {18}out(net, (handle,envelope,kop_pub,ttl,repl,ts_pub,psig));
+    {19}out(oob, (handle,k_read,kop_pub,ttl,repl,ts_pub));
+    {20}new ts_burn: bitstring;
+    {23}event Burned(handle,kop_pub);
+    {21}let dmsg: bitstring = delete_msg(handle,ts_burn) in
+    {22}let dsig: bitstring = sign(hash(dmsg),kop_priv) in
+    {24}out(net, (handle,ts_burn,dsig));
+    {25}new ts_fr: bitstring;
+    {26}let frm: bitstring = fetch_replies_msg(handle,ts_fr) in
+    {27}let frs: bitstring = sign(hash(frm),kop_priv) in
+    {28}out(net, (handle,ts_fr,frs));
+    {29}in(net, (=handle,b: bitstring));
+    {30}let blob(e_pub: pk,ct: bitstring) = b in
+    {33}let raad: bitstring = reply_aad(ver_reply,handle,e_pub) in
+    {31}let shared: ge = ecdh(kop_priv,e_pub) in
+    {32}let raes: aes_key = hkdf_aes(shared,reply_info_aes(handle,e_pub)) in
+    {34}let rpt: bitstring = adec(ct,raes,raad) in
+    {35}event ReplyDelivered(handle,rpt)
+) | (
+    {36}!
+    {37}in(oob, (handle_1: bitstring,k_read_1: aes_key,kop: pk,ttl_1: bitstring,repl_1: bitstring,ts_pub_1: bitstring));
+    {38}in(net, (=handle_1,env: bitstring,=kop,=ttl_1,=repl_1,=ts_pub_1,psig_1: bitstring));
+    {39}let aad_e_1: bitstring = aad_envelope(ver_envelope,handle_1,ts_pub_1,repl_1) in
+    {40}let m: bitstring = adec(env,k_read_1,aad_e_1) in
+    {41}new e_priv: sk;
+    {47}event Replied(handle_1,reply_secret);
+    {42}let e_pub_1: pk = pk_of(e_priv) in
+    {45}let raad_1: bitstring = reply_aad(ver_reply,handle_1,e_pub_1) in
+    {43}let shared_1: ge = ecdh(e_priv,kop) in
+    {44}let raes_1: aes_key = hkdf_aes(shared_1,reply_info_aes(handle_1,e_pub_1)) in
+    {46}let ct_1: bitstring = aenc(reply_secret,raes_1,raad_1) in
+    {48}out(net, (handle_1,blob(e_pub_1,ct_1)))
+) | (
+    {49}!
+    {50}in(net, (handle_2: bitstring,env_1: bitstring,kop_1: pk,ttl_2: bitstring,repl_2: bitstring,ts_pub_2: bitstring,psig_2: bitstring));
+    {51}let pmsg_1: bitstring = publish_msg(handle_2,env_1,ttl_2,repl_2,ts_pub_2) in
+    {52}if (checksign(psig_2,hash(pmsg_1),kop_1) = true) then
+    {53}insert wyrd_kop(handle_2,kop_1);
+    {54}event HostStored(handle_2,kop_1,env_1,ttl_2,repl_2);
+    {55}out(net, (handle_2,env_1,kop_1,ttl_2,repl_2,ts_pub_2,psig_2))
+) | (
+    {56}!
+    {57}in(net, (handle_3: bitstring,ts_burn_1: bitstring,dsig_1: bitstring));
+    {61}get wyrd_kop(=handle_3,kop_2: pk) in
+    {58}let dmsg_1: bitstring = delete_msg(handle_3,ts_burn_1) in
+    {59}if (checksign(dsig_1,hash(dmsg_1),kop_2) = true) then
+    {60}event HostBurned(handle_3,kop_2)
+) | (
+    {62}!
+    {63}in(net, (handle_4: bitstring,b_1: bitstring));
+    {64}out(net, (handle_4,b_1))
+) | (
+    {65}!
+    {66}in(net, (handle_5: bitstring,ts_fr_1: bitstring,frs_1: bitstring));
+    {69}get wyrd_kop(=handle_5,kop_3: pk) in
+    {67}let frm_1: bitstring = fetch_replies_msg(handle_5,ts_fr_1) in
+    {68}if (checksign(frs_1,hash(frm_1),kop_3) = true) then
+    0
+)
+
+-- Query not attacker(body_secret[]) in process 1.
+Translating the process into Horn clauses...
+Completing...
+Starting query not attacker(body_secret[])
+RESULT not attacker(body_secret[]) is true.
+-- Query not attacker(reply_secret[]) in process 1.
+Translating the process into Horn clauses...
+Completing...
+Starting query not attacker(reply_secret[])
+RESULT not attacker(reply_secret[]) is true.
+-- Query event(HostStored(handle_6,kop_4,env_2,ttl_3,repl_3)) && event(HonestKop(kop_4)) ==> event(Authored(handle_6,kop_4,body_secret[],ttl_3,repl_3)) in process 1.
+Translating the process into Horn clauses...
+Completing...
+Starting query event(HostStored(handle_6,kop_4,env_2,ttl_3,repl_3)) && event(HonestKop(kop_4)) ==> event(Authored(handle_6,kop_4,body_secret[],ttl_3,repl_3))
+goal reachable: b-event(Authored(handle_6,pk_of(derive_origin_priv(s[],n_1)),body_secret[],ttl_3,repl_3)) -> event(HostStored(handle_6,pk_of(derive_origin_priv(s[],n_1)),aenc(body_secret[],derive_k_read(s[],n_1),aad_envelope(ver_envelope[],handle_6,ts_pub_3,repl_3)),ttl_3,repl_3)) && event(HonestKop(pk_of(derive_origin_priv(s[],n_1))))
+Abbreviations:
+handle_6 = handle[!1 = @sid]
+n_1 = n[!1 = @sid]
+ts_pub_3 = ts_pub[!1 = @sid]
+repl_3 = repl[!1 = @sid]
+ttl_3 = ttl[!1 = @sid]
+RESULT event(HostStored(handle_6,kop_4,env_2,ttl_3,repl_3)) && event(HonestKop(kop_4)) ==> event(Authored(handle_6,kop_4,body_secret[],ttl_3,repl_3)) is true.
+-- Query event(HostBurned(handle_6,kop_4)) && event(HonestKop(kop_4)) ==> event(Burned(handle_6,kop_4)) in process 1.
+Translating the process into Horn clauses...
+Completing...
+Starting query event(HostBurned(handle_6,kop_4)) && event(HonestKop(kop_4)) ==> event(Burned(handle_6,kop_4))
+goal reachable: b-event(Burned(handle_6,pk_of(derive_origin_priv(s[],n_1)))) -> event(HostBurned(handle_6,pk_of(derive_origin_priv(s[],n_1)))) && event(HonestKop(pk_of(derive_origin_priv(s[],n_1))))
+Abbreviations:
+handle_6 = handle[!1 = @sid]
+n_1 = n[!1 = @sid]
+RESULT event(HostBurned(handle_6,kop_4)) && event(HonestKop(kop_4)) ==> event(Burned(handle_6,kop_4)) is true.
+
+--------------------------------------------------------------
+Verification summary:
+
+Query not attacker(body_secret[]) is true.
+
+Query not attacker(reply_secret[]) is true.
+
+Query event(HostStored(handle_6,kop_4,env_2,ttl_3,repl_3)) && event(HonestKop(kop_4)) ==> event(Authored(handle_6,kop_4,body_secret[],ttl_3,repl_3)) is true.
+
+Query event(HostBurned(handle_6,kop_4)) && event(HonestKop(kop_4)) ==> event(Burned(handle_6,kop_4)) is true.
+
+--------------------------------------------------------------
+

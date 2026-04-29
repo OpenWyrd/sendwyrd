@@ -1,7 +1,7 @@
 ---
 type: manifest
 created: 2026-04-24
-updated: 2026-04-25
+updated: 2026-04-28
 last_edited_by: agent_operator
 tags: [manifest, governance, mop, sendwyrd]
 ---
@@ -82,6 +82,15 @@ See `what/decisions/` for full ADRs. Summary:
 | 018 | TTL expiry response: 410 Gone with structured tombstone metadata, 30-day retention (closes B8) |
 | 019 | Renderer displays a symmetric privacy-posture indicator on every wyrd view (closes B9) |
 | 020 | v1 stack: Next.js + Hono on Cloudflare + Neon Postgres + R2; Web Crypto + noble + scure; AES-GCM + Schnorr (closes S3) |
+| 021 | Single-form addressing — fragment URL only; legacy path-form supported as a transitional client redirect (supersedes the two-form addressing in ADR-004) |
+| 022 | `K_read` derived from BIP-39 seed via HKDF (recovery restores share URLs, not just metadata; supersedes the per-wyrd-random `K_read` choice in ADR-005) |
+| 023 | Payment-token posture — detect Lightning + Bitcoin tokens locally, hand off to wallets, never settle |
+| 024 | No relay-side recipient model; user-side aggregation is author-only (presence-check) or browser-local (viewing log) |
+| 025 | Formal verification effort — Tier 1 ProVerif (run, all queries pass), Tier 2 hand-written + Theorem 1 in CryptoVerif, Tier 3 property-based regression (`what/docs/formal/`) |
+
+## Formal Verification
+
+Tier 1, Tier 2, and Tier 3 verification artifacts live at `what/docs/formal/`. Tier 1 (ProVerif symbolic model) and the body-confidentiality CryptoVerif proof are mechanically discharged on this commit; the rest of Tier 2 is hand-written. See `what/docs/formal/README.md` for the index, and ADR-025 for the policy.
 
 ## Open Questions
 

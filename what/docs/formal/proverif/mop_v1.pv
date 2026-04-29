@@ -82,9 +82,9 @@ fun aad_envelope(bitstring, bitstring, bitstring, bitstring) : bitstring.
 fun publish_msg (bitstring, bitstring, bitstring, bitstring, bitstring) : bitstring.
 fun delete_msg  (bitstring, bitstring) : bitstring.
 fun fetch_replies_msg(bitstring, bitstring) : bitstring.
-fun reply_aad   (bitstring, bitstring, bitstring) : bitstring.
-fun reply_info_aes(bitstring, bitstring) : bitstring.
-fun reply_info_iv (bitstring, bitstring) : bitstring.
+fun reply_aad   (bitstring, bitstring, pk) : bitstring.
+fun reply_info_aes(bitstring, pk) : bitstring.
+fun reply_info_iv (bitstring, pk) : bitstring.
 
 (* Reply blob is (e_pub, ct); we want destructuring -> mark [data]. *)
 fun blob(pk, bitstring) : bitstring [data].
@@ -94,6 +94,11 @@ free ver_envelope : bitstring.
 free ver_reply    : bitstring.
 
 (* ---- Events --------------------------------------------------------- *)
+event HonestKop(pk).
+    (* The Author derived this K_origin_pub from the secret seed. Used to
+       scope authentication queries to honest keys — the protocol is
+       open-publish (anyone can publish under their own freshly generated
+       keypair), so authentication is meaningful only for HONEST kops. *)
 event Authored(bitstring, pk, bitstring, bitstring, bitstring).
     (* handle, K_origin_pub, body, ttl, replies_enabled *)
 event HostStored(bitstring, pk, bitstring, bitstring, bitstring).
@@ -126,6 +131,7 @@ let Author(s : seed) =
     let kop_priv = derive_origin_priv(s, n) in
     let kop_pub  = pk_of(kop_priv)            in
     let k_read   = derive_k_read(s, n)        in
+    event HonestKop(kop_pub);
 
     let aad_e    = aad_envelope(ver_envelope, handle, ts_pub, repl) in
     let envelope = aenc(body_secret, k_read, aad_e) in
@@ -238,18 +244,22 @@ query attacker(body_secret).
        attacker; only K_origin_priv (= seed-derived) can decrypt. *)
 query attacker(reply_secret).
 
-(* Q3. Publish authentication. Every host-stored wyrd corresponds to an
-       Authored event by the legitimate K_origin_priv holder, with
-       matching (ttl, replies_enabled). *)
+(* Q3. Publish authentication. Scoped to HONEST K_origin_pub values
+       (i.e., those derived from the Author's secret seed). The protocol
+       is open-publish — anyone can generate a fresh keypair and publish
+       under it; that's not a forgery. The meaningful claim is: under an
+       honest pubkey, every host-stored wyrd corresponds to a real
+       Authored event with matching (ttl, replies_enabled), which also
+       gives AAD-binding integrity. *)
 query handle : bitstring, kop : pk, env : bitstring,
       ttl : bitstring, repl : bitstring;
-    event(HostStored(handle, kop, env, ttl, repl)) ==>
-    (event(Authored(handle, kop, body_secret, ttl, repl))).
+    event(HostStored(handle, kop, env, ttl, repl)) && event(HonestKop(kop)) ==>
+    event(Authored(handle, kop, body_secret, ttl, repl)).
 
-(* Q4. Burn authorization. The host only honors burns produced by the
-       wyrd's K_origin_priv holder. *)
+(* Q4. Burn authorization, scoped to honest pubkeys. *)
 query handle : bitstring, kop : pk;
-    event(HostBurned(handle, kop)) ==> event(Burned(handle, kop)).
+    event(HostBurned(handle, kop)) && event(HonestKop(kop)) ==>
+    event(Burned(handle, kop)).
 
 (* No reply-origin authentication query. Reply submission is
    unauthenticated by design (ADR-008); anyone with the URL — including

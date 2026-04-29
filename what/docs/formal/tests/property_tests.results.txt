@@ -1,0 +1,17 @@
+OpenWyrd MOP — property tests (50 iterations each)
+
+P1 — envelope round-trip
+P2 — AAD tamper integrity
+P3 — wrong-key rejection
+P4 — HD K_read determinism
+P5 — HD K_read distinctness across n
+P6 — HD seed isolation
+P7 — K_origin / K_read domain separation
+P8 — reply blob round-trip
+P9 — reply handle-binding
+
+=== Summary ===
+Passed: 400
+Failed: 0
+
+All properties hold across 400 checks.

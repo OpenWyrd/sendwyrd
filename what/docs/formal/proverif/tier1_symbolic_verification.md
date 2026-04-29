@@ -228,17 +228,21 @@ adversary; only the holder of `K_origin_priv` can decrypt.
 
 **Conclusion.** ProVerif should report `not attacker(reply_secret) is true`.
 
-### Q3 — Publish authentication
+### Q3 — Publish authentication (scoped to honest pubkeys)
 
 ```proverif
 query handle, kop, env, ttl, repl;
-    event(HostStored(handle, kop, env, ttl, repl)) ==>
+    event(HostStored(handle, kop, env, ttl, repl)) && event(HonestKop(kop)) ==>
     event(Authored(handle, kop, body_secret, ttl, repl)).
 ```
 
-**Claim.** Every successfully-stored wyrd was Authored by the matching
-`K_origin_priv` holder, with **the same** `(ttl, replies_enabled)`. This
-captures both publish unforgeability *and* AAD-driven metadata integrity.
+**Claim.** For *honest* `K_origin_pub` values (those derived from the
+Author's secret seed), every successfully-stored wyrd was Authored by
+the matching `K_origin_priv` holder, with **the same**
+`(ttl, replies_enabled)`. This captures both publish unforgeability
+*and* AAD-driven metadata integrity. The `HonestKop` filter is required
+because the protocol is open-publish — anyone can generate a fresh
+keypair and publish under it, and that is *not* a forgery (see §9.1).
 
 **Adversary's path and blockers.**
 
@@ -255,15 +259,17 @@ are bound into the signed message, so the host cannot store a
 publish-accepted record with metadata that diverges from what the author
 signed.
 
-### Q4 — Burn authorization
+### Q4 — Burn authorization (scoped to honest pubkeys)
 
 ```proverif
 query handle, kop;
-    event(HostBurned(handle, kop)) ==> event(Burned(handle, kop)).
+    event(HostBurned(handle, kop)) && event(HonestKop(kop)) ==>
+    event(Burned(handle, kop)).
 ```
 
-**Claim.** The host only emits HostBurned for a handle whose
-`K_origin_priv` holder authorized the burn.
+**Claim.** For *honest* `K_origin_pub` values, the host only emits
+HostBurned for a handle whose `K_origin_priv` holder authorized the
+burn. Same `HonestKop` scoping rationale as Q3.
 
 **Adversary's path and blockers.**
 
@@ -334,14 +340,16 @@ cd what/docs/formal/proverif
 proverif -in pitype mop_v1.pv | tee mop_v1.results.txt
 ```
 
-Expected results, in order:
+Expected results (and the actual results captured at
+`mop_v1.results.txt` on 2026-04-28):
 
 ```
 RESULT not attacker(body_secret[]) is true.
 RESULT not attacker(reply_secret[]) is true.
-RESULT event(HostStored(handle, kop, env, ttl, repl)) ==>
-       event(Authored(handle, kop, body_secret[], ttl, repl)) is true.
-RESULT event(HostBurned(handle, kop)) ==> event(Burned(handle, kop)) is true.
+RESULT event(HostStored(handle, kop, env, ttl, repl)) && event(HonestKop(kop))
+       ==> event(Authored(handle, kop, body_secret[], ttl, repl)) is true.
+RESULT event(HostBurned(handle, kop)) && event(HonestKop(kop))
+       ==> event(Burned(handle, kop)) is true.
 ```
 
 If any query returns `is false`, ProVerif emits an attack trace.
@@ -359,18 +367,59 @@ Investigate, fix the spec or the model, and re-run.
 
 ## 9. Status
 
-**Model:** complete and ready to run.
+**Model:** complete.
 
-**Verifier execution:** not run on this machine (proverif is not
-installed by default on Fedora). The model is self-contained and
-reproducible per §7.
+**Verifier execution:** ProVerif 2.05 ran on `mop_v1.pv` on
+2026-04-28. All four queries pass. Full output captured at
+`mop_v1.results.txt` (alongside the model in this directory).
 
-When ProVerif is run and outputs `is true` on all four queries, the
-Tier 1 claim is discharged: **OpenWyrd MOP v1 is symbolically secure
+```
+RESULT not attacker(body_secret[]) is true.
+RESULT not attacker(reply_secret[]) is true.
+RESULT event(HostStored(handle, kop, env, ttl, repl)) && event(HonestKop(kop))
+       ==> event(Authored(handle, kop, body_secret, ttl, repl)) is true.
+RESULT event(HostBurned(handle, kop)) && event(HonestKop(kop))
+       ==> event(Burned(handle, kop)) is true.
+```
+
+Total runtime: under 2 seconds on a Fedora 43 / x86_64 laptop.
+
+**Tier 1 claim, discharged:** OpenWyrd MOP v1 is symbolically secure
 against a Dolev-Yao adversary controlling the public network and the
 canonical host, under the assumption that AES-GCM, BIP-340 Schnorr,
-secp256k1 ECDH, HKDF-SHA256, and SHA-256 each behave as their idealized
-abstractions.** Tier 2 is what makes that assumption respectable.
+secp256k1 ECDH, HKDF-SHA256, and SHA-256 each behave as their
+idealized abstractions. Tier 2 is what makes that assumption respectable.
+
+### 9.1 What we changed during verification
+
+The model went through one query refinement during the run. The first
+draft posed publish/burn authentication unconditionally:
+
+```
+event(HostStored(...)) ==> event(Authored(...))
+```
+
+ProVerif found a "trace" against this — the attacker generates a fresh
+keypair, signs a publish under it, and the host accepts. This is **not
+a real attack**: the protocol is open-publish, anyone can publish
+under their own keypair. The query was over-broad. We added an
+`event HonestKop(kop_pub)` emitted by the Author when they derive a key
+from the secret seed, and refined the queries to:
+
+```
+event(HostStored(...)) && event(HonestKop(kop)) ==> event(Authored(...))
+```
+
+i.e., "for HONEST publisher keys (those derived from the user's seed),
+the host can only store wyrds that the legitimate seed-holder
+authored." With that scoping, both Q3 and Q4 hold.
+
+This is a useful confirmation of what the model is actually saying: the
+protocol's authentication is **per-pubkey**, not "is this a SendWyrd
+user." There is no global notion of "user"; there are only K_origin
+keypairs, and each one is unforgeable by anyone who doesn't hold its
+private half. That matches ADR-003 and the spec's identity-less posture
+(§ Architecture: no identity primitives in the README).
 
 ## 10. References
 

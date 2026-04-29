@@ -1,0 +1,272 @@
+Doing expand get, insert and prove unique annotations... No change.
+Doing simplify (non-expanded game)... No change.
+Doing expand... No change.
+Doing remove assignments of findcond... No change.
+Doing simplify... Run simplify 1 time(s). Fixpoint reached.
+No change.
+Doing move all binders... No change.
+Doing SA rename new without array accesses and remove assignments of findcond... No change.
+Doing merge branches... No change.
+Proof of (one-session) secrecy of b failed:
+  at 41, bad usage(s) of c, which may depend on b.
+Trying equivalence prf(hkdf)... Transf. OK Proba. computed Transf. done Succeeded.
+Doing simplify (non-expanded game)... Eliminated collisions between info and info Probability: 0.5 / |info_t| * N_compose * N_compose
+Done.
+Doing expand... Done.
+Doing remove assignments of findcond... Done.
+Doing simplify... Run simplify 1 time(s). Fixpoint reached.
+No change.
+Doing move all binders... No change.
+Doing SA rename new without array accesses and remove assignments of findcond... No change.
+Doing merge branches... No change.
+Proof of (one-session) secrecy of b failed:
+  at 36, bad usage(s) of c, which may depend on b.
+Trying equivalence prf(hkdf)... Failed.
+Trying equivalence int_ctxt(aes_enc)... Failed:
+Random variables: r -> k_1
+The transformation did not use the useful_change oracles, or oracles deemed useful by default.
+Trying equivalence ind_cpa(aes_enc)... Transf. OK Proba. computed Transf. done Succeeded.
+Doing simplify (non-expanded game)... Done.
+Doing expand... Done.
+Doing remove assignments of findcond... Done.
+Doing simplify... Run simplify 2 time(s). Fixpoint reached.
+Done.
+Doing move all binders... No change.
+Doing SA rename new without array accesses and remove assignments of findcond... Done.
+Doing merge branches... No change.
+Proved one-session secrecy of b
+Proved secrecy of b
+Proved query event(repeated_nonce_1) ==> false with public variables b
+===================== Proof starts =======================
+Initial state
+Game 1 is
+     Ostart() :=
+     s_1 <-R seed_t;
+     return();
+     foreach i_compose <= N_compose do
+     O_publish(m0: cleartext_t, m1: cleartext_t, ad: aad_t) :=
+     if Z(m0) = Z(m1) then
+     info <-R info_t;
+     b <-R bool;
+     iv <-R nonce_t;
+     k: aes_key_t <- hkdf(s_1, info);
+     mb: cleartext_t <- if_fun(b, m0, m1);
+     c: ciphertext_t <- aes_enc(mb, ad, k, iv);
+     return(c, info, iv)
+
+
+Applying equivalence prf(hkdf) [probability Phkdf(time_1, N_compose)]
+  - Equivalence prf(hkdf) with variables: s_1 -> k_1
+yields
+
+Game 2 is
+     Ostart() :=
+     return();
+     foreach i_compose <= N_compose do
+     O_publish(m0: cleartext_t, m1: cleartext_t, ad: aad_t) :=
+     if Z(m0) = Z(m1) then
+     info <-R info_t;
+     b <-R bool;
+     iv <-R nonce_t;
+     k: aes_key_t <- (x_O: info_t <- info; {20}find [unique] u = ri <= N_compose suchthat defined(x_O[ri], r[ri]) && {23}(x_O = x_O[ri]) then r[u] else r <-R aes_key_t; r);
+     mb: cleartext_t <- if_fun(b, m0, m1);
+     c: ciphertext_t <- aes_enc(mb, ad, k, iv);
+     return(c, info, iv)
+
+
+Applying simplify (non-expanded game) [probability 0.5 * N_compose^2 / |info_t|]
+  - Simplification pass
+    - Replaced (x_O = x_O[ri]) with false at 23
+    - Remove branch 1 in find at 20
+    - Find at 20 removed (else branch kept if any)
+yields
+
+Game 3 is
+     Ostart() :=
+     return();
+     foreach i_compose <= N_compose do
+     O_publish(m0: cleartext_t, m1: cleartext_t, ad: aad_t) :=
+     if Z(m0) = Z(m1) then
+     info <-R info_t;
+     b <-R bool;
+     iv <-R nonce_t;
+     k: aes_key_t <- (x_O: info_t <- info; r <-R aes_key_t; r);
+     mb: cleartext_t <- if_fun(b, m0, m1);
+     c: ciphertext_t <- aes_enc(mb, ad, k, iv);
+     return(c, info, iv)
+
+
+Applying expand
+  - Expand if/find/let
+yields
+
+Game 4 is
+     Ostart() :=
+     return();
+     foreach i_compose <= N_compose do
+     O_publish(m0: cleartext_t, m1: cleartext_t, ad: aad_t) :=
+     if Z(m0) = Z(m1) then
+     info <-R info_t;
+     b <-R bool;
+     iv <-R nonce_t;
+     x_O: info_t <- info;
+     r <-R aes_key_t;
+     k: aes_key_t <- r;
+     mb: cleartext_t <- if_fun(b, m0, m1);
+     c: ciphertext_t <- aes_enc(mb, ad, k, iv);
+     return(c, info, iv)
+
+
+Applying remove assignments of findcond
+  - Remove assignments on x_O (definition removed, all usages removed)
+  - Remove assignments on k (definition removed, all usages removed)
+yields
+
+Game 5 is
+     Ostart() :=
+     return();
+     foreach i_compose <= N_compose do
+     O_publish(m0: cleartext_t, m1: cleartext_t, ad: aad_t) :=
+     if Z(m0) = Z(m1) then
+     info <-R info_t;
+     b <-R bool;
+     iv <-R nonce_t;
+     r <-R aes_key_t;
+     mb: cleartext_t <- if_fun(b, m0, m1);
+     c: ciphertext_t <- aes_enc(mb, ad, r, iv);
+     return(c, info, iv)
+
+
+Applying equivalence ind_cpa(aes_enc) [probability N_compose * Penc(time_2, 1) + Pr[event repeated_nonce_1 in game 6 with public variables b]]
+  - Equivalence ind_cpa(aes_enc) with variables: r -> k_1
+yields
+
+Game 6 is
+     Ostart() :=
+     return();
+     foreach i_compose <= N_compose do
+     O_publish(m0: cleartext_t, m1: cleartext_t, ad: aad_t) :=
+     if Z(m0) = Z(m1) then
+     info <-R info_t;
+     b <-R bool;
+     iv <-R nonce_t;
+     r_2 <-R aes_key_t;
+     mb: cleartext_t <- if_fun(b, m0, m1);
+     c: ciphertext_t <- (x: cleartext_t <- mb; d: aad_t <- ad; n: nonce_t <- iv; {35}find  else r_1: ciphertext_t <- enc'(Z(x), d, r_2, n); r_1);
+     return(c, info, iv)
+
+
+Applying simplify (non-expanded game)
+  - Simplification pass
+    - Find at 35 removed (else branch kept if any)
+yields
+
+Game 7 is
+     Ostart() :=
+     return();
+     foreach i_compose <= N_compose do
+     O_publish(m0: cleartext_t, m1: cleartext_t, ad: aad_t) :=
+     if Z(m0) = Z(m1) then
+     info <-R info_t;
+     b <-R bool;
+     iv <-R nonce_t;
+     r_2 <-R aes_key_t;
+     mb: cleartext_t <- if_fun(b, m0, m1);
+     c: ciphertext_t <- (x: cleartext_t <- mb; d: aad_t <- ad; n: nonce_t <- iv; r_1: ciphertext_t <- enc'(Z(x), d, r_2, n); r_1);
+     return(c, info, iv)
+
+
+Applying expand
+  - Expand if/find/let
+yields
+
+Game 8 is
+     Ostart() :=
+     return();
+     foreach i_compose <= N_compose do
+     O_publish(m0: cleartext_t, m1: cleartext_t, ad: aad_t) :=
+     if Z(m0) = Z(m1) then
+     info <-R info_t;
+     b <-R bool;
+     iv <-R nonce_t;
+     r_2 <-R aes_key_t;
+     mb: cleartext_t <- if_fun(b, m0, m1);
+     x: cleartext_t <- mb;
+     d: aad_t <- ad;
+     n: nonce_t <- iv;
+     r_1: ciphertext_t <- enc'(Z(x), d, r_2, n);
+     c: ciphertext_t <- r_1;
+     return(c, info, iv)
+
+
+Applying remove assignments of findcond
+  - Remove assignments on x (definition removed, all usages removed)
+  - Remove assignments on d (definition removed, all usages removed)
+  - Remove assignments on n (definition removed, all usages removed)
+  - Remove assignments on c (definition removed, all usages removed)
+yields
+
+Game 9 is
+     Ostart() :=
+     return();
+     foreach i_compose <= N_compose do
+     O_publish(m0: cleartext_t, m1: cleartext_t, ad: aad_t) :=
+     if Z(m0) = Z(m1) then
+     info <-R info_t;
+     b <-R bool;
+     iv <-R nonce_t;
+     r_2 <-R aes_key_t;
+     mb: cleartext_t <- if_fun(b, m0, m1);
+     r_1: ciphertext_t <- {26}enc'(Z(mb), ad, r_2, iv);
+     return(r_1, info, iv)
+
+
+Applying simplify
+  - Simplification pass
+    - Replaced enc'(Z(mb), ad, r_2, iv) with enc'(Z(m0), ad, r_2, iv) at 26
+yields
+
+Game 10 is
+     Ostart() :=
+     return();
+     foreach i_compose <= N_compose do
+     O_publish(m0: cleartext_t, m1: cleartext_t, ad: aad_t) :=
+     if Z(m0) = Z(m1) then
+     info <-R info_t;
+     b <-R bool;
+     iv <-R nonce_t;
+     r_2 <-R aes_key_t;
+     mb: cleartext_t <- if_fun(b, m0, m1);
+     r_1: ciphertext_t <- enc'(Z(m0), ad, r_2, iv);
+     return(r_1, info, iv)
+
+
+Applying SA rename new without array accesses and remove assignments of findcond
+  - Remove assignments on mb (definition removed, all usages removed)
+yields
+
+Game 11 is
+     Ostart() :=
+     return();
+     foreach i_compose <= N_compose do
+     O_publish(m0: cleartext_t, m1: cleartext_t, ad: aad_t) :=
+     if Z(m0) = Z(m1) then
+     info <-R info_t;
+     b <-R bool;
+     iv <-R nonce_t;
+     r_2 <-R aes_key_t;
+     r_1: ciphertext_t <- enc'(Z(m0), ad, r_2, iv);
+     return(r_1, info, iv)
+
+
+Proved event(repeated_nonce_1) ==> false with public variables b in game 11
+Proved secrecy of b in game 11
+Adv[Game 1: secrecy of b] <= N_compose^2 / |info_t| + 2 * Phkdf(time_1, N_compose) + Adv[Game 5: secrecy of b]
+Adv[Game 5: secrecy of b] <= 2 * N_compose * Penc(time_2, 1) + Adv[Game 6: secrecy of b, repeated_nonce_1]
+Adv[Game 6: secrecy of b, repeated_nonce_1] <= Pr[Game 11: repeated_nonce_1] + Adv[Game 11: secrecy of b]
+Pr[Game 11: repeated_nonce_1] <= 0
+Adv[Game 11: secrecy of b] <= 0
+RESULT Proved secrecy of b up to probability N_compose^2 / |info_t| + 2 * Phkdf(time_1, N_compose) + 2 * N_compose * Penc(time_2, 1)
+RESULT time_1 = 2 * N_compose * time(Z) + N_compose * time(if_fun) + N_compose * time(aes_enc) + time
+RESULT time_2 = 2 * N_compose * time(Z) + N_compose * time(if_fun) + time + (N_compose - 1) * max(time(aes_enc), time(Z) + time(aes_enc))
+All queries proved.

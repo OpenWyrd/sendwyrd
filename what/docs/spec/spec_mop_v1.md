@@ -885,6 +885,7 @@ Items that the wire spec deliberately leaves to implementation phase (Phase E) o
 - ADR-022 — `K_read` derived from seed via HKDF (supersedes the per-wyrd-random `K_read` in §7.3 as drafted; partially supersedes ADR-005's K_read paragraph).
 - ADR-023 — Payment-token posture: detect locally, hand off to wallets, never settle. Extends §8.1 detection to Bitcoin addresses + `bitcoin:` URI alongside Lightning forms; extends §8.2 cap exclusion to all detected payment tokens.
 - ADR-024 — No relay-side recipient model: user-side aggregation is author-only or browser-local. Reinforces §13/§15 absence of recipient-keyed surfaces; clarifies the "inbox"/"outbox" UI vocabulary against ADR-009.
+- ADR-025 — Formal verification effort: Tier 1 ProVerif (executed; all queries pass), Tier 2 hand-written reductions + Theorem 1 mechanized in CryptoVerif, Tier 3 property-based regression. Artifacts at `what/docs/formal/`.
 
 ---
 

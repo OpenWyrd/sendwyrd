@@ -83,13 +83,13 @@ when the time comes:
 | Tier | Artifact | Status |
 |---|---|---|
 | 1 | ProVerif model | Complete |
-| 1 | Verifier execution | Not run on this machine (proverif not installed by default on Fedora) |
+| 1 | Verifier execution | **Run, all 4 queries pass** (output captured at `proverif/mop_v1.results.txt`) |
 | 1 | Per-query analysis | Complete |
 | 2 | Theorem statements | Complete (5 theorems + 1 corollary + 1 composition) |
 | 2 | Proofs | Complete (hand-written, game-hopping style) |
 | 2 | Concrete bounds | Computed |
-| 2 | Mechanization | Deferred (CryptoVerif / EasyCrypt — recommended pre-external-review) |
-| 3 | Implementation verification | Out of scope |
+| 2 | Mechanization | POC for Theorem 1 (body confidentiality) in CryptoVerif; remaining theorems mechanized as TODO |
+| 3 | Implementation verification | Property-based test scaffolding present; full effort lives in mop-js |
 
 ## How to update this when the spec changes
 
