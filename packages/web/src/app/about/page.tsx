@@ -516,6 +516,23 @@ sig=<base64url-signature>`}
         <CollapsibleSection title="Stack">
           <ul style={ulStyle}>
             <li>
+              <strong>Protocol</strong>: OpenWyrd MOP. SendWyrd is the canonical
+              reference implementation; the wire spec is open and independently
+              implementable. Spec at{" "}
+              <a
+                href="https://openwyrd.org/spec"
+                style={linkStyle}
+                rel="noreferrer"
+              >
+                openwyrd.org/spec
+              </a>
+              ; project home at{" "}
+              <a href="https://openwyrd.org" style={linkStyle} rel="noreferrer">
+                openwyrd.org
+              </a>
+              .
+            </li>
+            <li>
               <strong>Web</strong>: Next.js on Cloudflare Workers (OpenNext);
               installable PWA.
             </li>

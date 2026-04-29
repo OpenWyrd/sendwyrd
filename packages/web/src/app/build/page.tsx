@@ -72,20 +72,26 @@ export default function BuildPage() {
             </li>
             <li>
               <strong>Wire spec</strong> — byte-for-byte description of every
-              endpoint, envelope layout, signed payload, and error code.
-              Currently at v1.0.4-draft. The published{" "}
-              <Code>@sendwyrd/core</Code> package is the executable reference —{" "}
-              <Code>npm view @sendwyrd/core</Code> or unpack the tarball to read
-              the implementation directly. The companion spec doc is available
-              on request from{" "}
+              endpoint, envelope layout, signed payload, and error code. The
+              spec is OpenWyrd MOP-001, published at{" "}
               <a
-                href="https://x.com/deltaclimbs"
+                href="https://openwyrd.org/spec"
                 style={linkStyle}
                 rel="noreferrer"
               >
-                @deltaclimbs
-              </a>
-              .
+                openwyrd.org/spec
+              </a>{" "}
+              (canonical) or{" "}
+              <a
+                href="https://github.com/openwyrd/mop/blob/main/spec/MOP-001.md"
+                style={linkStyle}
+                rel="noreferrer"
+              >
+                openwyrd/mop
+              </a>{" "}
+              on GitHub. SendWyrd is the canonical reference implementation; the
+              published <Code>@sendwyrd/core</Code> package is the executable
+              form.
             </li>
             <li>
               <strong>Reference TS package</strong> <Code>@sendwyrd/core</Code>{" "}
@@ -130,7 +136,23 @@ export default function BuildPage() {
             implementable from primitives in any language with secp256k1 +
             BIP-32 + AES-256-GCM. The Schnorr signatures are BIP-340; the HD
             derivation is BIP-32 hardened; the seed format is BIP-39. All
-            standard.
+            standard. A second reference implementation is in flight in Go at{" "}
+            <a
+              href="https://github.com/openwyrd/wyrd-go"
+              style={linkStyle}
+              rel="noreferrer"
+            >
+              openwyrd/wyrd-go
+            </a>
+            ; conformance vectors live at{" "}
+            <a
+              href="https://github.com/openwyrd/mop-conformance"
+              style={linkStyle}
+              rel="noreferrer"
+            >
+              openwyrd/mop-conformance
+            </a>
+            .
           </p>
         </Section>
 
