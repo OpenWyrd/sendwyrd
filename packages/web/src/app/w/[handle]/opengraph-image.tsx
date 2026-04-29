@@ -17,7 +17,13 @@
 import { ImageResponse } from "next/og";
 import { PERMANENT_EXPIRES_AT_MS } from "@sendwyrd/core";
 
-export const runtime = "edge";
+// Intentionally NOT exporting `runtime = "edge"`. @opennextjs/cloudflare
+// runs every function as a Cloudflare Worker (functionally edge), but its
+// bundler rejects routes that explicitly opt into Next's edge runtime
+// because that requires a separate function bundle on AWS Lambda — see
+// the OpenNext error "edge runtime function to be defined in a separate
+// function". Omitting the export lets next/og's ImageResponse run in the
+// default worker context, which is what we want here.
 export const alt = "SendWyrd — encrypted wyrd";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
