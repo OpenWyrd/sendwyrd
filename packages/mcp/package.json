@@ -4,7 +4,7 @@
   "private": false,
   "type": "module",
   "description": "Model Context Protocol server for SendWyrd. Exposes compose / view / burn / reply / attest as agent-callable tools over stdio.",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "homepage": "https://sendwyrd.com",
   "repository": {
     "type": "git",

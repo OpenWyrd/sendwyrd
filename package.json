@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "SendWyrd — encrypted, ephemeral, capability-URL conversational primitive (protocol codename: MOP)",
-  "license": "UNLICENSED",
+  "license": "AGPL-3.0-or-later",
   "packageManager": "pnpm@9.15.0",
   "engines": {
     "node": ">=20.18.0"

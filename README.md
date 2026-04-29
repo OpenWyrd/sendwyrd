@@ -156,4 +156,10 @@ cd packages/web && pnpm exec opennextjs-cloudflare build && pnpm exec opennextjs
 
 ## License
 
-Unreleased. License TBD before public source release.
+`sendwyrd` is **mixed-license**, mirroring the [OpenWyrd MOP](https://github.com/openwyrd/mop) project posture:
+
+- **Server (`packages/api`, root, default)** — [`AGPL-3.0-or-later`](LICENSE). Running a modified server against users obligates you to publish your modifications. The hosted-service capture loophole closes here.
+- **Reference web client (`packages/web`)** — [`Apache-2.0`](packages/web/LICENSE). The trust boundary is the server, not the client; deployers must be free to fork and redistribute the UI.
+- **Client libraries (`packages/core`, `packages/mcp`)** — [`Apache-2.0`](packages/mcp/LICENSE). Permissive at the client edge to maximize protocol adoption.
+
+Governance — including permanent commitments, plugin boundary, premium / commercial posture, and trademark policy — lives in [`openwyrd/mop` `governance/CHARTER.md`](https://github.com/openwyrd/mop/blob/main/governance/CHARTER.md) and [`governance/TRADEMARK.md`](https://github.com/openwyrd/mop/blob/main/governance/TRADEMARK.md). `sendwyrd` operates under that charter as the canonical reference implementation.
