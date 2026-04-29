@@ -14,6 +14,25 @@ export const metadata: Metadata = {
   title: "SendWyrd",
   description: "Hyperlinks for conversational objects.",
   applicationName: "SendWyrd",
+  // Root-level og/twitter blocks so every page that doesn't override unfurls
+  // with a brand card on WhatsApp / iMessage / Telegram / Facebook / Signal.
+  // Critically, no `images:` here — Next 15 routes the colocated
+  // `opengraph-image.tsx` into og:image (and twitter:image as fallback) only
+  // when this array is absent. /w/[handle] overrides with its own colocated
+  // route for the per-handle credential card. (See reference: Next 15 OG
+  // image precedence.)
+  openGraph: {
+    title: "SendWyrd",
+    description: "Hyperlinks for conversational objects.",
+    siteName: "SendWyrd",
+    type: "website",
+    url: "https://sendwyrd.com",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "SendWyrd",
+    description: "Hyperlinks for conversational objects.",
+  },
   // Theme color is exposed two ways: through the manifest (single value
   // pinned to dark, used by the OS for splash/standalone chrome) and via
   // <meta name="theme-color"> with light/dark media queries below for the
