@@ -1,4 +1,4 @@
-NIP-XX (Draft)
+NIP-G6 (Draft)
 ==============
 
 OpenWyrd Capability-URL Inline Rendering
@@ -7,6 +7,8 @@ OpenWyrd Capability-URL Inline Rendering
 `draft` `optional`
 
 > **Status:** working draft, not yet submitted upstream. Successor in spirit to the withdrawn NIP-C6 ([nostr-protocol/nips#2327](https://github.com/nostr-protocol/nips/pull/2327), withdrawn 2026-04-28). Inherits both review objections from that round: zero sender burden, URL self-identifies. See `nip_capability_url_v1.md` for historical context.
+>
+> **Number choice:** picked `G6` after scanning merged NIPs and open/closed PRs — no conflict. `G` is outside the hex-digit convention used by merged NIPs to date; happy to renumber per editor preference.
 
 ---
 
