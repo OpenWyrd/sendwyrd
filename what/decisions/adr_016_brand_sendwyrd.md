@@ -51,7 +51,7 @@ The original ADR retained the `MOP/` directory name "for operational continuity.
 - **GitHub repository renamed**: `github.com/DeltaClimbs/MOP` → `github.com/openwyrd/sendwyrd`. GitHub serves automatic redirects from the old path; old clones can be updated with `git remote set-url origin https://github.com/openwyrd/sendwyrd.git`.
 - **Working directory renamed**: `~/lattice/MOP/` → `~/lattice/sendwyrd/`.
 - **Parent lattice files updated**: `~/lattice/.gitignore` and `~/lattice/bootstrap.sh` REPOS array updated.
-- **Claude Code memory directory** at `~/.claude/projects/-home-operator-lattice-MOP/` was copied to `-home-operator-lattice-sendwyrd/` to preserve user-profile, feedback, and project memory across the path change. Old path retained until next session start verifies the new path works.
+- **Local agent memory directory** was copied across the path change to preserve user-profile, feedback, and project memory. Old path retained until next session start verifies the new path works.
 
 **Protocol codename MOP is retained** in spec-facing language (this ADR, `spec_mop_v1.md`, the `MOP-Protocol-Version: 1` header). Only the operational identifier (repo, dir) was renamed.
 

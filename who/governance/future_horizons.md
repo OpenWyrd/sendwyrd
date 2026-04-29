@@ -37,7 +37,7 @@ Concrete use cases:
 
 The product surface is intentionally narrow per `feedback_anti_scope_creep_relay_layer.md`. SendWyrd does not grow into a knowledge graph. Integrations let users **ride wyrds into** their existing tools — exits, not features. This is the right shape: SendWyrd authors the artifact; PKMs and CRMs index and contextualize it.
 
-For the user (the operator), this also closes a loop with the sibling `~/lattice/personal_crm/` project — wyrds sent to contacts become attachments to their CRM record without either tool needing to know about the other beyond a URL.
+For the user, this also closes a loop with a sibling personal-CRM project — wyrds sent to contacts become attachments to their CRM record without either tool needing to know about the other beyond a URL.
 
 ### Strategic significance: this validates the message-object architecture choice
 
@@ -73,7 +73,7 @@ All integrations layer **above** the existing wire spec — none require core pr
 
 When SendWyrd has actual users sending real wyrds, AND we observe at least one user manually pasting wyrd URLs into a PKM tool — that's the signal integration would be picked up rather than ignored. Until then, defer.
 
-A second possible trigger: the personal_crm project (or any sibling) reaches a point where it would benefit from wyrd ingestion. At that moment the integration shape becomes concrete and the work has a clear home.
+A second possible trigger: a sibling tool reaches a point where it would benefit from wyrd ingestion. At that moment the integration shape becomes concrete and the work has a clear home.
 
 ---
 
@@ -112,7 +112,7 @@ The strategic point: these are **client capabilities atop the existing protocol 
 
 When SendWyrd has paying-customer-shaped demand (people asking to pay for *something*), AND at least one of these three constraints is the specific friction. Probably audio comes first if it comes at all — voice is a natural extension of "intent and action" framing. Attachments and the 3000-cap are second-order, dependent on the audio-first shape working.
 
-The other trigger: a sibling tool in `~/lattice/` (e.g. an audio-journaling project) needs to compose wyrds programmatically. At that point the audio path becomes a usable building block before it's a paid feature.
+The other trigger: a sibling tool (e.g. an audio-journaling project) needs to compose wyrds programmatically. At that point the audio path becomes a usable building block before it's a paid feature.
 
 ---
 
@@ -134,7 +134,7 @@ H3 is the family of follow-on surfaces that exercise the topology more deeply, i
 
 H3 is the **strategic argument for shipping a primitive that refuses every feature**. The feature refusal is what creates the routing-substrate-shaped vacancy that personal agents step into. A protocol that supplied its own discovery would compete with the agent layer; SendWyrd cooperates with it by abstaining.
 
-For the user (the operator), this also dovetails with the broader `~/lattice/` workspace ambition — sibling projects (`personal_crm/`, `power_broker/`, etc.) become routing-rule sources for the user's own SendWyrd-aware agent. The agent reads CRM tags + PKM context, transcribes the user's wyrd-publish intent, and forwards capsules through trust networks — all without SendWyrd ever modeling the trust network on its own wire.
+For the user, this also dovetails with a broader workspace ambition — sibling tools (a personal CRM, a relationship-graph tool, etc.) become routing-rule sources for the user's own SendWyrd-aware agent. The agent reads CRM tags + PKM context, transcribes the user's wyrd-publish intent, and forwards capsules through trust networks — all without SendWyrd ever modeling the trust network on its own wire.
 
 ### What it would architecturally require
 
@@ -156,4 +156,4 @@ All H3 surfaces ride on the existing wire spec and the existing MCP verb set. No
 
 When the MCP has at least 50 active installations AND we observe at least one user manually scripting routing logic on top of it (a shell loop, a cron job, an agent prompt that does compose-and-forward) — that's the signal to invest in H3 surfaces. Until then, the bare verb set is sufficient and the topology proves itself by usage, not by feature surface.
 
-A second trigger: a sibling project in `~/lattice/` (e.g. `personal_crm/`, `power_broker/`) reaches a point where it would benefit from a routing-aware SendWyrd integration. At that moment one of the H3 surfaces becomes concrete and has a clear home.
+A second trigger: a sibling project (e.g. a personal CRM, a relationship-graph tool) reaches a point where it would benefit from a routing-aware SendWyrd integration. At that moment one of the H3 surfaces becomes concrete and has a clear home.
