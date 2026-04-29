@@ -26,7 +26,7 @@ import {
 } from "@sendwyrd/core";
 import { burnWyrd } from "@/lib/api";
 import { PrivacyIndicator } from "@/components/PrivacyIndicator";
-import { WyrdBody } from "@/components/WyrdBody";
+import { WyrdCard } from "@/components/WyrdCard";
 import { ReplyForm } from "@/components/ReplyForm";
 import { InstallAffordance } from "@/components/InstallAffordance";
 import { Nav } from "@/components/Nav";
@@ -207,7 +207,7 @@ export default function FragmentClient({
                 paddingBottom: "var(--spacing-3)",
               }}
             >
-              <WyrdBody body={state.body} transitives={state.transitives} />
+              <WyrdCard body={state.body} transitives={state.transitives} />
             </div>
             <p
               style={{
