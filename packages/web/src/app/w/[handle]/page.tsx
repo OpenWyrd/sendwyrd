@@ -18,6 +18,7 @@
  */
 
 import { Suspense } from "react";
+import type { Metadata } from "next";
 import FragmentClient, { type InitialFetch } from "./FragmentClient";
 
 // Force a fresh render per request — burns and tombstones must reflect
@@ -28,6 +29,38 @@ export const dynamic = "force-dynamic";
 interface Params {
   handle: string;
 }
+
+// Static OG/Twitter metadata, identical for every handle (live or 404).
+// The card reveals nothing the URL itself doesn't already reveal: it's a
+// SendWyrd link, the body is encrypted, you have to visit to decrypt. The
+// host literally cannot include wyrd content here — K_read lives in the
+// fragment, never reaches the server (RFC 3986 §3.5). ADR-021 §"Revisited
+// 2026-04-28" relaxes the strict no-feed-surface posture to allow this
+// content-free brand identifier.
+export const metadata: Metadata = {
+  title: "Encrypted Wyrd",
+  description: "An encrypted message. Tap to decrypt.",
+  openGraph: {
+    title: "Encrypted Wyrd",
+    description: "An encrypted message. Tap to decrypt.",
+    siteName: "SendWyrd",
+    type: "website",
+    images: [
+      {
+        url: "/og/wyrd.png",
+        width: 1200,
+        height: 630,
+        alt: "SendWyrd — encrypted wyrd",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Encrypted Wyrd",
+    description: "An encrypted message. Tap to decrypt.",
+    images: ["/og/wyrd.png"],
+  },
+};
 
 const API_BASE = process.env.SENDWYRD_API_BASE ?? "https://sendwyrd.com";
 

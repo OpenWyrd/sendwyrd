@@ -5,7 +5,7 @@ adr_number: 21
 title: "Single-form addressing (fragment-only); supersedes two-form addressing"
 status: accepted
 created: 2026-04-26
-updated: 2026-04-26
+updated: 2026-04-28
 last_edited_by: agent_operator
 supersedes: adr_004
 superseded_by:
@@ -112,3 +112,24 @@ The URL parser (`parseWyrdUrl`) retains recognition of the legacy path form so t
 - **Audit body parser** for any other places that special-case the public form. Currently only the route layer has special-case logic; the parser is form-agnostic.
 - **Backfill native-client (post-v1) spec** to reflect single-form addressing in iOS / Android renderer specs when those clients are designed.
 - **Monitor user feedback** post-deploy for cases where the loss of OG previews is operationally painful. If real users hit this, revisit whether a federation-mode opt-in could re-introduce a host-readable form WITHOUT bringing it back to the canonical host.
+
+## Revisited 2026-04-28 — content-free OG card on `/w/{handle}`
+
+The "Open follow-on" above triggered. Real-world test: a wyrd URL pasted into Nostr rendered as a bare URL with no preview, making it indistinguishable from spam in feed contexts. The bet that "recipients who actually visit are higher-signal than recipients who scroll-by" only pays off if recipients can tell a SendWyrd link apart from a generic URL in the first place — and a bare URL with no signage fails that test.
+
+**Resolution**: ship a static, content-free OG card on `/w/{handle}` (and 404s — same card for both, no per-handle data). Sigil + "SendWyrd" wordmark + "ENCRYPTED WYRD · TAP TO DECRYPT" subtitle on a dark background. Identical for every handle. No DB lookup. No wyrd-specific information.
+
+**Why this is consistent with this ADR's privacy posture**:
+
+The strongest argument in this ADR (lines 32, 85, 107) was about wyrd *content* landing in feed surfaces — which only worked when the public-path form let the host decrypt. In the single-form world the server cannot decrypt: `K_read` lives in the URL fragment and never reaches the server (RFC 3986 §3.5 — fragments are stripped before any HTTP request). So an OG card on `/w/{handle}` can include only what the server itself knows, which by construction is nothing about the wyrd's content. The card displays brand identifiers; the body never enters any feed.
+
+**What this does relax**: the broader "out of feed-rendering UIs entirely" posture (line 85). SendWyrd will now render as a card in Nostr/Twitter/iMessage/Slack feed surfaces, just with no body. This is a posture relaxation, not a content-leak regression. The trade is: recipients in feed surfaces see brand acknowledgment instead of a bare URL, accepting that some fraction may form passive scroll-by impressions of "encrypted message, probably noise" rather than actively visiting. The bet is that this is net-positive vs. URLs being indistinguishable from spam.
+
+**What is NOT included in the card**:
+
+- Handle (it's already in the URL)
+- TTL / expiry hint
+- Wyrd existence (live vs. expired vs. never-existed) — same card for all
+- Any per-handle data of any kind
+
+**Federation-mode revisit** (originally contemplated as the escape hatch) becomes irrelevant for this specific concern. Federation-mode is still on the table for other reasons (host-readable previews where federated relays opt-in to richer rendering), but the v1-on-Nostr operational pain is resolved by content-free OG without needing to introduce host-readable forms.
