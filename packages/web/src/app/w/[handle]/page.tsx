@@ -30,13 +30,14 @@ interface Params {
   handle: string;
 }
 
-// Static OG/Twitter metadata, identical for every handle (live or 404).
-// The card reveals nothing the URL itself doesn't already reveal: it's a
-// SendWyrd link, the body is encrypted, you have to visit to decrypt. The
-// host literally cannot include wyrd content here — K_read lives in the
-// fragment, never reaches the server (RFC 3986 §3.5). ADR-021 §"Revisited
-// 2026-04-28" relaxes the strict no-feed-surface posture to allow this
-// content-free brand identifier.
+// OG/Twitter text metadata. The image itself is rendered by the colocated
+// `opengraph-image.tsx` route — Next 15 wires it into og:image and (as
+// fallback) twitter:image automatically, so we deliberately omit `images:`
+// here. Critical: in Next 15.5.x, an explicit `images:` array overrides
+// the file-based route and makes the dynamic per-handle card unreachable.
+// The image carries handle + TTL class only — server-known envelope
+// metadata, no plaintext (K_read lives in the URL fragment and never
+// reaches the host per RFC 3986 §3.5; ADR-021 §Revisited 2026-04-28).
 export const metadata: Metadata = {
   title: "Encrypted Wyrd",
   description: "An encrypted message. Tap to decrypt.",
@@ -45,20 +46,11 @@ export const metadata: Metadata = {
     description: "An encrypted message. Tap to decrypt.",
     siteName: "SendWyrd",
     type: "website",
-    images: [
-      {
-        url: "/og/wyrd.png",
-        width: 1200,
-        height: 630,
-        alt: "SendWyrd — encrypted wyrd",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Encrypted Wyrd",
     description: "An encrypted message. Tap to decrypt.",
-    images: ["/og/wyrd.png"],
   },
 };
 
