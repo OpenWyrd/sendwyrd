@@ -511,30 +511,6 @@ sig=<base64url-signature>`}
             identity; it composes with whatever attestation layer the
             participants choose to bring.
           </p>
-          <p style={pStyle}>
-            The compatibility runs deeper than transport.{" "}
-            <a
-              href="https://github.com/nostr-protocol/nips/pull/2327"
-              style={linkStyle}
-              rel="noreferrer"
-            >
-              <strong>NIP-C6: Capability-URL References</strong>
-            </a>{" "}
-            (currently an open PR against <Code>nostr-protocol/nips</Code>, not
-            yet merged) defines a scheme-agnostic event kind for{" "}
-            <em>host-blind encrypted artifacts</em> — events that point at a URL
-            whose fragment carries the read key, with the host unable to
-            decrypt. A wyrd is one such artifact; a Nostr client implementing
-            the NIP fetches the envelope, decrypts with the URL fragment, and
-            renders the wyrd <em>inline in the feed</em> with encryption and
-            expiry badges — the same way it renders an image or a long-form
-            post. That is downstream of Nostr being an open client/relay
-            protocol with extensible event kinds. No closed social surface — X,
-            Instagram, Facebook, LinkedIn — lets a third party ship rich inline
-            rendering for an external primitive; URLs unfurl to the
-            platform&apos;s own preview card and stop there. SendWyrd composes
-            with Nostr in a way it cannot compose with any other social layer.
-          </p>
         </CollapsibleSection>
 
         <CollapsibleSection title="Stack">

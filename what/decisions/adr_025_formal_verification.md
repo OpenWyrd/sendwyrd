@@ -34,7 +34,7 @@ Each claim is plausible, and the implementation has unit + integration tests, bu
 A formal verification pass closes that gap. It is also a near-prerequisite for:
 
 - Any external security review that would otherwise have to redo the analysis from scratch.
-- NIP-C6 (the user-authored Nostr NIP that builds on capability-URL primitives) progressing toward formal Nostr-protocol status, which expects rigorous security analysis.
+- Any future capability-URL standardization effort (Nostr NIP, IETF draft, or otherwise) progressing toward formal status, which expects rigorous security analysis. (NIP-C6 was an early candidate, withdrawn 2026-04-28; the formal artifact remains useful for any successor.)
 - A v2 ADR proposing wire changes — without a baseline formal artifact, the burden of "show this doesn't break security" falls on prose review.
 
 Three layers of verification are technically meaningful, with diminishing tractability:
@@ -115,7 +115,7 @@ Positive:
 
 - Spec changes go through a formal-verification gate, not just review.
 - External security reviewers can audit a single artifact rather than reconstructing the analysis.
-- The artifact is reusable for NIP-C6 and any downstream protocol that builds on capability-URL primitives.
+- The artifact is reusable for any downstream protocol that builds on capability-URL primitives.
 - The Tier 3 harness catches mop-js regressions early.
 
 Negative:

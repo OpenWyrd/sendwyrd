@@ -1,10 +1,18 @@
-NIP-C6
-======
+NIP-C6 (Withdrawn)
+==================
 
 Capability-URL References
 -------------------------
 
-`draft` `optional`
+`withdrawn` (was `draft` `optional`)
+
+> **Withdrawn 2026-04-28** — `nostr-protocol/nips#2327` closed. fiatjaf's review feedback ("URL self-identifies, no need for tags") prompted a re-examination, and the conclusion was that the URL pattern plus standard OpenGraph metadata served by the host gives capability artifacts first-class rendering on every platform — Nostr, iMessage, Twitter, Slack, Discord — without any per-event tag schema. The reference-vs-share distinction is encoded in fragment presence (no fragment = reference, fragment = share); no `k` tag is needed. Fragment-leak prevention reduces to standard URL hygiene that fragments never travel HTTP (RFC 3986 §3.5). The whole tag schema was solving a coordination problem that OpenGraph already solves.
+>
+> Preserved here as historical record. Do not cite as a normative spec.
+
+---
+
+
 
 A tag schema and rendering convention for Nostr events that reference *capability-encrypted artifacts* hosted off-Nostr — where the artifact's read key lives in the URL fragment, the host is read-blind, and the event author is referencing or sharing the artifact rather than embedding its body.
 
