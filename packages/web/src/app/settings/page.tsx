@@ -935,7 +935,11 @@ export default function SettingsPage() {
 
         <h2 style={sectionStyle}>About</h2>
         <p style={{ ...metaStyle, marginBottom: "var(--spacing-12)" }}>
-          SendWyrd v0.1 · MOP protocol v1
+          SendWyrd v0.1 · reference implementation of{" "}
+          <a href="https://openwyrd.org" style={linkStyle} rel="noreferrer">
+            OpenWyrd MOP
+          </a>{" "}
+          v1
           <br />
           Build on this:{" "}
           <a href="/build" style={linkStyle}>
