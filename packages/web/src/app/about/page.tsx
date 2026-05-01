@@ -544,6 +544,17 @@ sig=<base64url-signature>`}
               envelopes only; no plaintext anywhere on the host.
             </li>
             <li>
+              <strong>Source</strong>:{" "}
+              <a
+                href="https://github.com/openwyrd/sendwyrd"
+                style={linkStyle}
+                rel="noreferrer"
+              >
+                github.com/openwyrd/sendwyrd
+              </a>{" "}
+              (AGPL-3.0).
+            </li>
+            <li>
               <strong>API / build on this</strong>:{" "}
               <a href="/build" style={linkStyle}>
                 /build
