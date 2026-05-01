@@ -1,15 +1,22 @@
-PATTERNS='mrchapiro|machcap|chapiro|5aa935489ed472330341d50ca095b641|org-crimson-bar-31850116|holy-poetry-85164505'
+PATTERNS='mrchapiro|machcap|chapiro|5aa935489ed472330341d50ca095b641|org-crimson-bar-31850116|holy-poetry-85164505|home-michael'
 
 LEAKS=$(git diff --cached -U0 -- ':!.husky/pre-commit' | grep -E '^\+[^+]' | grep -nE "$PATTERNS" || true)
 
-if [ -n "$LEAKS" ]; then
+# Name patterns scoped: .obsidian/ and setup.sh carry legitimate third-party
+# Michael/Mike references (plugin authors) and must stay editable.
+NAME_PATTERNS='\b[Mm]ichael\b|\b[Mm]ike\b'
+NAME_LEAKS=$(git diff --cached -U0 -- ':!.husky/pre-commit' ':!.obsidian/' ':!setup.sh' | grep -E '^\+[^+]' | grep -nE "$NAME_PATTERNS" || true)
+
+if [ -n "$LEAKS" ] || [ -n "$NAME_LEAKS" ]; then
   echo "" >&2
   echo "Pre-commit blocked: staged content contains banned operator personal-info patterns." >&2
   echo "" >&2
-  echo "$LEAKS" >&2
+  [ -n "$LEAKS" ] && echo "$LEAKS" >&2
+  [ -n "$NAME_LEAKS" ] && echo "$NAME_LEAKS" >&2
   echo "" >&2
-  echo "Patterns blocked: $PATTERNS" >&2
-  echo "Remove the offending content or edit .husky/pre-commit if this is a false positive." >&2
+  echo "Strict patterns (any path): $PATTERNS" >&2
+  echo "Name patterns (excl .obsidian/, setup.sh): $NAME_PATTERNS" >&2
+  echo "Operator identity in repo content is @deltaclimbs only. Remove the content or edit .husky/pre-commit if this is a false positive." >&2
   exit 1
 fi
 
